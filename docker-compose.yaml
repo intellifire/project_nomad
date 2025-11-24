@@ -1,16 +1,8 @@
 services:
   firestarr-app:
-    image: firestarr-app
-    build:
-      context: .
-      target: firestarr-app
-      dockerfile: .docker/Dockerfile
-      args:
-        VERSION: ${VERSION}
-        USERNAME: ${USERNAME}
-        USER_ID: ${USER_ID}
-      tags:
-        - firestarr-app:${VERSION}
+    container_name: firestarr-app
+    image: ghcr.io/cwfmf/firestarr:dev-0.9.5.4
+
     volumes:
       - /etc/ssl/certs:/etc/ssl/certs
       - ./firestarr_data:/appl/data
