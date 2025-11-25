@@ -1,0 +1,11 @@
+{
+  "name": "project_nomad",
+  "version": "1.0.0",
+  "description": "## Project",
+  "main": "index.js",
+  "scripts": {
+    "SYM:MemSave": "bash documentation/persist/saveMemory.sh"
+  },
+  "author": "",
+  "license": "ISC"
+}
