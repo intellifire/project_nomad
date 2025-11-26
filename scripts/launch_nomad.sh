@@ -233,7 +233,7 @@ test_help() {
 
     local output
     output=$(docker compose -f "$PROJECT_DIR/docker-compose.yaml" run --rm firestarr-app \
-        /appl/firestarr/firestarr --help 2>&1)
+        /appl/firestarr/firestarr --help 2>&1) || true
 
     echo "$output"
 
@@ -258,7 +258,7 @@ test_function_help() {
 
     local output
     output=$(docker compose -f "$PROJECT_DIR/docker-compose.yaml" run --rm firestarr-app \
-        /appl/firestarr/firestarr test --help 2>&1)
+        /appl/firestarr/firestarr test --help 2>&1) || true
 
     echo "$output"
 
