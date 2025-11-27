@@ -19,7 +19,7 @@ Create functionality for generating shareable links to exports.
 
 ## Files to Create/Modify
 - `backend/src/infrastructure/export/ShareableLinkService.ts`
-- `backend/src/domain/entities/ShareableLink.ts`
+- `backend/src/application/entities/ShareableLink.ts`
 - `backend/src/api/routes/v1/exports.ts` (add share endpoint)
 
 ## Notes

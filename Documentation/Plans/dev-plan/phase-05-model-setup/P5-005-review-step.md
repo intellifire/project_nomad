@@ -22,6 +22,7 @@ Create the final wizard step showing summary and execution options.
 ## Files to Create/Modify
 - `frontend/src/features/ModelSetup/steps/ReviewStep.tsx`
 - `frontend/src/features/ModelSetup/components/ModelSummary.tsx`
+- `frontend/src/features/ModelSetup/hooks/useModelExecution.ts`
 
 ## Notes
 - This is where the wizard connects to the backend API

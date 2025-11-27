@@ -21,6 +21,7 @@ Implement unique model ID generation and shareable status link creation.
 ## Files to Create/Modify
 - `backend/src/application/services/ModelIdGenerator.ts`
 - `frontend/src/features/ModelSetup/components/ExecutionConfirmation.tsx`
+- `frontend/src/features/ModelSetup/types/execution.types.ts`
 
 ## Notes
 - Model ID should be human-readable and unique

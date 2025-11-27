@@ -18,8 +18,8 @@ Implement state management for wizard data with localStorage persistence for dra
 3 hours
 
 ## Files to Create/Modify
-- `frontend/src/components/Wizard/useWizardState.ts`
-- `frontend/src/utils/storage.ts`
+- `frontend/src/features/Wizard/hooks/useWizardState.ts`
+- `frontend/src/shared/utils/storage.ts`
 
 ## Notes
 - Draft models live in localStorage until executed

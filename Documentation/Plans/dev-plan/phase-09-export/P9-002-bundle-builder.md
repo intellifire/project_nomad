@@ -20,7 +20,7 @@ Create service for building export bundles with multiple outputs.
 
 ## Files to Create/Modify
 - `backend/src/infrastructure/export/ExportBundleBuilder.ts`
-- `backend/src/domain/entities/ExportBundle.ts`
+- `backend/src/application/entities/ExportBundle.ts`
 
 ## Notes
 - Bundle is the unit of export delivery

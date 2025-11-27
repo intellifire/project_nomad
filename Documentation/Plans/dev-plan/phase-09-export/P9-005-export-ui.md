@@ -19,10 +19,12 @@ Create the React UI for selecting export format and delivery method.
 3-4 hours
 
 ## Files to Create/Modify
-- `frontend/src/features/Export/ExportWizard.tsx`
+- `frontend/src/features/Export/components/ExportWizard.tsx`
 - `frontend/src/features/Export/steps/OutputSelectionStep.tsx`
 - `frontend/src/features/Export/steps/FormatSelectionStep.tsx`
 - `frontend/src/features/Export/steps/DeliveryStep.tsx`
+- `frontend/src/features/Export/hooks/useExportGeneration.ts`
+- `frontend/src/features/Export/index.ts`
 
 ## Notes
 - Reuse wizard components from Phase 4

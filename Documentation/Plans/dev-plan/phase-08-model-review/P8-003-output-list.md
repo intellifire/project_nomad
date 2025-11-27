@@ -19,8 +19,8 @@ Create the list component showing available model outputs with action buttons.
 2-3 hours
 
 ## Files to Create/Modify
-- `frontend/src/features/ModelReview/OutputList.tsx`
-- `frontend/src/features/ModelReview/OutputItem.tsx`
+- `frontend/src/features/ModelReview/components/OutputList.tsx`
+- `frontend/src/features/ModelReview/components/OutputItem.tsx`
 
 ## Notes
 - Actions trigger view popup or export workflow

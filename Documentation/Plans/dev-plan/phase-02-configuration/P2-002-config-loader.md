@@ -19,8 +19,8 @@ Implement the service that loads configuration from JSON files with fallback to 
 3 hours
 
 ## Files to Create/Modify
-- `backend/src/infrastructure/config/ConfigurationLoader.ts`
-- `backend/src/infrastructure/config/index.ts`
+- `backend/src/infrastructure/config/ConfigurationLoader.ts` (implements IConfigurationService)
+- `backend/src/infrastructure/config/index.ts` (barrel export)
 
 ## Notes
 - Use `fs.readFileSync` for simplicity (config loaded once at startup)

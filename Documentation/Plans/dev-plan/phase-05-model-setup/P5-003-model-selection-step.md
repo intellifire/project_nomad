@@ -20,6 +20,8 @@ Create the step for selecting the fire modeling engine and run type.
 
 ## Files to Create/Modify
 - `frontend/src/features/ModelSetup/steps/ModelSelectionStep.tsx`
+- `frontend/src/features/ModelSetup/types/modelSelection.types.ts`
+- `frontend/src/features/ModelSetup/hooks/useModelSelection.ts`
 
 ## Notes
 - Post-MVP will add WISE option

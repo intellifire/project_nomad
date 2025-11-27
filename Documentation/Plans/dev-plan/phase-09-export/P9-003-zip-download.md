@@ -18,6 +18,7 @@ Implement ZIP archive creation and download for export bundles.
 2-3 hours
 
 ## Files to Create/Modify
+- `backend/src/application/interfaces/IZipGenerator.ts`
 - `backend/src/infrastructure/export/ZipGenerator.ts`
 - `backend/src/api/routes/v1/exports.ts`
 
