@@ -19,7 +19,8 @@ Create wrapper for executing FireSTARR commands in Docker container.
 3 hours
 
 ## Files to Create/Modify
-- `backend/src/infrastructure/engines/DockerExecutor.ts`
+- `backend/src/application/interfaces/IContainerExecutor.ts`
+- `backend/src/infrastructure/docker/DockerExecutor.ts`
 
 ## Notes
 - Reference launch_nomad.sh for correct docker compose patterns

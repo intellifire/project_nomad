@@ -20,7 +20,7 @@ Create popup/modal component for previewing outputs on a map.
 3 hours
 
 ## Files to Create/Modify
-- `frontend/src/features/ModelReview/OutputPreviewModal.tsx`
+- `frontend/src/features/ModelReview/components/OutputPreviewModal.tsx`
 
 ## Notes
 - Reuse map components from Phase 3

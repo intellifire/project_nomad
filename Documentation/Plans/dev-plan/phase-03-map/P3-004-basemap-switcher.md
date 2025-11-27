@@ -18,8 +18,8 @@ Implement basemap selection between Physical, Streets, and Satellite views.
 2 hours
 
 ## Files to Create/Modify
-- `frontend/src/components/Map/BasemapSwitcher.tsx`
-- `frontend/src/constants/basemaps.ts`
+- `frontend/src/features/Map/components/BasemapSwitcher.tsx`
+- `frontend/src/features/Map/types/basemaps.ts`
 
 ## Notes
 - Use MapBox standard styles or custom styles

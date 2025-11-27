@@ -19,7 +19,8 @@ Create the React component for displaying model execution results summary.
 2-3 hours
 
 ## Files to Create/Modify
-- `frontend/src/features/ModelReview/ResultsSummary.tsx`
+- `frontend/src/features/ModelReview/components/ResultsSummary.tsx`
+- `frontend/src/features/ModelReview/hooks/useModelResults.ts`
 - `frontend/src/features/ModelReview/index.ts`
 
 ## Notes

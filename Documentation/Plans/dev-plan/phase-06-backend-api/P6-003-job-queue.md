@@ -18,8 +18,9 @@ Implement a job queue system for managing model execution requests and tracking 
 3-4 hours
 
 ## Files to Create/Modify
+- `backend/src/application/entities/Job.ts`
+- `backend/src/application/interfaces/IJobQueue.ts`
 - `backend/src/infrastructure/services/JobQueue.ts`
-- `backend/src/domain/entities/Job.ts`
 - `backend/src/api/routes/v1/jobs.ts` (add status endpoint)
 
 ## Notes

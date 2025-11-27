@@ -18,8 +18,9 @@ Create service to generate FireSTARR input files from domain models.
 3-4 hours
 
 ## Files to Create/Modify
-- `backend/src/infrastructure/engines/firestarr/InputGenerator.ts`
-- `backend/src/infrastructure/engines/firestarr/WeatherCSVWriter.ts`
+- `backend/src/application/interfaces/IInputGenerator.ts`
+- `backend/src/infrastructure/firestarr/FireSTARRInputGenerator.ts`
+- `backend/src/infrastructure/firestarr/WeatherCSVWriter.ts`
 
 ## Notes
 - Weather CSV format is strict - see firestarr_io.md for exact columns

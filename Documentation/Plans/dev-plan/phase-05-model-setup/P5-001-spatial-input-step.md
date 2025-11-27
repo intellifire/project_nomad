@@ -23,6 +23,8 @@ Create the first wizard step for selecting or drawing the fire ignition geometry
 - `frontend/src/features/ModelSetup/steps/SpatialInputStep.tsx`
 - `frontend/src/features/ModelSetup/components/GeometryUpload.tsx`
 - `frontend/src/features/ModelSetup/components/CoordinateInput.tsx`
+- `frontend/src/features/ModelSetup/types/spatial.types.ts`
+- `frontend/src/features/ModelSetup/hooks/useSpatialInput.ts`
 
 ## Notes
 - This is the most complex step due to multiple input methods

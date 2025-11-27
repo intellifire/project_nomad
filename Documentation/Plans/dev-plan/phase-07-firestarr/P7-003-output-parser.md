@@ -18,7 +18,8 @@ Create service to parse FireSTARR output files into domain models.
 3 hours
 
 ## Files to Create/Modify
-- `backend/src/infrastructure/engines/firestarr/OutputParser.ts`
+- `backend/src/application/interfaces/IOutputParser.ts`
+- `backend/src/infrastructure/firestarr/FireSTARROutputParser.ts`
 
 ## Notes
 - Outputs are in FIRESTARR_DATASET_PATH/sims/
