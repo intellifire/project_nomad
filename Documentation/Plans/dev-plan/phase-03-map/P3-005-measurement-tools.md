@@ -19,8 +19,9 @@ Add tools for measuring distances and areas on the map.
 2-3 hours
 
 ## Files to Create/Modify
-- `frontend/src/components/Map/MeasurementTool.tsx`
-- `frontend/src/utils/geometry.ts` (calculation functions)
+- `frontend/src/features/Map/components/MeasurementTool.tsx`
+- `frontend/src/features/Map/hooks/useMeasurement.ts`
+- `frontend/src/shared/utils/geometry.ts` (calculation functions)
 
 ## Notes
 - Use Turf.js for accurate geodesic calculations

@@ -18,7 +18,8 @@ Add 3D terrain visualization with user-adjustable exaggeration.
 2-3 hours
 
 ## Files to Create/Modify
-- `frontend/src/components/Map/TerrainControl.tsx`
+- `frontend/src/features/Map/components/TerrainControl.tsx`
+- `frontend/src/features/Map/hooks/useTerrain.ts`
 
 ## Notes
 - 3D terrain helps visualize fire behavior in mountainous areas

@@ -19,9 +19,9 @@ Implement map drawing tools for user geometry input using MapBox Draw.
 3-4 hours
 
 ## Files to Create/Modify
-- `frontend/src/components/Map/DrawingToolbar.tsx`
-- `frontend/src/components/Map/useDrawing.ts` (hook)
-- `frontend/src/types/geometry.ts`
+- `frontend/src/features/Map/components/DrawingToolbar.tsx`
+- `frontend/src/features/Map/hooks/useDrawing.ts`
+- `frontend/src/features/Map/types/geometry.ts`
 
 ## Notes
 - Output standard GeoJSON format

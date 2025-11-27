@@ -18,9 +18,10 @@ Create the base MapBox GL JS wrapper component for React with proper lifecycle m
 3-4 hours
 
 ## Files to Create/Modify
-- `frontend/src/components/Map/MapContainer.tsx`
-- `frontend/src/components/Map/MapContext.tsx`
-- `frontend/src/components/Map/index.ts`
+- `frontend/src/features/Map/components/MapContainer.tsx`
+- `frontend/src/features/Map/context/MapContext.tsx`
+- `frontend/src/features/Map/types/index.ts`
+- `frontend/src/features/Map/index.ts`
 - `frontend/.env.example` (add VITE_MAPBOX_TOKEN)
 
 ## Notes

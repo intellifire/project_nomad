@@ -1,0 +1,53 @@
+/**
+ * Application Interfaces
+ *
+ * Abstractions that enable dependency inversion between the application layer
+ * and external systems. Implementations are provided by the infrastructure layer.
+ */
+
+// Fire Modeling Engine
+export {
+  type IFireModelingEngine,
+  type ExecutionStatus,
+  type ExecutionOptions,
+  type EngineCapabilities,
+} from './IFireModelingEngine.js';
+
+// Weather Repository
+export {
+  type IWeatherRepository,
+  type WeatherSource,
+  type WeatherSourceType,
+  type WeatherFetchOptions,
+  type WeatherFetchResult,
+} from './IWeatherRepository.js';
+
+// Spatial Repository
+export {
+  type ISpatialRepository,
+  type ElevationData,
+  type FuelTypeData,
+  type SpatialQueryResult,
+  type SpatialQueryOptions,
+} from './ISpatialRepository.js';
+
+// Model Repository
+export {
+  type IModelRepository,
+  type ModelFilter,
+  type SpatialModelFilter,
+  type ModelQueryOptions,
+  type ModelQueryResult,
+} from './IModelRepository.js';
+
+// Configuration Service
+export {
+  type IConfigurationService,
+  type DeploymentMode,
+  type DataSourceConfig,
+  type AgencyBrandingConfig,
+  type RoleConfig,
+  type ExportOptionsConfig,
+  type EngineConfig,
+  type ApplicationConfig,
+} from './IConfigurationService.js';

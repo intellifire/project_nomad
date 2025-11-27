@@ -18,6 +18,7 @@ Create the service that spawns shell processes for model execution.
 3-4 hours
 
 ## Files to Create/Modify
+- `backend/src/application/interfaces/IModelExecutionService.ts`
 - `backend/src/infrastructure/services/ModelExecutionService.ts`
 
 ## Notes
