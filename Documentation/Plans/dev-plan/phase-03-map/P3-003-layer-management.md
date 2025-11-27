@@ -19,9 +19,10 @@ Create layer management system for displaying model outputs and data overlays.
 4 hours
 
 ## Files to Create/Modify
-- `frontend/src/components/Map/LayerManager.ts`
-- `frontend/src/components/Map/LayerPanel.tsx`
-- `frontend/src/components/Map/LayerItem.tsx`
+- `frontend/src/features/Map/hooks/useLayers.ts`
+- `frontend/src/features/Map/components/LayerPanel.tsx`
+- `frontend/src/features/Map/components/LayerItem.tsx`
+- `frontend/src/features/Map/types/layer.ts`
 
 ## Notes
 - Layers will display fire perimeters, intensity grids, probability maps

@@ -18,10 +18,11 @@ Create the reusable wizard container that handles step navigation, used by Model
 3-4 hours
 
 ## Files to Create/Modify
-- `frontend/src/components/Wizard/Wizard.tsx`
-- `frontend/src/components/Wizard/WizardContext.tsx`
-- `frontend/src/components/Wizard/types.ts`
-- `frontend/src/components/Wizard/index.ts`
+- `frontend/src/features/Wizard/components/WizardContainer.tsx`
+- `frontend/src/features/Wizard/components/WizardNavigation.tsx`
+- `frontend/src/features/Wizard/context/WizardContext.tsx`
+- `frontend/src/features/Wizard/types/index.ts`
+- `frontend/src/features/Wizard/index.ts`
 
 ## Notes
 - Keep wizard generic - specific steps are in Phase 5

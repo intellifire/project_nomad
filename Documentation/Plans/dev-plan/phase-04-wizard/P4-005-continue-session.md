@@ -19,8 +19,11 @@ Implement the dashboard view showing draft models and ability to resume editing.
 2-3 hours
 
 ## Files to Create/Modify
-- `frontend/src/components/Dashboard/DraftsDashboard.tsx`
-- `frontend/src/components/Dashboard/DraftCard.tsx`
+- `frontend/src/features/Dashboard/components/DraftsDashboard.tsx`
+- `frontend/src/features/Dashboard/components/DraftCard.tsx`
+- `frontend/src/features/Dashboard/hooks/useDrafts.ts`
+- `frontend/src/features/Dashboard/types/draft.ts`
+- `frontend/src/features/Dashboard/index.ts`
 
 ## Notes
 - This is a key UX feature for interrupted sessions

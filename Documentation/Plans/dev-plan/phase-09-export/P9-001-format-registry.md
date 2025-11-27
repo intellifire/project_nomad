@@ -18,6 +18,7 @@ Create registry of supported export formats with conversion capabilities.
 2-3 hours
 
 ## Files to Create/Modify
+- `backend/src/application/interfaces/IExportFormatRegistry.ts`
 - `backend/src/infrastructure/export/ExportFormatRegistry.ts`
 - `backend/src/infrastructure/export/formats/index.ts`
 - `backend/src/infrastructure/export/formats/GeoJSONFormat.ts`

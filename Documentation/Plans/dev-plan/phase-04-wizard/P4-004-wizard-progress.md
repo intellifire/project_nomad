@@ -18,8 +18,8 @@ Create a visual progress indicator showing current step and overall completion.
 2 hours
 
 ## Files to Create/Modify
-- `frontend/src/components/Wizard/WizardProgress.tsx`
-- `frontend/src/components/Wizard/WizardProgress.css`
+- `frontend/src/features/Wizard/components/WizardProgress.tsx`
+- `frontend/src/features/Wizard/components/WizardProgress.css`
 
 ## Notes
 - Match fire theme styling

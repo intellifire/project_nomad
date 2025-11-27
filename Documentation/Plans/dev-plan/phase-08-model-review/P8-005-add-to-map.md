@@ -19,7 +19,7 @@ Implement ability to add model outputs as layers on the main application map.
 2-3 hours
 
 ## Files to Create/Modify
-- `frontend/src/features/ModelReview/useAddToMap.ts`
+- `frontend/src/features/ModelReview/hooks/useAddToMap.ts`
 - `frontend/src/components/Map/LayerManager.ts` (extend)
 
 ## Notes

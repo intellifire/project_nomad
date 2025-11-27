@@ -21,6 +21,8 @@ Create the step for entering start date/time and model duration.
 
 ## Files to Create/Modify
 - `frontend/src/features/ModelSetup/steps/TemporalStep.tsx`
+- `frontend/src/features/ModelSetup/types/temporal.types.ts`
+- `frontend/src/features/ModelSetup/hooks/useTemporalInput.ts`
 
 ## Notes
 - Date/time handling is tricky - use date-fns or dayjs

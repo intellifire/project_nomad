@@ -22,6 +22,8 @@ Create the step for weather data configuration and FWI index input.
 - `frontend/src/features/ModelSetup/steps/WeatherStep.tsx`
 - `frontend/src/features/ModelSetup/components/FWIInput.tsx`
 - `frontend/src/features/ModelSetup/components/WeatherUpload.tsx`
+- `frontend/src/features/ModelSetup/types/weather.types.ts`
+- `frontend/src/features/ModelSetup/hooks/useWeatherInput.ts`
 
 ## Notes
 - FWI indices are critical for fire behavior prediction

@@ -1,32 +1,45 @@
 # P2-001: Configuration TypeScript Types
 
+## Status: SKIP/COMPLETE
+
+Configuration types already exist in Clean Architecture compliant location:
+- `backend/src/application/interfaces/IConfigurationService.ts`
+
+This file contains:
+- `ApplicationConfig` - Root configuration type
+- `AgencyBrandingConfig` - Agency branding
+- `DataSourceConfig` - Data source configuration
+- `EngineConfig` - Fire modeling engine configuration
+- `ExportOptionsConfig` - Export options
+- `RoleConfig` - Role mappings
+- `IConfigurationService` - Service interface
+- `DeploymentMode` - Type for SAN/ACN modes
+
 ## Description
 Define the TypeScript types/interfaces for the configuration system, matching the JSON schema from project_plan.md.
 
 ## Acceptance Criteria
-- [ ] Create `NomadConfig` root type with all configuration sections
-- [ ] Create `AgencyConfig` type (id, name, branding)
-- [ ] Create `DataSourceConfig` type (weather, wildfirePoints, fuelTypes)
-- [ ] Create `ModelConfig` type (available engines, suppressed engines)
-- [ ] Create `ExportConfig` type (allowed delivery methods)
-- [ ] Create `RoleMappingConfig` type for agency role mapping
-- [ ] Export all types from barrel file
+- [x] Create `NomadConfig` root type with all configuration sections (exists as `ApplicationConfig`)
+- [x] Create `AgencyConfig` type (id, name, branding) (exists as part of `ApplicationConfig`)
+- [x] Create `DataSourceConfig` type (weather, wildfirePoints, fuelTypes)
+- [x] Create `ModelConfig` type (available engines, suppressed engines) (exists as `EngineConfig`)
+- [x] Create `ExportConfig` type (allowed delivery methods) (exists as `ExportOptionsConfig`)
+- [x] Create `RoleMappingConfig` type for agency role mapping (exists as `RoleConfig`)
+- [x] Export all types from barrel file
 
 ## Dependencies
 - None (can run parallel to Phase 1)
 
 ## Estimated Time
-2 hours
+~~2 hours~~ **0 hours - already complete**
 
 ## Files to Create/Modify
-- `backend/src/infrastructure/config/types/NomadConfig.ts`
-- `backend/src/infrastructure/config/types/AgencyConfig.ts`
-- `backend/src/infrastructure/config/types/DataSourceConfig.ts`
-- `backend/src/infrastructure/config/types/ModelConfig.ts`
-- `backend/src/infrastructure/config/types/ExportConfig.ts`
-- `backend/src/infrastructure/config/types/index.ts`
+~~Infrastructure layer files~~ **Already exists in Application layer (Clean Architecture):**
+- `backend/src/application/interfaces/IConfigurationService.ts` ✓
 
 ## Notes
-- Reference the JSON example in project_plan.md Configuration Structure section
-- Use strict types (avoid `any`)
+- Types already defined in Phase 1 application interfaces
+- Located in application layer per Clean Architecture principles
+- IConfigurationService interface provides complete contract for configuration access
+- Use strict types (avoid `any`) - already implemented
 - Consider Zod schemas for runtime validation (future enhancement)

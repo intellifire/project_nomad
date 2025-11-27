@@ -19,8 +19,9 @@ Create a validation system for wizard steps that prevents progression until requ
 2-3 hours
 
 ## Files to Create/Modify
-- `frontend/src/components/Wizard/validation.ts`
-- `frontend/src/components/Wizard/ValidationErrors.tsx`
+- `frontend/src/features/Wizard/hooks/useValidation.ts`
+- `frontend/src/features/Wizard/components/ValidationErrors.tsx`
+- `frontend/src/features/Wizard/types/validation.ts`
 
 ## Notes
 - Each wizard step implements its own validator
