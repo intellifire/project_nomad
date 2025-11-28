@@ -1,0 +1,145 @@
+### Project Nomad API - REST Client Test File
+### Use with VS Code REST Client extension (humao.rest-client)
+
+@baseUrl = http://localhost:3001/api/v1
+
+### ============================================
+### Health & Info
+### ============================================
+
+### Health Check
+GET {{baseUrl}}/health
+
+###
+
+### API Info
+GET {{baseUrl}}/info
+
+###
+
+### Public Config
+GET {{baseUrl}}/config
+
+### ============================================
+### Models
+### ============================================
+
+### List All Models
+GET {{baseUrl}}/models
+
+###
+
+### Create a FireSTARR Model
+# @name createFirestarr
+POST {{baseUrl}}/models
+Content-Type: application/json
+
+{
+  "name": "Test FireSTARR Model",
+  "engineType": "firestarr"
+}
+
+###
+
+### Create a WISE Model
+# @name createWise
+POST {{baseUrl}}/models
+Content-Type: application/json
+
+{
+  "name": "Test WISE Model",
+  "engineType": "wise"
+}
+
+###
+
+### Get Model by ID (use id from create response)
+@modelId = {{createFirestarr.response.body.id}}
+GET {{baseUrl}}/models/{{modelId}}
+
+###
+
+### Execute Model (returns jobId)
+# @name executeModel
+POST {{baseUrl}}/models/{{modelId}}/execute
+
+### ============================================
+### Jobs
+### ============================================
+
+### List All Jobs
+GET {{baseUrl}}/jobs
+
+###
+
+### List Pending Jobs
+GET {{baseUrl}}/jobs?status=pending
+
+###
+
+### List Running Jobs
+GET {{baseUrl}}/jobs?status=running
+
+###
+
+### Get Job Status (use jobId from execute response)
+@jobId = {{executeModel.response.body.jobId}}
+GET {{baseUrl}}/jobs/{{jobId}}
+
+###
+
+### Cancel Job
+DELETE {{baseUrl}}/jobs/{{jobId}}
+
+### ============================================
+### Error Cases (for testing error handling)
+### ============================================
+
+### Get Non-existent Model (404)
+GET {{baseUrl}}/models/does-not-exist
+
+###
+
+### Get Non-existent Job (404)
+GET {{baseUrl}}/jobs/does-not-exist
+
+###
+
+### Create Model with Missing Name (400)
+POST {{baseUrl}}/models
+Content-Type: application/json
+
+{
+  "engineType": "firestarr"
+}
+
+###
+
+### Create Model with Invalid Engine (400)
+POST {{baseUrl}}/models
+Content-Type: application/json
+
+{
+  "name": "Bad Model",
+  "engineType": "invalid"
+}
+
+###
+
+### Invalid JSON (400)
+POST {{baseUrl}}/models
+Content-Type: application/json
+
+{ this is not valid json }
+
+### ============================================
+### Documentation
+### ============================================
+
+### OpenAPI Spec (JSON)
+GET http://localhost:3001/api/openapi.json
+
+###
+
+### Swagger UI (open in browser)
+# http://localhost:3001/api/docs

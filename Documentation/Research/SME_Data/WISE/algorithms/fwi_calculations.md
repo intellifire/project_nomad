@@ -765,5 +765,4 @@ await fwi.FWICalculateDailyStatisticsPromise();
 
 **Document Version**: 1.0
 **Last Updated**: 2025-11-25
-**Author**: Claude (SME), based on Franco Nogarin's operational WISE implementations
 **Target Audience**: Fire modeling specialists, WISE integrators, Project Nomad developers
