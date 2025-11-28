@@ -8,7 +8,7 @@
 // FireModel - core modeling job entity
 export {
   FireModel,
-  FireModelId,
+  type FireModelId,
   createFireModelId,
   EngineType,
   ModelStatus,
@@ -45,7 +45,7 @@ export {
 // ModelResult - execution outputs
 export {
   ModelResult,
-  ModelResultId,
+  type ModelResultId,
   createModelResultId,
   OutputType,
   OutputFormat,
@@ -56,7 +56,7 @@ export {
 // Job - execution job tracking
 export {
   Job,
-  JobId,
+  type JobId,
   createJobId,
   JobStatus,
   type JobProps,
