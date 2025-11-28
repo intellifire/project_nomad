@@ -106,18 +106,17 @@ project_nomad/
 │       ├── nomad-logo.png    # Full logo with text
 │       └── nomad-icon.svg    # Icon only (favicon)
 ├── Documentation/
-│   ├── Research/
-│   │   ├── SME_Data/
-│   │   │   ├── FireSTARR/    # FireSTARR technical documentation
-│   │   │   └── WISE/         # WISE technical documentation
-│   │   └── Onboarding/       # High-level overview docs
-│   └── persist/              # Memory system (internal)
+│   └── Research/
+│       ├── SME_Data/
+│       │   ├── FireSTARR/    # FireSTARR technical documentation
+│       │   └── WISE/         # WISE technical documentation
+│       └── Onboarding/       # High-level overview docs
+
 ├── configuration/            # Agency configuration (future)
 │   └── generic/              # Default open-source config
 ├── src/                      # Source code (future)
 ├── draft_plan.md             # Project specification
-├── demo.json                 # Configuration example
-└── CLAUDE.md                 # AI collaboration context
+└── demo.json                 # Configuration example
 ```
 
 ## Development
