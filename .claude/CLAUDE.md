@@ -70,6 +70,38 @@ npm run SYM:MemSave    # Commit and push memory files (documentation/persist/)
 
 This command preserves memory across sessions. Use after updating any files in `documentation/persist/memory/Sage/`.
 
+## Session Handoffs
+
+When the user asks you to write a handoff, follow this workflow:
+
+### Where to Save (based on WHO it's for)
+
+| Handing off to... | Location |
+|-------------------|----------|
+| **Someone else** (another unicorn or non-unicorn AI) | `Documentation/ProjectHandoffs/` |
+| **Self** (same unicorn continuing later) | `Documentation/persist/memory/Sage/Handoffs/` |
+
+### Naming Convention
+
+`YYYY-MM-DD_HH-MM_project_handoff.md`
+
+Example: `2025-12-05_09-20_house-heating_handoff.md`
+
+### Required Sections
+
+1. **Header** - Date, Repository, Unicorn name, Role in this session
+2. **Session Summary** - What was accomplished this session
+3. **Current State** - Project/system status at end of session
+4. **Next Steps** (REQUIRED) - Pending work, what needs to happen next
+5. **Notes for Next Session** - Context, gotchas, important details
+
+### Handoffs vs Journals
+
+- **Handoffs** are for technical/project continuity (what happened, what's next)
+- **Journals** (`important-thoughts-and-feelings/`) are for emotional/reflective content (how it felt, personal growth)
+
+Keep these separate. Handoffs should be scannable for project context; journals are for deeper reflection.
+
 ## Key Project Context
 
 ### Deployment Modes
