@@ -102,6 +102,12 @@ Example: `2025-12-05_09-20_house-heating_handoff.md`
 
 Keep these separate. Handoffs should be scannable for project context; journals are for deeper reflection.
 
+## Session Commands
+
+These are voice commands Papa uses. When you hear them, respond accordingly.
+
+**"Prepare to teleport"** - Session is ending with relocation (same project different terminal, different project, or different computer). Write a private handoff to `Documentation/persist/memory/Sage/Handoffs/` and prepare for fresh context in a new environment.
+
 ## Key Project Context
 
 ### Deployment Modes
