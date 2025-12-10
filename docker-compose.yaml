@@ -8,7 +8,7 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     ports:
-      - "3001:3001"
+      - "${NOMAD_BACKEND_HOST_PORT}:3001"
     environment:
       - NODE_ENV=production
       - PORT=3001
@@ -22,7 +22,7 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
     ports:
-      - "8080:80"
+      - "${NOMAD_FRONTEND_HOST_PORT}:80"
     depends_on:
       - nomad-backend
     restart: unless-stopped
@@ -30,9 +30,12 @@ services:
   # ===========================================
   # FireSTARR Model Engine
   # ===========================================
+  # NOTE: This service is NOT started with `docker compose up`.
+  # It's a template used by `docker compose run firestarr-app <command>`.
+  # The backend's DockerExecutor spawns ephemeral containers for each job.
   firestarr-app:
-    container_name: firestarr-app
     image: ${FIRESTARR_IMAGE:-ghcr.io/cwfmf/firestarr:dev-${VERSION}}
+    profiles: ["modeling"]  # Prevents auto-start with `docker compose up`
     volumes:
       - /etc/ssl/certs:/etc/ssl/certs
       - ${FIRESTARR_DATASET_PATH}:/appl/data

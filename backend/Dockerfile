@@ -11,16 +11,20 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies first (better caching)
-COPY backend/package*.json ./
-COPY package-lock.json ./
-RUN npm ci
+# Copy workspace root package files first (for dependency caching)
+COPY package.json package-lock.json ./
 
-# Copy source
-COPY backend/ .
+# Copy backend package.json (workspace member)
+COPY backend/package.json ./backend/
 
-# Build
-RUN npm run build
+# Install all workspace dependencies
+RUN npm ci --workspace=@nomad/backend
+
+# Copy backend source
+COPY backend/ ./backend/
+
+# Build backend
+RUN npm run build --workspace=@nomad/backend
 
 # Production stage
 FROM node:22-slim AS production
@@ -33,10 +37,10 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy built app and node_modules
-COPY --from=builder /app/dist ./dist
+# Copy built app and node_modules from workspace structure
+COPY --from=builder /app/backend/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/backend/package.json ./
 
 EXPOSE 3001
 CMD ["node", "dist/index.js"]
