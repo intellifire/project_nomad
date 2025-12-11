@@ -9,6 +9,9 @@ services:
       dockerfile: backend/Dockerfile
     ports:
       - "${NOMAD_BACKEND_HOST_PORT}:3001"
+    volumes:
+      # WARNING: Docker socket mount - see Security Considerations in README
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - NODE_ENV=production
       - PORT=3001
