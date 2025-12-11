@@ -139,6 +139,33 @@ sudo apt-get install gdal-bin libgdal-dev
 
 **Docker:** The backend Dockerfile includes GDAL automatically.
 
+## Docker Deployment
+
+```bash
+docker compose build
+docker compose up -d
+```
+
+### Security Considerations
+
+**Docker Socket Mount Warning**: The backend container mounts the host's Docker socket (`/var/run/docker.sock`) to spawn FireSTARR model containers. This grants the backend container **root-equivalent access to the host machine**.
+
+Implications:
+- Any process with Docker socket access can start privileged containers
+- Can mount arbitrary host filesystem paths
+- Effectively allows container escape
+
+**Recommendations:**
+- Only deploy in trusted network environments
+- Do not expose the backend directly to the public internet without additional hardening
+- Consider a reverse proxy with authentication for production deployments
+- For high-security environments, implement a job queue architecture where a dedicated worker (outside the container) handles model execution
+
+This architecture is acceptable for:
+- Local development
+- Internal agency deployments behind firewalls
+- Trusted research environments
+
 ## Development
 
 ```bash
