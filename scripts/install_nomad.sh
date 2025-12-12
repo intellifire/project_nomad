@@ -386,19 +386,33 @@ install_dataset() {
 pull_image() {
     print_step "Checking Docker images..."
 
-    # If using a custom local image, check if it exists
+    # If FIRESTARR_IMAGE is set, handle it specifically
     if [ -n "$FIRESTARR_IMAGE" ]; then
+        # Check if image exists locally first
         if docker image inspect "$FIRESTARR_IMAGE" &> /dev/null; then
-            print_success "Local image found: $FIRESTARR_IMAGE"
+            print_success "Image found locally: $FIRESTARR_IMAGE"
             return 0
+        fi
+
+        # If it looks like a registry image (contains /), try to pull it
+        if [[ "$FIRESTARR_IMAGE" == *"/"* ]]; then
+            print_step "Pulling $FIRESTARR_IMAGE from registry..."
+            if docker pull "$FIRESTARR_IMAGE"; then
+                print_success "Image pulled: $FIRESTARR_IMAGE"
+                return 0
+            else
+                print_error "Failed to pull image: $FIRESTARR_IMAGE"
+                return 1
+            fi
         else
+            # Local image name but not found
             print_error "Local image not found: $FIRESTARR_IMAGE"
             echo "Build it with: docker compose build firestarr-app"
             return 1
         fi
     fi
 
-    # Default: try to pull from registry
+    # Default: try to pull from registry using docker compose
     print_step "Pulling Docker images from registry..."
     if docker compose -f "$PROJECT_DIR/docker-compose.yaml" pull; then
         print_success "Docker images ready"
