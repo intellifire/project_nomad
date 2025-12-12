@@ -28,8 +28,12 @@ export class ShareableLinkService {
   /** Base URL for generating share URLs */
   private baseUrl: string;
 
-  constructor(baseUrl: string = process.env.BASE_URL ?? 'http://localhost:3001') {
-    this.baseUrl = baseUrl;
+  constructor(baseUrl?: string) {
+    const resolvedBaseUrl = baseUrl ?? process.env.VITE_API_BASE_URL;
+    if (!resolvedBaseUrl) {
+      throw new Error('VITE_API_BASE_URL environment variable is required for shareable links');
+    }
+    this.baseUrl = resolvedBaseUrl;
 
     // Cleanup expired links periodically
     setInterval(() => this.cleanupExpired(), 5 * 60 * 1000);
