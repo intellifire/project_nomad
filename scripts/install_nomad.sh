@@ -11,7 +11,7 @@
 set -e
 
 # Installer version
-INSTALLER_VERSION="1.0.0"
+INSTALLER_VERSION="1.1.0"
 
 # Script directory (for calling other scripts)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -28,6 +28,10 @@ REQUIRED_VARS=(
     "USER_ID"
     "FIRESTARR_DATASET_SOURCE"
     "FIRESTARR_DATASET_PATH"
+    "VITE_MAPBOX_TOKEN"
+    "VITE_API_BASE_URL"
+    "NOMAD_FRONTEND_HOST_PORT"
+    "NOMAD_BACKEND_HOST_PORT"
 )
 
 # Colors for output
