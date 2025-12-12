@@ -96,7 +96,7 @@ detect_architecture() {
                 ARCH_EXPLANATION="Modern x86_64 CPU with AVX2 support detected.
     This is optimal and can use the standard FireSTARR build."
             else
-                RECOMMENDED_IMAGE="ghcr.io/cwfmf/firestarr:${VERSION}-sandybridge"
+                RECOMMENDED_IMAGE="ghcr.io/wise-developers/firestarr:${VERSION}-sandybridge"
                 ARCH_EXPLANATION="Older x86_64 CPU without AVX2 support detected.
     This requires the Sandybridge-compatible FireSTARR build
     (compiled for older CPUs without modern vector instructions)."
