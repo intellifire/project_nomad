@@ -1,0 +1,24 @@
+# Force LF line endings for shell scripts (prevents Windows autocrlf breakage)
+*.sh text eol=lf
+
+# Force LF for other text files that might be executed or parsed
+*.bash text eol=lf
+*.zsh text eol=lf
+Makefile text eol=lf
+Dockerfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+
+# Binary files (don't touch)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.tif binary
+*.tiff binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tar binary

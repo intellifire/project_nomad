@@ -449,19 +449,20 @@ check_git_autocrlf() {
         echo "    This setting converts line endings from LF to CRLF on checkout,"
         echo "    which can break shell scripts with 'bad interpreter' errors."
         echo ""
-        echo "    Recommended fix:"
-        echo ""
-        echo "        git config --global core.autocrlf false"
-        echo ""
-        echo "    Then re-clone this repository, or run:"
+        echo "    This repo has .gitattributes to force LF for scripts, but your"
+        echo "    existing files may already have CRLF. To fix:"
         echo ""
         echo "        git rm --cached -r ."
         echo "        git reset --hard"
         echo ""
+        echo "    Or optionally disable autocrlf globally:"
+        echo ""
+        echo "        git config --global core.autocrlf false"
+        echo ""
         read -p "Continue anyway? [y/N] " -n 1 -r
         echo ""
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            print_error "Please fix core.autocrlf and try again"
+            print_error "Please fix line endings and try again"
             return 1
         fi
         print_warning "Continuing with autocrlf=true (scripts may fail)"
