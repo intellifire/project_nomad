@@ -142,7 +142,7 @@ detect_architecture() {
                 ARCH_EXPLANATION="Modern x86_64 CPU with AVX2 support detected.
     This is optimal and can use the standard FireSTARR build."
             else
-                RECOMMENDED_IMAGE="ghcr.io/cwfmf/firestarr:${VERSION}-sandybridge"
+                RECOMMENDED_IMAGE="ghcr.io/wise-developers/firestarr:${VERSION}-sandybridge"
                 ARCH_EXPLANATION="Older x86_64 CPU without AVX2 support detected.
     This requires the Sandybridge-compatible FireSTARR build
     (compiled for older CPUs without modern vector instructions)."
@@ -203,7 +203,7 @@ configure_firestarr_image() {
         echo ""
         echo "    1) Use recommended: $RECOMMENDED_IMAGE"
         echo "    2) Modern x86_64 (AVX2):    ghcr.io/cwfmf/firestarr:dev-${VERSION}"
-        echo "    3) Older x86_64 (no AVX2):  ghcr.io/cwfmf/firestarr:${VERSION}-sandybridge"
+        echo "    3) Older x86_64 (no AVX2):  ghcr.io/wise-developers/firestarr:${VERSION}-sandybridge"
         echo "    4) ARM64 (Apple Silicon):   ghcr.io/wise-developers/firestarr:${VERSION}-arm64"
         echo "    5) Enter custom image"
         echo ""
@@ -217,7 +217,7 @@ configure_firestarr_image() {
                 update_firestarr_image "ghcr.io/cwfmf/firestarr:dev-${VERSION}"
                 ;;
             3)
-                update_firestarr_image "ghcr.io/cwfmf/firestarr:${VERSION}-sandybridge"
+                update_firestarr_image "ghcr.io/wise-developers/firestarr:${VERSION}-sandybridge"
                 ;;
             4)
                 update_firestarr_image "ghcr.io/wise-developers/firestarr:${VERSION}-arm64"
