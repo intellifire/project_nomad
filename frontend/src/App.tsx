@@ -32,6 +32,10 @@ interface ModelSummary {
   status: string;
   engineType: string;
   createdAt: string;
+  userId: string | null;
+  outputMode?: string | null;
+  confidenceInterval?: number | null;
+  durationDays?: number | null;
 }
 
 /**
@@ -268,6 +272,10 @@ function AppContent() {
         },
         weather: weatherConfig,
         scenarios: data.model.runType === 'probabilistic' ? 100 : 1,
+        outputMode: data.model.outputMode,
+        // Convert from decimal (0.8) to percentage (80) for backend
+        confidenceInterval: data.model.confidenceInterval ? Math.round(data.model.confidenceInterval * 100) : 50,
+        smoothPerimeter: data.model.smoothPerimeter,
       });
 
       console.log('Model created and execution started:', result);
@@ -524,8 +532,36 @@ function AppContent() {
                       }}>
                         {model.status}
                       </span>
+                      {model.userId && (
+                        <span style={{ marginRight: '8px', color: '#60a5fa' }}>
+                          {model.userId}
+                        </span>
+                      )}
                       {new Date(model.createdAt).toLocaleString()}
                     </div>
+                    {/* Show output mode, confidence, and duration for completed models */}
+                    {model.status === 'completed' && (model.outputMode || model.durationDays) && (
+                      <div style={{ color: '#9ca3af', fontSize: '11px', marginTop: '4px' }}>
+                        {model.outputMode && (
+                          <span style={{
+                            display: 'inline-block',
+                            padding: '1px 5px',
+                            borderRadius: '3px',
+                            backgroundColor: model.outputMode === 'pseudo-deterministic' ? '#7c3aed' : '#0369a1',
+                            color: 'white',
+                            marginRight: '6px',
+                          }}>
+                            {model.outputMode === 'pseudo-deterministic' ? 'Perimeters' : 'Probability'}
+                            {model.outputMode === 'pseudo-deterministic' && model.confidenceInterval && ` ${model.confidenceInterval}%`}
+                          </span>
+                        )}
+                        {model.durationDays && (
+                          <span style={{ color: '#60a5fa' }}>
+                            {model.durationDays} day{model.durationDays !== 1 ? 's' : ''}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     {model.status === 'completed' && (

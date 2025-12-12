@@ -204,12 +204,38 @@ export function ModelSummary({ data }: ModelSummaryProps) {
           <span style={labelStyle}>Run Type:</span>
           <span style={valueStyle}>
             {data.model?.runType === 'deterministic'
-              ? 'Deterministic (Single Run)'
+              ? 'Single Scenario'
               : data.model?.runType === 'probabilistic'
-                ? 'Probabilistic (Multiple Runs)'
+                ? 'Multi-Scenario'
                 : 'Not set'}
           </span>
         </div>
+        <div style={rowStyle}>
+          <span style={labelStyle}>Output Mode:</span>
+          <span style={valueStyle}>
+            {data.model?.outputMode === 'probabilistic'
+              ? 'Probability Maps'
+              : data.model?.outputMode === 'pseudo-deterministic'
+                ? 'Fire Perimeters'
+                : 'Not set'}
+          </span>
+        </div>
+        {data.model?.outputMode === 'pseudo-deterministic' && (
+          <>
+            <div style={rowStyle}>
+              <span style={labelStyle}>Confidence Threshold:</span>
+              <span style={valueStyle}>
+                {data.model?.confidenceInterval ? `${(data.model.confidenceInterval * 100).toFixed(0)}%` : 'Not set'}
+              </span>
+            </div>
+            <div style={rowStyle}>
+              <span style={labelStyle}>Smooth Perimeter:</span>
+              <span style={valueStyle}>
+                {data.model?.smoothPerimeter ? 'Yes' : 'No'}
+              </span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Weather Summary */}

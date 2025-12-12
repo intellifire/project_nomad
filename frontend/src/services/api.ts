@@ -28,6 +28,17 @@ export class ApiError extends Error {
 }
 
 /**
+ * Get username header if simple auth is enabled
+ */
+function getUserHeader(): Record<string, string> {
+  const username = localStorage.getItem('nomad_username');
+  if (username) {
+    return { 'X-Nomad-User': username };
+  }
+  return {};
+}
+
+/**
  * Make an API request
  */
 async function request<T>(
@@ -39,6 +50,7 @@ async function request<T>(
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...getUserHeader(),
       ...options.headers,
     },
   };
@@ -106,6 +118,12 @@ export interface ExecuteModelRequest {
     latitude?: number;
   };
   scenarios?: number;
+  /** Output mode - how to post-process results */
+  outputMode?: 'probabilistic' | 'pseudo-deterministic';
+  /** Confidence interval for pseudo-deterministic perimeters (0.1-0.9) */
+  confidenceInterval?: number;
+  /** Whether to smooth perimeter polygons */
+  smoothPerimeter?: boolean;
 }
 
 export interface ExecuteModelResponse {
@@ -119,7 +137,11 @@ export interface ModelResponse {
   engineType: string;
   status: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
+  userId: string | null;
+  outputMode?: string | null;
+  confidenceInterval?: number | null;
+  durationDays?: number | null;
 }
 
 /**
@@ -201,6 +223,12 @@ export interface RunModelRequest {
     latitude?: number;
   };
   scenarios?: number;
+  /** Output mode - how to post-process results */
+  outputMode?: 'probabilistic' | 'pseudo-deterministic';
+  /** Confidence interval for pseudo-deterministic perimeters (0.1-0.9) */
+  confidenceInterval?: number;
+  /** Whether to smooth perimeter polygons */
+  smoothPerimeter?: boolean;
 }
 
 export interface RunModelResponse {

@@ -74,15 +74,26 @@ export interface ModelInputs {
 }
 
 /**
+ * Output configuration used for model run
+ */
+export interface OutputConfig {
+  outputMode: 'probabilistic' | 'pseudo-deterministic';
+  confidenceInterval: number;
+  smoothPerimeter: boolean;
+}
+
+/**
  * Full results response for API
  */
 export interface ModelResultsResponse {
   modelId: string;
   modelName: string;
   engineType: string;
+  userId: string | null;
   executionSummary: ExecutionSummary;
   inputs?: ModelInputs;
   outputs: OutputItem[];
+  outputConfig?: OutputConfig;
 }
 
 /**
@@ -113,7 +124,8 @@ export class ModelResultsService {
   async getResults(
     modelId: FireModelId,
     modelName: string,
-    engineType: string
+    engineType: string,
+    userId?: string
   ): Promise<Result<ModelResultsResponse, DomainError>> {
     // Get execution status - handle engine not being configured
     let status: ExecutionStatus;
@@ -155,6 +167,7 @@ export class ModelResultsService {
           modelId,
           modelName,
           engineType,
+          userId: userId ?? null,
           executionSummary: {
             startedAt: null,
             completedAt: null,
@@ -190,6 +203,7 @@ export class ModelResultsService {
         modelId,
         modelName,
         engineType,
+        userId: userId ?? null,
         executionSummary,
         outputs: [],
       });
@@ -250,6 +264,7 @@ export class ModelResultsService {
 
       // Build model inputs (ignition + weather)
       let inputs: ModelInputs | undefined;
+      let loadedOutputConfig: OutputConfig | undefined;
       if (outputs.length > 0 && outputs[0].filePath) {
         // Resolve relative path to absolute path for file operations
         const absoluteFilePath = resolveResultFilePath(outputs[0].filePath);
@@ -299,15 +314,71 @@ export class ModelResultsService {
         if (!inputs.ignition && !inputs.weatherCsvPath) {
           inputs = undefined;
         }
+
+        // Check for output-config.json and auto-generate perimeters if needed
+        const configPath = path.join(simDir, 'output-config.json');
+        try {
+          if (fs.existsSync(configPath)) {
+            const configContent = fs.readFileSync(configPath, 'utf-8');
+            loadedOutputConfig = JSON.parse(configContent) as OutputConfig;
+
+            if (loadedOutputConfig.outputMode === 'pseudo-deterministic') {
+              console.log(`[ModelResultsService] Auto-generating perimeters for ${modelId} at ${loadedOutputConfig.confidenceInterval}% confidence`);
+
+              // Check if perimeter outputs already exist
+              const hasPerimeters = outputs.some(o => o.type === 'perimeter');
+
+              if (!hasPerimeters) {
+                // Import and call perimeter generator
+                const { generatePerimeters } = await import('../../infrastructure/firestarr/index.js');
+                const perimeterResult = await generatePerimeters(simDir, {
+                  confidenceInterval: loadedOutputConfig.confidenceInterval,
+                  smoothPerimeter: loadedOutputConfig.smoothPerimeter,
+                });
+
+                if (perimeterResult.success && perimeterResult.value.perimeters.length > 0) {
+                  // Add perimeter outputs
+                  for (const perimeter of perimeterResult.value.perimeters) {
+                    // Use date if available, otherwise fall back to day number
+                    const dateLabel = perimeter.date || `Day ${perimeter.day}`;
+                    outputs.push({
+                      id: `perimeter-day${perimeter.day}-${modelId}`,
+                      type: 'perimeter' as OutputType,
+                      format: 'geojson' as OutputFormat,
+                      name: `Fire Perimeter - ${dateLabel} (${perimeter.confidenceInterval}%)`,
+                      timeOffsetHours: perimeter.day * 24,
+                      filePath: null,
+                      previewUrl: `/api/v1/models/${modelId}/perimeters?day=${perimeter.day}`,
+                      downloadUrl: `/api/v1/models/${modelId}/perimeters?day=${perimeter.day}&download=true`,
+                      metadata: {
+                        day: perimeter.day,
+                        date: perimeter.date,
+                        confidenceInterval: perimeter.confidenceInterval,
+                        geojson: perimeter.geojson,
+                      },
+                    });
+                  }
+                  console.log(`[ModelResultsService] Added ${perimeterResult.value.perimeters.length} perimeter outputs`);
+                } else if (!perimeterResult.success) {
+                  console.warn(`[ModelResultsService] Failed to generate perimeters: ${perimeterResult.error.message}`);
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.warn(`[ModelResultsService] Error checking output-config.json:`, e);
+        }
       }
 
       return Result.ok({
         modelId,
         modelName,
         engineType,
+        userId: userId ?? null,
         executionSummary,
         inputs,
         outputs,
+        outputConfig: loadedOutputConfig,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

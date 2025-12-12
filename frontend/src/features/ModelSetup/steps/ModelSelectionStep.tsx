@@ -6,7 +6,7 @@
 
 import React, { useCallback } from 'react';
 import { useWizardData } from '../../Wizard';
-import type { ModelSetupData, FireEngine, RunType } from '../types';
+import type { ModelSetupData, FireEngine, OutputMode } from '../types';
 
 const containerStyle: React.CSSProperties = {
   display: 'flex',
@@ -82,6 +82,47 @@ const radioStyle: React.CSSProperties = {
   display: 'none', // Hidden, the card is the clickable element
 };
 
+const formControlStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '8px',
+  marginTop: '12px',
+};
+
+const inputLabelStyle: React.CSSProperties = {
+  fontSize: '14px',
+  fontWeight: '500',
+  color: '#555',
+};
+
+const selectStyle: React.CSSProperties = {
+  padding: '8px 12px',
+  fontSize: '14px',
+  border: '1px solid #ddd',
+  borderRadius: '4px',
+  backgroundColor: 'white',
+  cursor: 'pointer',
+};
+
+const checkboxContainerStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  marginTop: '8px',
+};
+
+const checkboxStyle: React.CSSProperties = {
+  cursor: 'pointer',
+  width: '16px',
+  height: '16px',
+};
+
+const checkboxLabelStyle: React.CSSProperties = {
+  fontSize: '14px',
+  color: '#555',
+  cursor: 'pointer',
+};
+
 interface EngineOption {
   id: FireEngine;
   name: string;
@@ -90,8 +131,8 @@ interface EngineOption {
   available: boolean;
 }
 
-interface RunTypeOption {
-  id: RunType;
+interface OutputModeOption {
+  id: OutputMode;
   name: string;
   icon: string;
   description: string;
@@ -116,20 +157,20 @@ const engines: EngineOption[] = [
   },
 ];
 
-const runTypes: RunTypeOption[] = [
-  {
-    id: 'deterministic',
-    name: 'Deterministic',
-    icon: 'arrow-right',
-    description:
-      'Single simulation run with fixed parameters. Faster execution, produces a single fire perimeter prediction.',
-  },
+const outputModes: OutputModeOption[] = [
   {
     id: 'probabilistic',
-    name: 'Probabilistic',
-    icon: 'chart-bar',
+    name: 'Probability Maps',
+    icon: 'chart-simple',
     description:
-      'Multiple simulation runs with varied parameters. Longer execution time, produces burn probability maps showing fire likelihood.',
+      'Output daily probability rasters showing fire spread likelihood at each location.',
+  },
+  {
+    id: 'pseudo-deterministic',
+    name: 'Fire Perimeters',
+    icon: 'draw-polygon',
+    description:
+      'Output daily fire perimeter polygons at a confidence threshold (e.g., 50% probability).',
   },
 ];
 
@@ -142,6 +183,9 @@ export function ModelSelectionStep() {
   const model = data.model ?? {
     engine: 'firestarr',
     runType: 'deterministic',
+    outputMode: 'probabilistic',
+    confidenceInterval: 0.5,
+    smoothPerimeter: false,
   };
 
   // Update engine selection
@@ -159,12 +203,37 @@ export function ModelSelectionStep() {
     [setField, model]
   );
 
-  // Update run type selection
-  const handleRunTypeChange = useCallback(
-    (runType: RunType) => {
+  // Update output mode selection
+  const handleOutputModeChange = useCallback(
+    (outputMode: OutputMode) => {
       setField('model', {
         ...model,
-        runType,
+        outputMode,
+        // Set defaults when switching to pseudo-deterministic
+        confidenceInterval: outputMode === 'pseudo-deterministic' ? (model.confidenceInterval ?? 0.5) : undefined,
+        smoothPerimeter: outputMode === 'pseudo-deterministic' ? (model.smoothPerimeter ?? false) : undefined,
+      });
+    },
+    [setField, model]
+  );
+
+  // Update confidence interval
+  const handleConfidenceIntervalChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      setField('model', {
+        ...model,
+        confidenceInterval: parseFloat(event.target.value),
+      });
+    },
+    [setField, model]
+  );
+
+  // Update smooth perimeter
+  const handleSmoothPerimeterChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setField('model', {
+        ...model,
+        smoothPerimeter: event.target.checked,
       });
     },
     [setField, model]
@@ -223,49 +292,91 @@ export function ModelSelectionStep() {
         </div>
       </div>
 
-      {/* Run Type Selection */}
+      {/* Output Mode Selection */}
       <div style={sectionStyle}>
-        <label style={labelStyle}>Run Type</label>
+        <label style={labelStyle}>Output Mode</label>
         <div style={optionsStyle}>
-          {runTypes.map((runType) => {
-            const isSelected = model.runType === runType.id;
+          {outputModes.map((outputMode) => {
+            const isSelected = model.outputMode === outputMode.id;
             const cardStyle = isSelected ? selectedCardStyle : optionCardStyle;
 
             return (
               <div
-                key={runType.id}
+                key={outputMode.id}
                 style={cardStyle}
-                onClick={() => handleRunTypeChange(runType.id)}
+                onClick={() => handleOutputModeChange(outputMode.id)}
                 role="radio"
                 aria-checked={isSelected}
                 tabIndex={0}
               >
                 <input
                   type="radio"
-                  name="runType"
-                  value={runType.id}
+                  name="outputMode"
+                  value={outputMode.id}
                   checked={isSelected}
-                  onChange={() => handleRunTypeChange(runType.id)}
+                  onChange={() => handleOutputModeChange(outputMode.id)}
                   style={radioStyle}
                 />
                 <div style={optionTitleStyle}>
-                  <i className={`fa-solid fa-${runType.icon}`} />
-                  <span>{runType.name}</span>
+                  <i className={`fa-solid fa-${outputMode.icon}`} />
+                  <span>{outputMode.name}</span>
                   {isSelected && (
                     <span style={{ ...badgeStyle, backgroundColor: '#ff6b35', color: 'white' }}>
                       Selected
                     </span>
                   )}
                 </div>
-                <div style={optionDescStyle}>{runType.description}</div>
+                <div style={optionDescStyle}>{outputMode.description}</div>
               </div>
             );
           })}
         </div>
+
+        {/* Conditional controls for Fire Perimeters mode */}
+        {model.outputMode === 'pseudo-deterministic' && (
+          <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+            {/* Confidence Threshold Dropdown */}
+            <div style={formControlStyle}>
+              <label htmlFor="confidenceInterval" style={inputLabelStyle}>
+                Confidence Threshold
+              </label>
+              <select
+                id="confidenceInterval"
+                value={model.confidenceInterval ?? 0.5}
+                onChange={handleConfidenceIntervalChange}
+                style={selectStyle}
+              >
+                <option value={0.1}>10%</option>
+                <option value={0.2}>20%</option>
+                <option value={0.3}>30%</option>
+                <option value={0.4}>40%</option>
+                <option value={0.5}>50%</option>
+                <option value={0.6}>60%</option>
+                <option value={0.7}>70%</option>
+                <option value={0.8}>80%</option>
+                <option value={0.9}>90%</option>
+              </select>
+            </div>
+
+            {/* Smooth Perimeter Checkbox */}
+            <div style={checkboxContainerStyle}>
+              <input
+                type="checkbox"
+                id="smoothPerimeter"
+                checked={model.smoothPerimeter ?? false}
+                onChange={handleSmoothPerimeterChange}
+                style={checkboxStyle}
+              />
+              <label htmlFor="smoothPerimeter" style={checkboxLabelStyle}>
+                Smooth polygon edges
+              </label>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Info box for probabilistic */}
-      {model.runType === 'probabilistic' && (
+      {/* Info box for probability maps */}
+      {model.outputMode === 'probabilistic' && (
         <div
           style={{
             padding: '12px',
@@ -276,9 +387,27 @@ export function ModelSelectionStep() {
             color: '#333',
           }}
         >
-          <strong>Note:</strong> Probabilistic runs execute multiple simulations (typically 100+) to
-          generate burn probability maps. This can take significantly longer than deterministic runs
-          but provides uncertainty quantification.
+          <strong>Note:</strong> Probability maps show the likelihood of fire spread at each location
+          over time. These raster outputs are ideal for risk analysis and can be visualized with color
+          gradients representing burn probability.
+        </div>
+      )}
+
+      {/* Info box for fire perimeters */}
+      {model.outputMode === 'pseudo-deterministic' && (
+        <div
+          style={{
+            padding: '12px',
+            backgroundColor: '#ebf5fb',
+            borderRadius: '4px',
+            fontSize: '13px',
+            borderLeft: '4px solid #3498db',
+            color: '#333',
+          }}
+        >
+          <strong>Note:</strong> Fire perimeter mode post-processes the probability maps into daily
+          polygon perimeters at your chosen confidence threshold. Lower thresholds (e.g., 10%) show
+          maximum possible spread, while higher thresholds (e.g., 90%) show the most likely core area.
         </div>
       )}
     </div>

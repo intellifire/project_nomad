@@ -10,6 +10,7 @@ import { getKnex, isSqlite } from '../knex/index.js';
 
 // Import migrations
 import * as migration001 from './001_create_tables.js';
+import * as migration002 from './002_add_user_ownership.js';
 
 /**
  * Migration definition
@@ -25,6 +26,7 @@ interface Migration {
  */
 const migrations: Migration[] = [
   { name: '001_create_tables', ...migration001 },
+  { name: '002_add_user_ownership', ...migration002 },
 ];
 
 /**

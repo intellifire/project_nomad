@@ -32,8 +32,8 @@ interface ModelReviewPanelProps {
 /**
  * ModelReviewPanel displays full model results with preview capabilities.
  */
-const DEFAULT_WIDTH = 400;
-const DEFAULT_HEIGHT = 600;
+const DEFAULT_WIDTH = 730;
+const DEFAULT_HEIGHT = 1070;
 const MIN_WIDTH = 350;
 const MIN_HEIGHT = 400;
 
@@ -228,9 +228,11 @@ export function ModelReviewPanel({
           modelId={results.modelId}
           modelName={results.modelName}
           engineType={results.engineType}
+          userId={results.userId}
           summary={results.executionSummary}
           outputCount={results.outputs.length}
           inputs={results.inputs}
+          outputConfig={results.outputConfig}
           onAddIgnitionToMap={handleAddIgnitionToMap}
         />
         <OutputList

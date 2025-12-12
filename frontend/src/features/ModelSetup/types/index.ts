@@ -22,9 +22,14 @@ export type SpatialInputMethod = 'draw' | 'coordinates' | 'upload';
 export type FireEngine = 'firestarr' | 'wise';
 
 /**
- * Model run types
+ * Model run types (legacy - kept for compatibility)
  */
 export type RunType = 'deterministic' | 'probabilistic';
+
+/**
+ * Output mode types - how FireSTARR results should be post-processed
+ */
+export type OutputMode = 'probabilistic' | 'pseudo-deterministic';
 
 /**
  * Weather data source
@@ -103,8 +108,14 @@ export interface TemporalData {
 export interface ModelData {
   /** Selected fire modeling engine */
   engine: FireEngine;
-  /** Deterministic or probabilistic run */
+  /** Deterministic or probabilistic run (legacy - kept for compatibility) */
   runType: RunType;
+  /** Output mode - how to post-process FireSTARR results */
+  outputMode: OutputMode;
+  /** Confidence interval for pseudo-deterministic perimeters (0.1-0.9) */
+  confidenceInterval?: number;
+  /** Whether to smooth perimeter polygons */
+  smoothPerimeter?: boolean;
 }
 
 /**
@@ -243,6 +254,9 @@ export const DEFAULT_MODEL_SETUP_DATA: ModelSetupData = {
   model: {
     engine: 'firestarr',
     runType: 'deterministic',
+    outputMode: 'probabilistic',
+    confidenceInterval: 0.5,
+    smoothPerimeter: false,
   },
   weather: {
     source: 'firestarr_csv',

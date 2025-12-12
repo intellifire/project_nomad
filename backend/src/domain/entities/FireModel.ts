@@ -48,6 +48,8 @@ export interface FireModelProps {
   readonly status?: ModelStatus;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
+  /** User who created this model (for ownership filtering) */
+  readonly userId?: string;
 }
 
 /**
@@ -75,6 +77,9 @@ export class FireModel {
   /** When this model was last updated */
   readonly updatedAt: Date;
 
+  /** User who created this model (for ownership filtering) */
+  readonly userId?: string;
+
   constructor(props: FireModelProps) {
     if (!props.name || props.name.trim().length === 0) {
       throw new Error('FireModel name cannot be empty');
@@ -86,6 +91,7 @@ export class FireModel {
     this.status = props.status ?? ModelStatus.Draft;
     this.createdAt = props.createdAt ?? new Date();
     this.updatedAt = props.updatedAt ?? new Date();
+    this.userId = props.userId;
   }
 
   /**
@@ -99,6 +105,7 @@ export class FireModel {
       status,
       createdAt: this.createdAt,
       updatedAt: new Date(),
+      userId: this.userId,
     });
   }
 
@@ -113,6 +120,7 @@ export class FireModel {
       status: this.status,
       createdAt: this.createdAt,
       updatedAt: new Date(),
+      userId: this.userId,
     });
   }
 

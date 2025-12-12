@@ -94,6 +94,7 @@ const tdStyle: React.CSSProperties = {
   padding: '6px 8px',
   borderBottom: '1px solid #ddd',
   whiteSpace: 'nowrap',
+  color: '#333',
 };
 
 const errorStyle: React.CSSProperties = {
