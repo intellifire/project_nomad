@@ -31,6 +31,7 @@ interface ModelRow {
   status: string;
   created_at: string;
   updated_at: string;
+  user_id: string | null;
 }
 
 /**
@@ -44,6 +45,7 @@ function rowToModel(row: ModelRow): FireModel {
     status: row.status as ModelStatus,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
+    userId: row.user_id ?? undefined,
   });
 }
 
@@ -63,6 +65,7 @@ export class KnexModelRepository implements IModelRepository {
       status: model.status,
       created_at: model.createdAt.toISOString(),
       updated_at: model.updatedAt.toISOString(),
+      user_id: model.userId ?? null,
     };
 
     // Use onConflict().merge() for upsert behavior (works across databases)
@@ -111,6 +114,11 @@ export class KnexModelRepository implements IModelRepository {
       query = query
         .where('created_at', '>=', filter.createdBetween.start.toISOString())
         .where('created_at', '<=', filter.createdBetween.end.toISOString());
+    }
+
+    // Filter by user ownership
+    if (filter.userId) {
+      query = query.where('user_id', filter.userId);
     }
 
     // Get total count (clone query before pagination)

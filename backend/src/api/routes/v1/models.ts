@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as fs from 'fs';
-import { asyncHandler } from '../../middleware/index.js';
+import { asyncHandler, simpleAuthMiddleware } from '../../middleware/index.js';
 import {
   FireModel,
   createFireModelId,
@@ -23,6 +23,9 @@ import type { WeatherConfig } from '../../../infrastructure/weather/types.js';
 
 const router = Router();
 
+// Apply simple auth middleware to all routes
+router.use(simpleAuthMiddleware);
+
 /**
  * Combined request body for creating and running a model
  */
@@ -39,6 +42,9 @@ interface RunModelRequestBody {
   };
   weather: WeatherConfig;
   scenarios?: number;
+  outputMode?: 'probabilistic' | 'pseudo-deterministic';
+  confidenceInterval?: number;
+  smoothPerimeter?: boolean;
 }
 
 /**
@@ -124,6 +130,7 @@ router.post(
       name: body.name,
       engineType: body.engineType,
       status: ModelStatus.Queued,
+      userId: req.user,  // Capture user ownership
     });
 
     const modelRepo = getModelRepository();
@@ -158,6 +165,9 @@ router.post(
       timeRange,
       weatherConfig: body.weather,
       simulationCount: body.scenarios ?? 100,
+      outputMode: body.outputMode === 'pseudo-deterministic' ? 'pseudo-deterministic' : 'probabilistic',
+      confidenceInterval: body.confidenceInterval ?? 50,
+      smoothPerimeter: body.smoothPerimeter ?? false,
     };
 
     // Start execution (FireSTARR)
@@ -166,6 +176,9 @@ router.post(
 
       (async () => {
         try {
+          // Mark job as running (sets startedAt timestamp)
+          await jobQueue.updateStatus(jobId, JobStatus.Running);
+
           await engine.initialize(model, executionOptions);
           await engine.execute(modelId);
           const status = await engine.getStatus(modelId);
@@ -263,6 +276,7 @@ router.post(
       name,
       engineType,
       status: ModelStatus.Draft,
+      userId: req.user,  // Capture user ownership
     });
 
     // Persist to database
@@ -355,6 +369,9 @@ interface ExecuteRequestBody {
   };
   weather: WeatherConfig;
   scenarios?: number;
+  outputMode?: 'probabilistic' | 'pseudo-deterministic';
+  confidenceInterval?: number;
+  smoothPerimeter?: boolean;
 }
 
 /**
@@ -670,7 +687,8 @@ router.get(
       const result = await resultsService.getResults(
         id as FireModelId,
         model.name,
-        model.engineType
+        model.engineType,
+        model.userId
       );
 
       console.log(`[ModelsRoute:results] Got result, success=${result.success}`);
@@ -827,6 +845,249 @@ router.get(
 
 /**
  * @openapi
+ * /models/{id}/perimeters:
+ *   get:
+ *     summary: Get perimeter GeoJSON for a specific day
+ *     description: Returns the generated perimeter polygon for a given day using the model's configured confidence interval
+ *     tags: [Models]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Model ID
+ *       - in: query
+ *         name: day
+ *         required: true
+ *         schema:
+ *           type: number
+ *         description: Day number (e.g., 170 for day of year)
+ *     responses:
+ *       200:
+ *         description: Perimeter GeoJSON
+ *         content:
+ *           application/geo+json:
+ *             schema:
+ *               type: object
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+router.get(
+  '/models/:id/perimeters',
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const day = parseInt(req.query.day as string, 10);
+
+    if (isNaN(day)) {
+      throw new ValidationError('Day parameter required', [
+        { field: 'day', message: 'Must provide a valid day number as query parameter' },
+      ]);
+    }
+
+    const modelRepo = getModelRepository();
+    const model = await modelRepo.findById(createFireModelId(id));
+    if (!model) {
+      throw new NotFoundError('Model', id);
+    }
+
+    // Check model is completed
+    if (model.status !== ModelStatus.Completed) {
+      throw new ValidationError('Model must be completed to get perimeters', [
+        { field: 'status', message: `Model status is ${model.status}` },
+      ]);
+    }
+
+    // Get working directory (cast to concrete type for FireSTARR-specific method)
+    const engine = getFireSTARREngine();
+    const workingDir = (engine as import('../../../infrastructure/firestarr/FireSTARREngine.js').FireSTARREngine).getWorkingDirectory(id as FireModelId);
+    if (!workingDir || !fs.existsSync(workingDir)) {
+      throw new NotFoundError('Working directory', id);
+    }
+
+    // Read output-config.json to get confidence settings
+    const configPath = `${workingDir}/output-config.json`;
+    let confidenceInterval = 80; // default
+    let smoothPerimeter = true; // default
+
+    if (fs.existsSync(configPath)) {
+      try {
+        const configContent = fs.readFileSync(configPath, 'utf-8');
+        const config = JSON.parse(configContent);
+        if (config.confidenceInterval && config.confidenceInterval >= 10 && config.confidenceInterval <= 90) {
+          confidenceInterval = config.confidenceInterval;
+        }
+        if (typeof config.smoothPerimeter === 'boolean') {
+          smoothPerimeter = config.smoothPerimeter;
+        }
+      } catch (e) {
+        console.warn(`[ModelsRoute:perimeters] Failed to read output-config.json: ${e}`);
+      }
+    }
+
+    // Find the probability raster for the requested day
+    const probabilityFile = fs.readdirSync(workingDir)
+      .find(f => f.match(new RegExp(`^probability_${day}(?:_[\\d-]+)?\\.tif$`)));
+
+    if (!probabilityFile) {
+      throw new NotFoundError('Probability raster', `day ${day}`, 'No matching probability raster found');
+    }
+
+    const filePath = `${workingDir}/${probabilityFile}`;
+
+    // Generate the perimeter
+    const { generatePerimeterForFile } = await import('../../../infrastructure/firestarr/index.js');
+    const result = await generatePerimeterForFile(filePath, {
+      confidenceInterval,
+      smoothPerimeter,
+      simplifyTolerance: 0.0001,
+    });
+
+    if (!result.success) {
+      throw result.error;
+    }
+
+    // Set headers for GeoJSON
+    res.setHeader('Content-Type', 'application/geo+json');
+    res.json(result.value.geojson);
+  })
+);
+
+/**
+ * @openapi
+ * /models/{id}/perimeters:
+ *   post:
+ *     summary: Generate vector perimeters from probability rasters
+ *     description: Converts probability raster outputs to vector polygons using GDAL
+ *     tags: [Models]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Model ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - confidenceInterval
+ *             properties:
+ *               confidenceInterval:
+ *                 type: number
+ *                 description: Confidence interval (10-90), represents threshold (e.g., 50 = pixels >= 0.5)
+ *                 minimum: 10
+ *                 maximum: 90
+ *               smoothPerimeter:
+ *                 type: boolean
+ *                 description: Whether to simplify the polygon
+ *                 default: false
+ *               simplifyTolerance:
+ *                 type: number
+ *                 description: Simplification tolerance in degrees (default 0.0001 ~= 10m)
+ *                 default: 0.0001
+ *     responses:
+ *       200:
+ *         description: Generated perimeters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 perimeters:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       day:
+ *                         type: number
+ *                       geojson:
+ *                         type: object
+ *                       confidenceInterval:
+ *                         type: number
+ *                 totalRasters:
+ *                   type: number
+ *                 successCount:
+ *                   type: number
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+router.post(
+  '/models/:id/perimeters',
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { confidenceInterval, smoothPerimeter = false, simplifyTolerance = 0.0001 } = req.body;
+
+    // Validate confidence interval
+    if (typeof confidenceInterval !== 'number' || confidenceInterval < 10 || confidenceInterval > 90) {
+      throw new ValidationError('Invalid confidence interval', [
+        { field: 'confidenceInterval', message: 'Must be a number between 10 and 90' },
+      ]);
+    }
+
+    const modelRepo = getModelRepository();
+    const model = await modelRepo.findById(createFireModelId(id));
+    if (!model) {
+      throw new NotFoundError('Model', id);
+    }
+
+    // Check model is completed
+    if (model.status !== ModelStatus.Completed) {
+      throw new ValidationError('Model must be completed to generate perimeters', [
+        { field: 'status', message: `Model status is ${model.status}` },
+      ]);
+    }
+
+    // Get the working directory from results
+    const engine = getFireSTARREngine();
+    const resultsService = getModelResultsService(engine);
+    const resultResponse = await resultsService.getResults(
+      id as FireModelId,
+      model.name,
+      model.engineType,
+      model.userId
+    );
+
+    if (!resultResponse.success || resultResponse.value.outputs.length === 0) {
+      throw new NotFoundError('Model results', id, 'No probability rasters found');
+    }
+
+    // Get working directory from first output file
+    const firstOutput = resultResponse.value.outputs[0];
+    if (!firstOutput.filePath) {
+      throw new NotFoundError('Output files', id, 'No file path found in results');
+    }
+
+    // Import perimeter generator
+    const { generatePerimeters } = await import('../../../infrastructure/firestarr/index.js');
+    const { resolveResultFilePath } = await import('../../../infrastructure/firestarr/FireSTARRInputGenerator.js');
+
+    // Resolve absolute path and get working directory
+    const absolutePath = resolveResultFilePath(firstOutput.filePath);
+    const workingDir = absolutePath.substring(0, absolutePath.lastIndexOf('/'));
+
+    // Generate perimeters
+    const perimeterResult = await generatePerimeters(workingDir, {
+      confidenceInterval,
+      smoothPerimeter,
+      simplifyTolerance,
+    });
+
+    if (!perimeterResult.success) {
+      throw perimeterResult.error;
+    }
+
+    res.json(perimeterResult.value);
+  })
+);
+
+/**
+ * @openapi
  * /models:
  *   get:
  *     summary: List models
@@ -858,15 +1119,54 @@ router.get(
  */
 router.get(
   '/models',
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (req, res) => {
     const modelRepo = getModelRepository();
-    const result = await modelRepo.find({});
-    const models = result.models.map((model) => ({
-      id: model.id,
-      name: model.name,
-      engineType: model.engineType,
-      status: model.status,
-      createdAt: model.createdAt.toISOString(),
+    // Filter by user when simple auth is enabled
+    const filter = req.user ? { userId: req.user } : {};
+    const result = await modelRepo.find(filter);
+
+    // Get FireSTARR engine for working directory lookup
+    const engine = getFireSTARREngine();
+
+    const models = await Promise.all(result.models.map(async (model) => {
+      const baseInfo = {
+        id: model.id,
+        name: model.name,
+        engineType: model.engineType,
+        status: model.status,
+        createdAt: model.createdAt.toISOString(),
+        userId: model.userId ?? null,
+        outputMode: null as string | null,
+        confidenceInterval: null as number | null,
+        durationDays: null as number | null,
+      };
+
+      // Try to read output config for completed models
+      if (model.status === ModelStatus.Completed) {
+        try {
+          const workingDir = (engine as import('../../../infrastructure/firestarr/FireSTARREngine.js').FireSTARREngine).getWorkingDirectory(model.id);
+          if (workingDir) {
+            // Read output config
+            const configPath = `${workingDir}/output-config.json`;
+            if (fs.existsSync(configPath)) {
+              const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+              baseInfo.outputMode = config.outputMode || 'probabilistic';
+              if (config.outputMode === 'pseudo-deterministic') {
+                baseInfo.confidenceInterval = config.confidenceInterval || null;
+              }
+            }
+
+            // Count probability rasters to get duration in days
+            const files = fs.readdirSync(workingDir);
+            const probFiles = files.filter(f => f.match(/^probability_\d+(?:_[\d-]+)?\.tif$/));
+            baseInfo.durationDays = probFiles.length;
+          }
+        } catch (e) {
+          // Ignore errors reading config - just return null values
+        }
+      }
+
+      return baseInfo;
     }));
 
     res.json({
@@ -915,6 +1215,13 @@ router.delete(
     const model = await modelRepo.findById(createFireModelId(id));
     if (!model) {
       throw new NotFoundError('Model', id);
+    }
+
+    // Check ownership when simple auth is enabled
+    if (req.user && model.userId && model.userId !== req.user) {
+      throw new ValidationError('Permission denied', [
+        { field: 'userId', message: 'You can only delete your own models' },
+      ]);
     }
 
     // Delete associated data first (order matters due to foreign keys)

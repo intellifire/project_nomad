@@ -67,7 +67,20 @@ export function OutputPreviewModal({
           throw new Error(`Failed to fetch preview: ${response.status}`);
         }
         const data = await response.json();
-        setGeoJsonData(data);
+
+        // Handle both Feature and FeatureCollection
+        // Perimeters may return a single Feature, not a FeatureCollection
+        if (data.type === 'Feature') {
+          // Convert single Feature to FeatureCollection
+          setGeoJsonData({
+            type: 'FeatureCollection',
+            features: [data],
+          });
+        } else if (data.type === 'FeatureCollection') {
+          setGeoJsonData(data);
+        } else {
+          throw new Error(`Invalid GeoJSON type: ${data.type}`);
+        }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
         setError(message);
@@ -132,7 +145,7 @@ export function OutputPreviewModal({
         });
 
         // Fit map to data bounds after source is added
-        if (geoJsonData.features.length > 0) {
+        if (geoJsonData.features && geoJsonData.features.length > 0) {
           const bounds = new mapboxgl.LngLatBounds();
           let hasValidCoords = false;
 

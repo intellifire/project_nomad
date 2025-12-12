@@ -6,6 +6,7 @@
  */
 
 import { join } from 'path';
+import { existsSync } from 'fs';
 import {
   IFireModelingEngine,
   ExecutionStatus,
@@ -38,6 +39,15 @@ const FIRESTARR_SERVICE = 'firestarr-app';
 const FIRESTARR_BINARY = '/appl/firestarr/firestarr';
 
 /**
+ * Output configuration for post-processing
+ */
+interface OutputConfig {
+  outputMode: 'probabilistic' | 'pseudo-deterministic';
+  confidenceInterval: number;
+  smoothPerimeter: boolean;
+}
+
+/**
  * Execution state tracked per model
  */
 interface ExecutionState {
@@ -46,6 +56,7 @@ interface ExecutionState {
   params?: FireSTARRParams;
   startTime?: Date;
   completedTime?: Date;
+  outputConfig?: OutputConfig;
 }
 
 /**
@@ -99,6 +110,19 @@ export class FireSTARREngine implements IFireModelingEngine {
       throw new Error(`Input generation failed: ${inputResult.error.message}`);
     }
 
+    // Build output configuration for post-processing
+    const outputConfig: OutputConfig = {
+      outputMode: options.outputMode ?? 'probabilistic',
+      confidenceInterval: options.confidenceInterval ?? 50,
+      smoothPerimeter: options.smoothPerimeter ?? false,
+    };
+
+    // Save output config to working directory for persistence
+    const configPath = join(inputResult.value.workingDir, 'output-config.json');
+    const { writeFile } = await import('fs/promises');
+    await writeFile(configPath, JSON.stringify(outputConfig, null, 2));
+    console.log(`[FireSTARREngine] Saved output config to ${configPath}`);
+
     // Store execution state
     this.executions.set(model.id, {
       status: {
@@ -108,6 +132,7 @@ export class FireSTARREngine implements IFireModelingEngine {
       },
       inputResult: inputResult.value,
       params,
+      outputConfig,
     });
 
     console.log(`[FireSTARREngine] Model ${model.id} initialized successfully`);
@@ -241,6 +266,31 @@ export class FireSTARREngine implements IFireModelingEngine {
       throw new Error(`Model ${modelId} not found in engine (may have run in previous session)`);
     }
     return state.status;
+  }
+
+  /**
+   * Gets the working directory for a model.
+   * Falls back to the standard path if not in current session.
+   */
+  getWorkingDirectory(modelId: FireModelId): string | null {
+    const state = this.executions.get(modelId);
+    if (state?.inputResult?.workingDir) {
+      return state.inputResult.workingDir;
+    }
+    // Fall back to standard path structure using same resolution as InputGenerator
+    const datasetPath = process.env.FIRESTARR_DATASET_PATH;
+    if (!datasetPath) {
+      console.warn('[FireSTARREngine] FIRESTARR_DATASET_PATH not set');
+      return null;
+    }
+    // Resolve paths from project root (parent of backend dir) to match InputGenerator
+    const projectRoot = join(process.cwd(), '..');
+    const resolvedDatasetPath = datasetPath.startsWith('/') ? datasetPath : join(projectRoot, datasetPath);
+    const standardPath = join(resolvedDatasetPath, 'sims', modelId);
+    if (existsSync(standardPath)) {
+      return standardPath;
+    }
+    return null;
   }
 
   async getResults(modelId: FireModelId): Promise<ModelResult[]> {

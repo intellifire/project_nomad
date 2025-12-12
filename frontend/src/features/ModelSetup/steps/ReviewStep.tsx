@@ -150,10 +150,18 @@ export function ReviewStep() {
         </div>
       </div>
 
-      {/* Model Summary */}
-      <ModelSummary data={data} />
+      {/* Notes - moved to top */}
+      <div style={notesStyle}>
+        <div style={notificationsTitleStyle}><i className="fa-solid fa-note-sticky" style={{ marginRight: '8px' }} />Notes (Optional)</div>
+        <textarea
+          value={execution.notes ?? ''}
+          onChange={handleNotesChange}
+          placeholder="Add any notes or comments about this model run..."
+          style={textareaStyle}
+        />
+      </div>
 
-      {/* Notifications */}
+      {/* Notifications - moved to top after notes */}
       <div style={notificationsStyle}>
         <div style={notificationsTitleStyle}><i className="fa-solid fa-envelope" style={{ marginRight: '8px' }} />Notification Preferences</div>
         <div style={checkboxRowStyle}>
@@ -208,23 +216,15 @@ export function ReviewStep() {
         </div>
       </div>
 
-      {/* Notes */}
-      <div style={notesStyle}>
-        <div style={notificationsTitleStyle}><i className="fa-solid fa-note-sticky" style={{ marginRight: '8px' }} />Notes (Optional)</div>
-        <textarea
-          value={execution.notes ?? ''}
-          onChange={handleNotesChange}
-          placeholder="Add any notes or comments about this model run..."
-          style={textareaStyle}
-        />
-      </div>
+      {/* Model Summary */}
+      <ModelSummary data={data} />
 
-      {/* Warning for probabilistic */}
+      {/* Warning for multi-scenario */}
       {data.model?.runType === 'probabilistic' && (
         <div style={warningStyle}>
-          <strong><i className="fa-solid fa-clock" style={{ marginRight: '6px' }} />Probabilistic Run:</strong> This simulation will run multiple iterations to
-          generate burn probability maps. Execution time may be significantly longer than a
-          deterministic run. You'll receive a notification when it completes.
+          <strong><i className="fa-solid fa-clock" style={{ marginRight: '6px' }} />Multi-Scenario Run:</strong> This simulation uses multiple weather streams
+          combined with stochastic spread modeling. Execution time may be longer than a
+          single-scenario run. You'll receive a notification when it completes.
         </div>
       )}
 

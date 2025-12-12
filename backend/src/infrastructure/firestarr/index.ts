@@ -49,6 +49,16 @@ export {
   type BreaksMode,
 } from './ContourGenerator.js';
 
+// Perimeter Generation (Raster to Vector)
+export {
+  generatePerimeters,
+  generatePerimeterForFile,
+  isGDALAvailable as isGDALAvailableForPerimeters,
+  type PerimeterGeneratorOptions,
+  type GeneratedPerimeter,
+  type PerimeterGenerationResult,
+} from './PerimeterGenerator.js';
+
 // Types
 export {
   type WeatherHourlyData,

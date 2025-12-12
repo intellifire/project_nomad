@@ -247,7 +247,7 @@ export function SpatialInputStep() {
           </div>
           {features.map((feature, index) => (
             <div key={feature.id ?? index} style={featureItemStyle}>
-              <span>
+              <span style={{ color: '#333' }}>
                 {formatGeometryType(feature.geometry.type)}
                 {feature.properties?.fileName && ` (from ${feature.properties.fileName})`}
               </span>

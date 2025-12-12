@@ -2,14 +2,49 @@
  * Splash Screen Component
  *
  * Branded welcome screen shown on app load.
- * Requires click to dismiss.
+ * When VITE_SIMPLE_AUTH=true, requires username entry.
+ * Otherwise, just click to enter.
  */
+
+import { useState, useEffect, useCallback } from 'react';
+
+const SIMPLE_AUTH_ENABLED = import.meta.env.VITE_SIMPLE_AUTH === 'true';
+const STORAGE_KEY = 'nomad_username';
 
 interface SplashScreenProps {
   onEnter: () => void;
 }
 
 export function SplashScreen({ onEnter }: SplashScreenProps) {
+  const [username, setUsername] = useState('');
+
+  // Load saved username from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      setUsername(saved);
+    }
+  }, []);
+
+  const handleSubmit = useCallback(() => {
+    if (SIMPLE_AUTH_ENABLED && !username.trim()) {
+      return; // Don't allow empty username when auth is required
+    }
+    // Save username to localStorage
+    if (username.trim()) {
+      localStorage.setItem(STORAGE_KEY, username.trim());
+    }
+    onEnter();
+  }, [username, onEnter]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSubmit();
+    }
+  }, [handleSubmit]);
+
+  const canEnter = !SIMPLE_AUTH_ENABLED || username.trim().length > 0;
+
   return (
     <div
       style={{
@@ -24,9 +59,7 @@ export function SplashScreen({ onEnter }: SplashScreenProps) {
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 100000,
-        cursor: 'pointer',
       }}
-      onClick={onEnter}
     >
       {/* Logo */}
       <img
@@ -58,26 +91,84 @@ export function SplashScreen({ onEnter }: SplashScreenProps) {
         style={{
           color: '#94a3b8',
           fontSize: '20px',
-          margin: '0 0 48px 0',
+          margin: '0 0 32px 0',
           textAlign: 'center',
         }}
       >
         Fire Modeling System<br />
         MVP Prototype v0.0<br />
         SAN Mode (Stand Alone Nomad)
-
       </p>
 
-      {/* Enter prompt */}
-      <div
+      {/* Username input (when simple auth enabled) */}
+      {SIMPLE_AUTH_ENABLED && (
+        <div style={{ marginBottom: '24px', width: '280px' }}>
+          <label
+            htmlFor="username"
+            style={{
+              display: 'block',
+              color: '#94a3b8',
+              fontSize: '14px',
+              marginBottom: '8px',
+            }}
+          >
+            Enter your name to continue
+          </label>
+          <input
+            id="username"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Your name"
+            autoFocus
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              fontSize: '16px',
+              backgroundColor: '#1e293b',
+              border: '2px solid #334155',
+              borderRadius: '8px',
+              color: '#ffffff',
+              outline: 'none',
+              boxSizing: 'border-box',
+            }}
+          />
+        </div>
+      )}
+
+      {/* Enter button */}
+      <button
+        onClick={handleSubmit}
+        disabled={!canEnter}
         style={{
-          color: '#64748b',
-          fontSize: '16px',
-          animation: 'pulse 2s infinite',
+          padding: '14px 48px',
+          fontSize: '18px',
+          fontWeight: 600,
+          color: '#ffffff',
+          backgroundColor: canEnter ? '#3b82f6' : '#475569',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: canEnter ? 'pointer' : 'not-allowed',
+          transition: 'background-color 0.2s',
         }}
       >
-        Click anywhere to enter
-      </div>
+        Enter
+      </button>
+
+      {/* Click anywhere hint when no auth */}
+      {!SIMPLE_AUTH_ENABLED && (
+        <div
+          style={{
+            color: '#64748b',
+            fontSize: '14px',
+            marginTop: '16px',
+            animation: 'pulse 2s infinite',
+          }}
+        >
+          or click anywhere to enter
+        </div>
+      )}
 
       {/* Pulse animation */}
       <style>

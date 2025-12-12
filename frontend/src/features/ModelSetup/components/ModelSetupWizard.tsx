@@ -31,8 +31,8 @@ export interface ModelSetupWizardProps {
   draftId?: string;
 }
 
-const DEFAULT_WIDTH = 480;
-const DEFAULT_HEIGHT = 600;
+const DEFAULT_WIDTH = 690;
+const DEFAULT_HEIGHT = 1040;
 const MIN_WIDTH = 380;
 const MIN_HEIGHT = 400;
 

@@ -8,3 +8,4 @@ export { asyncHandler } from './asyncHandler.js';
 export { errorHandler, type ApiErrorResponse } from './errorHandler.js';
 export { notFoundHandler } from './notFound.js';
 export { requestLogger } from './logging.js';
+export { simpleAuthMiddleware } from './simpleAuth.js';

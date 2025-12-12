@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import type { ExecutionSummary, ExecutionState, ModelInputs } from '../types';
+import type { ExecutionSummary, ExecutionState, ModelInputs, OutputConfig } from '../types';
 
 /**
  * Props for ResultsSummary
@@ -17,12 +17,16 @@ interface ResultsSummaryProps {
   modelName: string;
   /** Engine type used */
   engineType: string;
+  /** User who ran the model */
+  userId: string | null;
   /** Execution summary data */
   summary: ExecutionSummary;
   /** Number of output files */
   outputCount: number;
   /** Model inputs (ignition, weather) */
   inputs?: ModelInputs;
+  /** Output configuration used */
+  outputConfig?: OutputConfig;
   /** Callback to add ignition to map */
   onAddIgnitionToMap?: () => void;
 }
@@ -80,14 +84,20 @@ export function ResultsSummary({
   modelId,
   modelName,
   engineType,
+  userId,
   summary,
   outputCount,
   inputs,
+  outputConfig,
   onAddIgnitionToMap,
 }: ResultsSummaryProps) {
   const ignition = inputs?.ignition;
   const statusInfo = getStatusInfo(summary.status);
   const isInProgress = ['queued', 'initializing', 'running'].includes(summary.status);
+  // FireSTARR always runs stochastic iterations - show count if available
+  const simLabel = summary.simulationCount
+    ? `${summary.simulationCount} iterations`
+    : 'Stochastic';
 
   const containerStyle: React.CSSProperties = {
     backgroundColor: 'white',
@@ -203,10 +213,18 @@ export function ResultsSummary({
       <div style={headerStyle}>
         <div style={titleSectionStyle}>
           <h2 style={titleStyle}>{modelName}</h2>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px', flexWrap: 'wrap' }}>
             <span style={engineTagStyle}>
               {engineType.toUpperCase()}
             </span>
+            <span style={{ ...engineTagStyle, backgroundColor: '#e8f5e9', color: '#2e7d32' }}>
+              {simLabel}
+            </span>
+            {userId && (
+              <span style={{ ...engineTagStyle, backgroundColor: '#e3f2fd', color: '#1565c0' }}>
+                {userId}
+              </span>
+            )}
             <span style={{ ...engineTagStyle, fontFamily: 'monospace', fontSize: '11px' }}>
               {modelId}
             </span>
@@ -255,6 +273,49 @@ export function ResultsSummary({
           </div>
         )}
       </div>
+
+      {/* Output Configuration */}
+      {outputConfig && (
+        <div style={{
+          marginTop: '16px',
+          border: '1px solid #e0e0e0',
+          borderRadius: '6px',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            padding: '10px 12px',
+            backgroundColor: '#fafafa',
+            borderBottom: '1px solid #e0e0e0',
+            fontWeight: 500,
+            fontSize: '14px',
+            color: '#333',
+          }}>
+            Output Configuration
+          </div>
+          <div style={{ padding: '12px' }}>
+            <div style={statsGridStyle}>
+              <div style={statItemStyle}>
+                <div style={statLabelStyle}>Output Mode</div>
+                <div style={statValueStyle}>
+                  {outputConfig.outputMode === 'pseudo-deterministic' ? 'Fire Perimeters' : 'Probability Maps'}
+                </div>
+              </div>
+              {outputConfig.outputMode === 'pseudo-deterministic' && (
+                <>
+                  <div style={statItemStyle}>
+                    <div style={statLabelStyle}>Confidence</div>
+                    <div style={statValueStyle}>{outputConfig.confidenceInterval}%</div>
+                  </div>
+                  <div style={statItemStyle}>
+                    <div style={statLabelStyle}>Smoothing</div>
+                    <div style={statValueStyle}>{outputConfig.smoothPerimeter ? 'Yes' : 'No'}</div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Model Inputs section */}
       {inputs && (inputs.ignition || inputs.weatherDownloadUrl) && (

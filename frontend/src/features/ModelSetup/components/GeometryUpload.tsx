@@ -269,11 +269,11 @@ export function GeometryUpload({ onUpload }: GeometryUploadProps) {
           onChange={handleFileChange}
           style={{ display: 'none' }}
         />
-        <div style={{ fontSize: '24px', marginBottom: '8px' }}><i className="fa-solid fa-folder-open" /></div>
-        <div style={{ fontSize: '14px', fontWeight: 'bold' }}>
+        <div style={{ fontSize: '24px', marginBottom: '8px', color: '#666' }}><i className="fa-solid fa-folder-open" /></div>
+        <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#333' }}>
           {isDragActive ? 'Drop file here' : 'Click or drag file to upload'}
         </div>
-        <div style={{ fontSize: '12px', color: '#888', marginTop: '8px' }}>
+        <div style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
           Supports GeoJSON (.json, .geojson) and KML (.kml)
         </div>
       </div>

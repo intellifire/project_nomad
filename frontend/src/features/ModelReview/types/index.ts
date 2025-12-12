@@ -86,15 +86,26 @@ export interface ModelInputs {
 }
 
 /**
+ * Output configuration used for model run
+ */
+export interface OutputConfig {
+  outputMode: 'probabilistic' | 'pseudo-deterministic';
+  confidenceInterval: number;
+  smoothPerimeter: boolean;
+}
+
+/**
  * Full model results response from API
  */
 export interface ModelResultsResponse {
   modelId: string;
   modelName: string;
   engineType: string;
+  userId: string | null;
   executionSummary: ExecutionSummary;
   inputs?: ModelInputs;
   outputs: OutputItem[];
+  outputConfig?: OutputConfig;
 }
 
 /**
