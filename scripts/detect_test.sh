@@ -166,7 +166,7 @@ echo "    $ARCH_EXPLANATION"
 if [ "$AUTOCRLF_WARNING" = true ]; then
     echo ""
     echo -e "    ${YELLOW}WARNING: Git core.autocrlf=true can break shell scripts!${NC}"
-    echo "    Fix with: git config --global core.autocrlf false"
+    echo "    Refresh files with: git rm --cached -r . && git reset --hard"
 fi
 echo ""
 echo -e "${CYAN}Recommended Image:${NC}"
