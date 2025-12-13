@@ -184,6 +184,9 @@ export class ConfigurationLoader implements IConfigurationService {
     const agencyId = this.envService.getAgencyId();
     const deploymentMode = this.envService.getDeploymentMode();
 
+    // Reset configPath for reload support
+    this.configPath = null;
+
     let loadedConfig: Partial<ApplicationConfig> = {};
 
     // Try to load agency-specific config
