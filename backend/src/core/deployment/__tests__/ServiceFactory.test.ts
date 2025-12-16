@@ -16,7 +16,7 @@ function createMockEnvService(mode: 'SAN' | 'ACN'): IEnvironmentService {
     getAgencyId: () => undefined,
     get: () => undefined,
     getRequired: () => '',
-    getOrDefault: (key: string, def: string) => def,
+    getOrDefault: (_key: string, def: string) => def,
     isProduction: () => false,
     isDevelopment: () => true,
     isTest: () => false,
