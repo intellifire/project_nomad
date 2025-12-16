@@ -5,7 +5,7 @@
  * as we extend deployment mode support.
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 import healthRouter from '../routes/v1/health.js';

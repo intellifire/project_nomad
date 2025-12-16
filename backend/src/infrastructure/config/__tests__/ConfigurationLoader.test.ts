@@ -11,6 +11,7 @@ import * as path from 'path';
 import { ConfigurationLoader } from '../ConfigurationLoader.js';
 import { ConfigurationValidator } from '../ConfigurationValidator.js';
 import { IEnvironmentService } from '../../../application/interfaces/index.js';
+import { EngineType } from '../../../domain/entities/FireModel.js';
 
 // Mock environment service
 function createMockEnvService(options: {
@@ -22,7 +23,7 @@ function createMockEnvService(options: {
     getAgencyId: () => options.agencyId,
     get: () => undefined,
     getRequired: () => '',
-    getOrDefault: (key: string, def: string) => def,
+    getOrDefault: (_key: string, def: string) => def,
     isProduction: () => false,
     isDevelopment: () => true,
     isTest: () => false,
@@ -95,7 +96,7 @@ describe('ConfigurationLoader', () => {
       const validator = createMockValidator();
       const loader = new ConfigurationLoader(envService, testConfigDir, validator);
 
-      expect(loader.isEngineEnabled('firestarr')).toBe(true);
+      expect(loader.isEngineEnabled(EngineType.FireSTARR)).toBe(true);
       expect(loader.getEnabledEngines().length).toBeGreaterThan(0);
     });
   });
