@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "types": ["vite/client", "geojson"],
     "target": "ES2022",
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
@@ -21,5 +22,6 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/test", "**/*.test.ts", "**/*.test.tsx"]
 }

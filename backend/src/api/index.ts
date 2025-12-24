@@ -11,5 +11,13 @@ export {
   errorHandler,
   notFoundHandler,
   requestLogger,
+  simpleAuthMiddleware,
+  acnAuthMiddleware,
+  requireRoles,
   type ApiErrorResponse,
+  type ACNContext,
+  type AgencyIdentity,
+  type UserIdentity,
+  type NomadRole,
+  VALID_ROLES,
 } from './middleware/index.js';

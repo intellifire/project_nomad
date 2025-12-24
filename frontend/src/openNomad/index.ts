@@ -52,6 +52,13 @@ export {
   TokenRefreshDashboard,
 } from './examples/index.js';
 
+// Dashboard components (for ACN integration with custom adapters)
+export {
+  DashboardContainer,
+  type DashboardContainerProps,
+  type DashboardMode,
+} from '../features/Dashboard/components/DashboardContainer.js';
+
 // Re-export all types and the main interface
 export type {
   // Common types

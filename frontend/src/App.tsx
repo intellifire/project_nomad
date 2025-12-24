@@ -436,19 +436,13 @@ function AppContent() {
         </div>
       )}
 
-      {/* Dashboard Panel */}
-      {showDashboard && !showWizard && (
+      {/* Dashboard Panel - now self-contained with internal wizard */}
+      {showDashboard && (
         <DashboardContainer
           mode="floating"
           onClose={() => setShowDashboard(false)}
-          onLaunchWizard={(draftId) => {
-            setShowDashboard(false);
-            if (draftId) {
-              // TODO: Resume draft
-              console.log('Resume draft:', draftId);
-            }
-            setShowWizard(true);
-          }}
+          onWizardComplete={handleWizardComplete}
+          onWizardCancel={() => deleteAll()}
           onViewResults={(modelId) => {
             setShowDashboard(false);
             setReviewModelId(modelId);
