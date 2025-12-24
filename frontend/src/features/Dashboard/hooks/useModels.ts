@@ -87,7 +87,7 @@ function sortModels(
   sortBy: ModelSortOption,
   direction: 'asc' | 'desc'
 ): Model[] {
-  const sorted = [...models].sort((a, b) => {
+  const sorted = [...(models ?? [])].sort((a, b) => {
     let comparison = 0;
 
     switch (sortBy) {
@@ -123,7 +123,7 @@ function sortModels(
  * Filter models client-side (for additional filtering beyond API)
  */
 function filterModels(models: Model[], filters: ModelFilterOptions): Model[] {
-  return models.filter((model) => {
+  return (models ?? []).filter((model) => {
     // Filter by status
     if (filters.status) {
       const statuses = Array.isArray(filters.status) ? filters.status : [filters.status];
@@ -192,6 +192,11 @@ export function useModels(options: UseModelsOptions = {}): UseModelsReturn {
 
   // Track mounted state to prevent state updates after unmount
   const mountedRef = useRef(true);
+
+  // Reset mounted ref on mount (handles React Strict Mode double-mount)
+  useEffect(() => {
+    mountedRef.current = true;
+  }, []);
 
   // Fetch models from API
   const fetchModels = useCallback(async () => {

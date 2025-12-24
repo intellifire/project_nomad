@@ -29,6 +29,14 @@ import type { DraftSummary, DraftSortOption, DraftFilterOptions } from '../types
 export type DashboardTab = 'models' | 'drafts' | 'jobs';
 
 /**
+ * View state for internal navigation
+ * - 'dashboard': Main dashboard view with tabs
+ * - 'wizard': Model setup wizard
+ * - 'results': Model results viewer
+ */
+export type DashboardView = 'dashboard' | 'wizard' | 'results';
+
+/**
  * Sort options for models
  */
 export type ModelSortOption = 'createdAt' | 'updatedAt' | 'name' | 'status';
@@ -61,6 +69,14 @@ export interface LoadingState {
  * Dashboard state shape
  */
 export interface DashboardState {
+  // === View Navigation ===
+  /** Currently active view (dashboard, wizard, or results) */
+  activeView: DashboardView;
+  /** Draft ID being resumed in wizard (null for new model) */
+  wizardDraftId: string | null;
+  /** Model ID being viewed in results view */
+  resultsModelId: string | null;
+
   // === Active Tab ===
   /** Currently active tab */
   activeTab: DashboardTab;
@@ -113,6 +129,11 @@ export interface DashboardState {
 // =============================================================================
 
 export type DashboardAction =
+  // View navigation
+  | { type: 'SHOW_DASHBOARD' }
+  | { type: 'SHOW_WIZARD'; draftId?: string }
+  | { type: 'SHOW_RESULTS'; modelId: string }
+
   // Tab navigation
   | { type: 'SET_ACTIVE_TAB'; tab: DashboardTab }
 
@@ -164,6 +185,10 @@ const initialLoadingState: LoadingState = {
 };
 
 const initialState: DashboardState = {
+  activeView: 'dashboard',
+  wizardDraftId: null,
+  resultsModelId: null,
+
   activeTab: 'models',
 
   models: [],
@@ -194,6 +219,16 @@ const initialState: DashboardState = {
 
 function dashboardReducer(state: DashboardState, action: DashboardAction): DashboardState {
   switch (action.type) {
+    // View navigation
+    case 'SHOW_DASHBOARD':
+      return { ...state, activeView: 'dashboard', wizardDraftId: null, resultsModelId: null };
+
+    case 'SHOW_WIZARD':
+      return { ...state, activeView: 'wizard', wizardDraftId: action.draftId ?? null };
+
+    case 'SHOW_RESULTS':
+      return { ...state, activeView: 'results', resultsModelId: action.modelId };
+
     // Tab navigation
     case 'SET_ACTIVE_TAB':
       return { ...state, activeTab: action.tab };
@@ -537,5 +572,40 @@ export function useDraftSelection() {
     toggleDraftSelection,
     selectAllDrafts,
     clearDraftSelection,
+  };
+}
+
+/**
+ * Hook for view navigation within the dashboard.
+ * Provides methods to switch between dashboard, wizard, and results views.
+ */
+export function useDashboardView() {
+  const { state, dispatch } = useDashboard();
+
+  const showDashboard = useCallback(
+    () => dispatch({ type: 'SHOW_DASHBOARD' }),
+    [dispatch]
+  );
+
+  const showWizard = useCallback(
+    (draftId?: string) => dispatch({ type: 'SHOW_WIZARD', draftId }),
+    [dispatch]
+  );
+
+  const showResults = useCallback(
+    (modelId: string) => dispatch({ type: 'SHOW_RESULTS', modelId }),
+    [dispatch]
+  );
+
+  return {
+    activeView: state.activeView,
+    wizardDraftId: state.wizardDraftId,
+    resultsModelId: state.resultsModelId,
+    isDashboardView: state.activeView === 'dashboard',
+    isWizardView: state.activeView === 'wizard',
+    isResultsView: state.activeView === 'results',
+    showDashboard,
+    showWizard,
+    showResults,
   };
 }

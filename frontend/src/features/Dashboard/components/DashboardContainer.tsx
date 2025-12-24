@@ -9,10 +9,11 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { Rnd } from 'react-rnd';
-import { DashboardProvider, useDashboardTabs, type DashboardTab } from '../context/DashboardContext.js';
+import { DashboardProvider, useDashboardTabs, useDashboardView, type DashboardTab } from '../context/DashboardContext.js';
 import { ModelList } from './ModelList.js';
 import { DraftsDashboard } from './DraftsDashboard.js';
 import { StatusMonitor } from './StatusMonitor.js';
+import { ModelSetupWizard, type ModelSetupData } from '../../ModelSetup/index.js';
 import type { Model } from '../../../openNomad/api.js';
 
 // =============================================================================
@@ -32,7 +33,18 @@ export interface DashboardContainerProps {
   mode?: DashboardMode;
   /** Called when close button is clicked (floating mode only) */
   onClose?: () => void;
-  /** Called when user wants to launch the model wizard */
+  /**
+   * Called when wizard completes with model setup data.
+   * This is where consuming apps handle model submission (API calls, notifications, etc.)
+   * If not provided, the wizard will just return to dashboard on completion.
+   */
+  onWizardComplete?: (data: ModelSetupData) => void | Promise<void>;
+  /** Called when wizard is cancelled (optional, for cleanup) */
+  onWizardCancel?: () => void;
+  /**
+   * @deprecated Use internal view navigation instead. Dashboard now manages wizard internally.
+   * Called when user wants to launch the model wizard (legacy callback pattern)
+   */
   onLaunchWizard?: (draftId?: string) => void;
   /** Called when user wants to view model results */
   onViewResults?: (modelId: string) => void;
@@ -98,32 +110,36 @@ function TabNavigation({ activeTab, onTabChange, jobCount = 0 }: TabNavigationPr
 // =============================================================================
 
 interface DashboardContentProps {
-  onLaunchWizard?: (draftId?: string) => void;
   onViewResults?: (modelId: string) => void;
   onAddToMap?: (modelId: string) => void;
 }
 
 function DashboardContent({
-  onLaunchWizard,
   onViewResults,
   onAddToMap,
 }: DashboardContentProps) {
   const { activeTab, setActiveTab } = useDashboardTabs();
+  const { showWizard, showResults } = useDashboardView();
 
   // TODO: Get actual job count from useJobs hook
   const jobCount = 0;
 
   const handleResumeDraft = useCallback((draftId: string) => {
-    onLaunchWizard?.(draftId);
-  }, [onLaunchWizard]);
+    showWizard(draftId);
+  }, [showWizard]);
 
   const handleCreateNew = useCallback(() => {
-    onLaunchWizard?.();
-  }, [onLaunchWizard]);
+    showWizard();
+  }, [showWizard]);
 
   const handleViewModel = useCallback((model: Model) => {
-    onViewResults?.(model.id);
-  }, [onViewResults]);
+    // Use internal results view if no external handler
+    if (onViewResults) {
+      onViewResults(model.id);
+    } else {
+      showResults(model.id);
+    }
+  }, [onViewResults, showResults]);
 
   return (
     <div style={contentContainerStyle}>
@@ -161,21 +177,50 @@ function DashboardContent({
 
 interface FloatingDashboardProps extends DashboardContentProps {
   onClose?: () => void;
+  onWizardComplete?: (data: ModelSetupData) => void | Promise<void>;
+  onWizardCancel?: () => void;
   className?: string;
 }
 
 function FloatingDashboard({
   onClose,
-  onLaunchWizard,
+  onWizardComplete,
+  onWizardCancel,
   onViewResults,
   onAddToMap,
   className = '',
 }: FloatingDashboardProps) {
   const [size, setSize] = useState({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT });
+  const { activeView, wizardDraftId, showDashboard } = useDashboardView();
 
   // Calculate initial position (right side of screen)
   const [initialX] = useState(() => Math.max(20, window.innerWidth - DEFAULT_WIDTH - 40));
   const [initialY] = useState(() => 70);
+
+  // Handle wizard completion
+  const handleWizardComplete = useCallback(async (data: ModelSetupData) => {
+    if (onWizardComplete) {
+      await onWizardComplete(data);
+    }
+    showDashboard();
+  }, [onWizardComplete, showDashboard]);
+
+  // Handle wizard cancellation
+  const handleWizardCancel = useCallback(() => {
+    onWizardCancel?.();
+    showDashboard();
+  }, [onWizardCancel, showDashboard]);
+
+  // When showing wizard, render it instead of the dashboard panel
+  if (activeView === 'wizard') {
+    return (
+      <ModelSetupWizard
+        onComplete={handleWizardComplete}
+        onCancel={handleWizardCancel}
+        draftId={wizardDraftId ?? undefined}
+      />
+    );
+  }
 
   return (
     <Rnd
@@ -225,7 +270,6 @@ function FloatingDashboard({
 
         {/* Content */}
         <DashboardContent
-          onLaunchWizard={onLaunchWizard}
           onViewResults={onViewResults}
           onAddToMap={onAddToMap}
         />
@@ -239,22 +283,51 @@ function FloatingDashboard({
 // =============================================================================
 
 interface EmbeddedDashboardProps extends DashboardContentProps {
+  onWizardComplete?: (data: ModelSetupData) => void | Promise<void>;
+  onWizardCancel?: () => void;
   className?: string;
 }
 
 function EmbeddedDashboard({
-  onLaunchWizard,
+  onWizardComplete,
+  onWizardCancel,
   onViewResults,
   onAddToMap,
   className = '',
 }: EmbeddedDashboardProps) {
+  const { activeView, wizardDraftId, showDashboard } = useDashboardView();
+
+  // Handle wizard completion
+  const handleWizardComplete = useCallback(async (data: ModelSetupData) => {
+    if (onWizardComplete) {
+      await onWizardComplete(data);
+    }
+    showDashboard();
+  }, [onWizardComplete, showDashboard]);
+
+  // Handle wizard cancellation
+  const handleWizardCancel = useCallback(() => {
+    onWizardCancel?.();
+    showDashboard();
+  }, [onWizardCancel, showDashboard]);
+
+  // When showing wizard, render it instead of the dashboard
+  if (activeView === 'wizard') {
+    return (
+      <ModelSetupWizard
+        onComplete={handleWizardComplete}
+        onCancel={handleWizardCancel}
+        draftId={wizardDraftId ?? undefined}
+      />
+    );
+  }
+
   return (
     <div style={embeddedContainerStyle} className={`dashboard-embedded ${className}`}>
       <div style={embeddedHeaderStyle}>
         <h2 style={titleStyle}>Dashboard</h2>
       </div>
       <DashboardContent
-        onLaunchWizard={onLaunchWizard}
         onViewResults={onViewResults}
         onAddToMap={onAddToMap}
       />
@@ -272,29 +345,34 @@ function EmbeddedDashboard({
  * In floating mode (SAN), it renders as a draggable, resizable panel.
  * In embedded mode (ACN), it renders inline for integration into agency UIs.
  *
- * @example Floating mode (SAN)
+ * The Dashboard is self-contained - clicking "New Model" opens the wizard internally.
+ * No external wizard wiring required.
+ *
+ * @example Floating mode (SAN) - self-contained
  * ```tsx
  * <DashboardContainer
  *   mode="floating"
  *   onClose={() => setShowDashboard(false)}
- *   onLaunchWizard={(id) => launchWizard(id)}
- *   onViewResults={(id) => showResults(id)}
+ *   onWizardComplete={async (data) => {
+ *     await runModel(data);
+ *   }}
  * />
  * ```
  *
- * @example Embedded mode (ACN)
+ * @example Embedded mode (ACN) - minimal integration
  * ```tsx
  * <DashboardContainer
  *   mode="embedded"
- *   onLaunchWizard={(id) => launchWizard(id)}
- *   onViewResults={(id) => showResults(id)}
+ *   onWizardComplete={handleModelSubmission}
  * />
  * ```
  */
 export function DashboardContainer({
   mode = 'floating',
   onClose,
-  onLaunchWizard,
+  onWizardComplete,
+  onWizardCancel,
+  onLaunchWizard: _onLaunchWizard, // Deprecated, kept for backwards compatibility
   onViewResults,
   onAddToMap,
   initialTab = 'models',
@@ -308,14 +386,16 @@ export function DashboardContainer({
       {mode === 'floating' ? (
         <FloatingDashboard
           onClose={onClose}
-          onLaunchWizard={onLaunchWizard}
+          onWizardComplete={onWizardComplete}
+          onWizardCancel={onWizardCancel}
           onViewResults={onViewResults}
           onAddToMap={onAddToMap}
           className={className}
         />
       ) : (
         <EmbeddedDashboard
-          onLaunchWizard={onLaunchWizard}
+          onWizardComplete={onWizardComplete}
+          onWizardCancel={onWizardCancel}
           onViewResults={onViewResults}
           onAddToMap={onAddToMap}
           className={className}

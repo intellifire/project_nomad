@@ -14,6 +14,9 @@
 // Main container
 export { DashboardContainer, type DashboardContainerProps, type DashboardMode } from './components/DashboardContainer.js';
 
+// Re-export ModelSetupData for typing onWizardComplete handlers
+export type { ModelSetupData } from '../ModelSetup/index.js';
+
 // Model components
 export { ModelList, type ModelListProps } from './components/ModelList.js';
 export { ModelCard, type ModelCardProps } from './components/ModelCard.js';
@@ -35,12 +38,14 @@ export {
   useDashboardOptional,
   useDashboardState,
   useDashboardTabs,
+  useDashboardView,
   useModelSelection,
   useDraftSelection,
   type DashboardProviderProps,
   type DashboardState,
   type DashboardAction,
   type DashboardTab,
+  type DashboardView,
   type ModelSortOption,
   type ModelFilterOptions,
   type LoadingState,

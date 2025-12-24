@@ -9,3 +9,12 @@ export { errorHandler, type ApiErrorResponse } from './errorHandler.js';
 export { notFoundHandler } from './notFound.js';
 export { requestLogger } from './logging.js';
 export { simpleAuthMiddleware } from './simpleAuth.js';
+export {
+  acnAuthMiddleware,
+  requireRoles,
+  type ACNContext,
+  type AgencyIdentity,
+  type UserIdentity,
+  type NomadRole,
+  VALID_ROLES,
+} from './acnAuth.js';

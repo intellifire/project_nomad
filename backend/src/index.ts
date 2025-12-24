@@ -1,5 +1,5 @@
 import express from 'express';
-import cors from 'cors';
+import cors, { CorsOptions } from 'cors';
 import dotenv from 'dotenv';
 import { resolve } from 'path';
 import {
@@ -8,6 +8,8 @@ import {
   requestLogger,
   notFoundHandler,
   errorHandler,
+  acnAuthMiddleware,
+  simpleAuthMiddleware,
 } from './api/index.js';
 import { initDatabase, initializeRepositories, getJobRepository } from './infrastructure/database/index.js';
 
@@ -39,17 +41,82 @@ async function initializeDatabaseLayer(): Promise<void> {
 }
 
 // ============================================
+// CORS Configuration
+// ============================================
+
+/**
+ * Gets CORS options based on deployment mode.
+ *
+ * - SAN mode: Allow all origins (for local/standalone deployments)
+ * - ACN mode: Restrict to registered agency origins
+ */
+function getCorsOptions(): CorsOptions {
+  const mode = process.env.NOMAD_DEPLOYMENT_MODE || 'SAN';
+
+  if (mode === 'ACN') {
+    // Collect allowed origins from NOMAD_AGENCY_ORIGINS_* env vars
+    const allowedOrigins: string[] = [];
+    for (const [key, value] of Object.entries(process.env)) {
+      if (key.startsWith('NOMAD_AGENCY_ORIGINS_') && value) {
+        allowedOrigins.push(...value.split(',').map((o) => o.trim()));
+      }
+    }
+
+    // Also allow NOMAD_CORS_ORIGINS for additional origins
+    if (process.env.NOMAD_CORS_ORIGINS) {
+      allowedOrigins.push(...process.env.NOMAD_CORS_ORIGINS.split(',').map((o) => o.trim()));
+    }
+
+    console.log(`[CORS] ACN mode - allowed origins: ${allowedOrigins.join(', ') || '(none)'}`);
+
+    return {
+      origin: (origin, callback) => {
+        // Allow requests with no origin (same-origin, curl, etc.)
+        if (!origin) {
+          callback(null, true);
+          return;
+        }
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          console.warn(`[CORS] Blocked origin: ${origin}`);
+          callback(new Error(`Origin ${origin} not allowed`));
+        }
+      },
+      credentials: true,
+    };
+  }
+
+  // SAN mode: allow all origins
+  console.log('[CORS] SAN mode - all origins allowed');
+  return {
+    origin: true,
+    credentials: true,
+  };
+}
+
+// ============================================
 // Middleware (order matters!)
 // ============================================
 
-// 1. CORS
-app.use(cors());
+// 1. CORS - configured based on deployment mode
+const corsOptions = getCorsOptions();
+app.use(cors(corsOptions));
 
 // 2. JSON body parser with size limit (10mb for large geometries)
 app.use(express.json({ limit: '10mb' }));
 
 // 3. Request logging
 app.use(requestLogger);
+
+// 4. Authentication - mode-specific
+if (process.env.NOMAD_DEPLOYMENT_MODE === 'ACN') {
+  console.log('[Startup] ACN mode: Agency authentication enabled');
+  app.use(acnAuthMiddleware);
+} else {
+  console.log('[Startup] SAN mode: Simple authentication enabled');
+  app.use(simpleAuthMiddleware);
+}
 
 // ============================================
 // Routes
