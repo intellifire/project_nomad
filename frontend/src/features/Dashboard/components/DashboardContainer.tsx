@@ -484,7 +484,7 @@ const tabButtonStyle: React.CSSProperties = {
 
 const activeTabStyle: React.CSSProperties = {
   color: '#1976d2',
-  borderBottomColor: '#1976d2',
+  borderBottom: '2px solid #1976d2',
 };
 
 const badgeStyle: React.CSSProperties = {
