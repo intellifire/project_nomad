@@ -1,6 +1,6 @@
 # Project Nomad - Project Plan
 
-**Last Updated:** 2025-12-21
+**Last Updated:** 2025-12-31
 **Repository:** [WISE-Developers/project_nomad](https://github.com/WISE-Developers/project_nomad)
 **SME:** Sage
 
@@ -38,17 +38,18 @@
 | Milestone | Status | Open | Closed | Notes |
 |-----------|--------|------|--------|-------|
 | [NWT MVP Prototype](https://github.com/WISE-Developers/project_nomad/milestone/5) | In Progress | 1 | 35 | Primary delivery target |
-| [NWT Working FireSTARR](https://github.com/WISE-Developers/project_nomad/milestone/4) | In Progress | 0 | 3 | Server compilation issues |
+| [NWT Working FireSTARR](https://github.com/WISE-Developers/project_nomad/milestone/4) | **Complete** | 0 | 3 | FireSTARR instance operational |
 | [Nomad Local Install](https://github.com/WISE-Developers/project_nomad/milestone/16) | In Progress | 1 | 1 | Installation documentation |
 
 ### Future Agency Onboarding
 
 | Milestone | Status | Notes |
 |-----------|--------|-------|
+| [Agency Integration Case Study](https://github.com/WISE-Developers/project_nomad/milestone/18) | Planned | 5 open - Co-authored with Meridian after EM3 integration |
 | [Alberta Onboarded](https://github.com/WISE-Developers/project_nomad/milestone/1) | Planned | 1 open |
 | [Ontario Onboarded](https://github.com/WISE-Developers/project_nomad/milestone/2) | Planned | 1 open |
-| [Simple Model Onboarding Docs](https://github.com/WISE-Developers/project_nomad/milestone/6) | Pending | 0/4 complete |
-| [FireSTARR Install from Nomad](https://github.com/WISE-Developers/project_nomad/milestone/7) | Pending | 0/1 complete |
+| [Simple Model Onboarding Docs](https://github.com/WISE-Developers/project_nomad/milestone/6) | **Complete** | 4/4 closed - WISE & FireSTARR I/O and Tech Summaries |
+| [FireSTARR Install from Nomad](https://github.com/WISE-Developers/project_nomad/milestone/7) | **Complete** | 0 open, 1 closed |
 | [WISE Install from Nomad](https://github.com/WISE-Developers/project_nomad/milestone/8) | Pending | 2 open |
 
 ---
