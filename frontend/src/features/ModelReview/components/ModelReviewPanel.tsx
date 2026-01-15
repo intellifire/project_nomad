@@ -12,7 +12,7 @@ import { OutputList, type BreaksMode } from './OutputList';
 import { OutputPreviewModal } from './OutputPreviewModal';
 import { useModelResults } from '../hooks/useModelResults';
 import { ExportPanel } from '../../Export';
-import { API_BASE_URL } from '../../../services/api';
+import { useOpenNomad } from '../../../openNomad/context';
 import type { OutputItem } from '../types';
 
 /**
@@ -43,6 +43,7 @@ export function ModelReviewPanel({
   onAddToMap,
   onAddRasterToMap,
 }: ModelReviewPanelProps) {
+  const api = useOpenNomad();
   const { results, isLoading, error, refetch } = useModelResults(modelId);
   const [previewOutput, setPreviewOutput] = useState<OutputItem | null>(null);
   const [showExportPanel, setShowExportPanel] = useState(false);
@@ -63,9 +64,9 @@ export function ModelReviewPanel({
    * Handle download request
    */
   const handleDownload = useCallback((output: OutputItem) => {
-    // Open download URL in new tab
-    window.open(`${API_BASE_URL}${output.downloadUrl}`, '_blank');
-  }, []);
+    // Open download URL in new tab (via adapter for embedded mode support)
+    window.open(api.results.getDownloadUrl(output.id), '_blank');
+  }, [api]);
 
   /**
    * Handle add to map request from output list or preview modal
@@ -77,12 +78,8 @@ export function ModelReviewPanel({
       if (!onAddToMap) return;
 
       try {
-        // Build preview URL with optional mode query param
-        let previewUrl = `${API_BASE_URL}${output.previewUrl}`;
-        if (mode) {
-          const separator = previewUrl.includes('?') ? '&' : '?';
-          previewUrl += `${separator}mode=${mode}`;
-        }
+        // Get preview URL via adapter (supports embedded mode)
+        const previewUrl = api.results.getPreviewUrl(output.id, mode);
 
         // Fetch the GeoJSON preview
         const response = await fetch(previewUrl);
@@ -103,7 +100,7 @@ export function ModelReviewPanel({
         alert('Failed to load output data for map');
       }
     },
-    [onAddToMap, results]
+    [api, onAddToMap, results]
   );
 
   /**
@@ -163,16 +160,9 @@ export function ModelReviewPanel({
       if (!onAddRasterToMap) return;
 
       try {
-        // Fetch bounds for the raster
-        const boundsUrl = `${API_BASE_URL}/api/v1/results/${output.id}/bounds`;
-        const response = await fetch(boundsUrl);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch bounds: ${response.status}`);
-        }
-        const { bounds } = await response.json();
-
-        // Build tile URL template
-        const tileUrl = `${API_BASE_URL}/api/v1/results/${output.id}/tile/{z}/{x}/{y}.png`;
+        // Get bounds and tile URL via adapter (supports embedded mode)
+        const bounds = await api.results.getTileBounds(output.id);
+        const tileUrl = api.results.getTileUrlTemplate(output.id);
 
         // Pass model info for layer naming
         const modelInfo = results ? {
@@ -187,7 +177,7 @@ export function ModelReviewPanel({
         alert('Failed to load raster data for map');
       }
     },
-    [onAddRasterToMap, results]
+    [api, onAddRasterToMap, results]
   );
 
   // Render panel content based on state

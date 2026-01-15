@@ -54,6 +54,7 @@ import {
   getModel,
   deleteModel as apiDeleteModel,
   getJob,
+  API_BASE_URL,
   type ModelResponse,
   type JobResponse,
 } from '../../services/api.js';
@@ -644,6 +645,72 @@ export function createDefaultAdapter(_options?: DefaultAdapterOptions): IOpenNom
             supportedOutputTypes: ['perimeter'],
           },
         ];
+      },
+
+      // -----------------------------------------------------------------------
+      // URL Generation (for embedded mode compatibility)
+      // -----------------------------------------------------------------------
+
+      /**
+       * Get the URL to fetch model results.
+       *
+       * DEFAULT BEHAVIOR: Returns URL to Nomad backend using API_BASE_URL.
+       *
+       * AGENCY NOTE: Return URL appropriate for your backend/proxy configuration.
+       */
+      getModelResultsUrl(modelId: string): string {
+        return `${API_BASE_URL}/api/v1/models/${modelId}/results`;
+      },
+
+      /**
+       * Get the preview URL for a result.
+       *
+       * DEFAULT BEHAVIOR: Returns URL to Nomad backend using API_BASE_URL.
+       *
+       * AGENCY NOTE: Return URL appropriate for your backend/proxy configuration.
+       * In embedded mode, this might be a relative URL through the host's proxy.
+       */
+      getPreviewUrl(resultId: string, mode?: 'static' | 'dynamic'): string {
+        const baseUrl = `${API_BASE_URL}/api/v1/results/${resultId}/preview`;
+        return mode ? `${baseUrl}?mode=${mode}` : baseUrl;
+      },
+
+      /**
+       * Get the download URL for a result.
+       *
+       * DEFAULT BEHAVIOR: Returns URL to Nomad backend using API_BASE_URL.
+       *
+       * AGENCY NOTE: Return URL appropriate for your backend/proxy configuration.
+       */
+      getDownloadUrl(resultId: string): string {
+        return `${API_BASE_URL}/api/v1/results/${resultId}/download`;
+      },
+
+      /**
+       * Get the tile URL template for raster results.
+       *
+       * DEFAULT BEHAVIOR: Returns URL template to Nomad backend.
+       *
+       * AGENCY NOTE: Return URL template appropriate for your tile serving setup.
+       */
+      getTileUrlTemplate(resultId: string): string {
+        return `${API_BASE_URL}/api/v1/results/${resultId}/tile/{z}/{x}/{y}.png`;
+      },
+
+      /**
+       * Get the bounding box for a raster result.
+       *
+       * DEFAULT BEHAVIOR: Fetches from Nomad backend bounds endpoint.
+       *
+       * AGENCY NOTE: Implement bounds retrieval for your tile serving setup.
+       */
+      async getTileBounds(resultId: string): Promise<BBox> {
+        const response = await fetch(`${API_BASE_URL}/api/v1/results/${resultId}/bounds`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch tile bounds: ${response.status}`);
+        }
+        const data = await response.json();
+        return data.bounds as BBox;
       },
     },
 
