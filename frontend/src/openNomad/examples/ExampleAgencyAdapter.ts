@@ -319,6 +319,35 @@ export function createAgencyAdapter(options: AgencyAdapterOptions): IOpenNomadAP
         },
       ];
     },
+
+    // URL generation for embedded mode support
+    getModelResultsUrl(modelId: string): string {
+      return `${apiBaseUrl}/models/${modelId}/results`;
+    },
+
+    getPreviewUrl(resultId: string, mode?: 'static' | 'dynamic'): string {
+      const baseUrl = `${apiBaseUrl}/results/${resultId}/preview`;
+      return mode ? `${baseUrl}?mode=${mode}` : baseUrl;
+    },
+
+    getDownloadUrl(resultId: string): string {
+      return `${apiBaseUrl}/results/${resultId}/download`;
+    },
+
+    getTileUrlTemplate(resultId: string): string {
+      return `${apiBaseUrl}/results/${resultId}/tile/{z}/{x}/{y}.png`;
+    },
+
+    async getTileBounds(resultId: string): Promise<BBox> {
+      const response = await fetch(`${apiBaseUrl}/results/${resultId}/bounds`, {
+        headers,
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch tile bounds: ${response.status}`);
+      }
+      const data = await response.json();
+      return data.bounds as BBox;
+    },
   };
 
   // ===========================================================================

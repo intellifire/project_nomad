@@ -25,9 +25,9 @@ import {
   JobStatusToast,
   NotificationPermissionBanner,
 } from './features/Notifications';
-import { runModel, API_BASE_URL } from './services/api';
+import { runModel } from './services/api';
 import type { ModelResultsResponse } from './features/ModelReview/types';
-import { OpenNomadProvider, createDefaultAdapter } from './openNomad';
+import { OpenNomadProvider, createDefaultAdapter, useOpenNomad } from './openNomad';
 import { DashboardContainer } from './features/Dashboard';
 
 /**
@@ -107,6 +107,7 @@ const headerContainerStyle: React.CSSProperties = {
  * Inner component that has access to DrawContext
  */
 function AppContent() {
+  const api = useOpenNomad();
   const [showWizard, setShowWizard] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -410,8 +411,9 @@ function AppContent() {
   // Handler for model card "Add to Map" button - fetches results and adds first output
   const handleModelCardAddToMap = useCallback(async (modelId: string) => {
     try {
-      // Fetch model results
-      const response = await fetch(`${API_BASE_URL}/api/v1/models/${modelId}/results`);
+      // Fetch model results via adapter (supports embedded mode)
+      const resultsUrl = api.results.getModelResultsUrl(modelId);
+      const response = await fetch(resultsUrl);
       if (!response.ok) {
         console.error('Failed to fetch model results:', response.status);
         return;
@@ -420,13 +422,14 @@ function AppContent() {
 
       // Find first output with a preview URL
       const output = results.outputs.find(o => o.previewUrl);
-      if (!output || !output.previewUrl) {
+      if (!output) {
         console.warn('No outputs with previewUrl found');
         return;
       }
 
-      // Fetch preview GeoJSON
-      const previewResponse = await fetch(output.previewUrl);
+      // Fetch preview GeoJSON via adapter
+      const previewUrl = api.results.getPreviewUrl(output.id);
+      const previewResponse = await fetch(previewUrl);
       if (!previewResponse.ok) {
         console.error('Failed to fetch preview:', previewResponse.status);
         return;
@@ -442,7 +445,7 @@ function AppContent() {
     } catch (err) {
       console.error('Error adding model to map:', err);
     }
-  }, [handleAddToMap]);
+  }, [api, handleAddToMap]);
 
   return (
     <>

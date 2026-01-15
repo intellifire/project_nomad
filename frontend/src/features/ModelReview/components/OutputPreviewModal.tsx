@@ -7,7 +7,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { API_BASE_URL } from '../../../services/api';
+import { useOpenNomad } from '../../../openNomad/context';
 import type { OutputItem } from '../types';
 
 /**
@@ -49,20 +49,22 @@ export function OutputPreviewModal({
   onClose,
   onAddToMap,
 }: OutputPreviewModalProps) {
+  const api = useOpenNomad();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [geoJsonData, setGeoJsonData] = useState<ContourFeatureCollection | null>(null);
 
-  // Fetch GeoJSON preview data
+  // Fetch GeoJSON preview data via adapter (supports embedded mode)
   useEffect(() => {
     async function fetchPreview() {
       setIsLoading(true);
       setError(null);
 
       try {
-        const response = await fetch(`${API_BASE_URL}${output.previewUrl}`);
+        const previewUrl = api.results.getPreviewUrl(output.id);
+        const response = await fetch(previewUrl);
         if (!response.ok) {
           throw new Error(`Failed to fetch preview: ${response.status}`);
         }
@@ -90,7 +92,7 @@ export function OutputPreviewModal({
     }
 
     fetchPreview();
-  }, [output.previewUrl]);
+  }, [api, output.id]);
 
   // Initialize map when GeoJSON is loaded
   useEffect(() => {

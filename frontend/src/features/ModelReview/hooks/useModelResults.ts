@@ -2,10 +2,11 @@
  * useModelResults Hook
  *
  * Fetches and manages model results from the backend API.
+ * Uses the openNomad adapter for URL generation to support embedded mode.
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { API_BASE_URL } from '../../../services/api';
+import { useOpenNomad } from '../../../openNomad/context';
 import type { ModelResultsResponse, OutputItem } from '../types';
 
 /**
@@ -39,6 +40,8 @@ export function useModelResults(
   initialModelId?: string,
   pollInterval: number = 5000
 ): UseModelResultsReturn {
+  const api = useOpenNomad();
+
   const [state, setState] = useState<UseModelResultsState>({
     results: null,
     isLoading: false,
@@ -51,16 +54,15 @@ export function useModelResults(
   );
 
   /**
-   * Fetch results from API
+   * Fetch results from API using adapter-provided URL
    */
   const fetchResults = useCallback(async (modelId: string) => {
     setCurrentModelId(modelId);
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/v1/models/${modelId}/results`
-      );
+      const url = api.results.getModelResultsUrl(modelId);
+      const response = await fetch(url);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -84,7 +86,7 @@ export function useModelResults(
         error: message,
       }));
     }
-  }, []);
+  }, [api]);
 
   /**
    * Refetch current model results
@@ -103,18 +105,18 @@ export function useModelResults(
   }, []);
 
   /**
-   * Get preview URL for a result
+   * Get preview URL for a result (via adapter)
    */
   const getPreviewUrl = useCallback((resultId: string) => {
-    return `${API_BASE_URL}/api/v1/results/${resultId}/preview`;
-  }, []);
+    return api.results.getPreviewUrl(resultId);
+  }, [api]);
 
   /**
-   * Get download URL for a result
+   * Get download URL for a result (via adapter)
    */
   const getDownloadUrl = useCallback((resultId: string) => {
-    return `${API_BASE_URL}/api/v1/results/${resultId}/download`;
-  }, []);
+    return api.results.getDownloadUrl(resultId);
+  }, [api]);
 
   /**
    * Poll for updates when model is in progress

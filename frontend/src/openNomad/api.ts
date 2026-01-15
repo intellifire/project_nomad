@@ -819,6 +819,62 @@ export interface IOpenNomadAPI {
      * @returns List of available export formats
      */
     getExportFormats(): Promise<ExportFormat[]>;
+
+    // -------------------------------------------------------------------------
+    // URL Generation (for embedded mode compatibility)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Get the URL to fetch model results.
+     *
+     * Returns the endpoint URL for fetching all results for a model.
+     * Components can use this with fetch() when they need the raw backend response.
+     *
+     * @param modelId - Model ID
+     * @returns URL string for fetching model results
+     */
+    getModelResultsUrl(modelId: string): string;
+
+    /**
+     * Get the preview URL for a result.
+     *
+     * In SAN mode, returns absolute URL to Nomad backend.
+     * In ACN mode, adapter returns URL appropriate for the host environment.
+     *
+     * @param resultId - Result ID
+     * @param mode - Breaks mode for probability outputs ('static' | 'dynamic')
+     * @returns URL string that can be used in fetch() or as src attribute
+     */
+    getPreviewUrl(resultId: string, mode?: 'static' | 'dynamic'): string;
+
+    /**
+     * Get the download URL for a result.
+     *
+     * @param resultId - Result ID
+     * @returns URL string for downloading the result
+     */
+    getDownloadUrl(resultId: string): string;
+
+    /**
+     * Get the tile URL template for raster results.
+     *
+     * Returns a URL template with {z}, {x}, {y} placeholders for use
+     * with Mapbox GL raster tile sources.
+     *
+     * @param resultId - Result ID
+     * @returns URL template string (e.g., "https://host/api/v1/results/{id}/tile/{z}/{x}/{y}.png")
+     */
+    getTileUrlTemplate(resultId: string): string;
+
+    /**
+     * Get the bounding box for a raster result.
+     *
+     * Used to configure raster tile source bounds in Mapbox GL.
+     *
+     * @param resultId - Result ID
+     * @returns Promise resolving to [minLng, minLat, maxLng, maxLat]
+     */
+    getTileBounds(resultId: string): Promise<BBox>;
   };
 
   // ===========================================================================
