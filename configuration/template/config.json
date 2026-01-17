@@ -1,0 +1,108 @@
+{
+  "$schema": "../../backend/src/core/config/schema/config.schema.json",
+  "version": "2.0",
+  "agencyId": "CHANGE_ME",
+  "agencyName": "Your Agency Name",
+  "deploymentMode": "ACN",
+  "environment": "development",
+  "auth": {
+    "provider": "oidc",
+    "oidc": {
+      "issuer": "https://login.your-agency.gov",
+      "clientId": "nomad-client",
+      "scopes": ["openid", "profile", "email"]
+    },
+    "roleMappings": [
+      { "externalRole": "AGENCY_ADMIN", "internalRole": "admin" },
+      { "externalRole": "FIRE_ANALYST", "internalRole": "fban" },
+      { "externalRole": "MODELER", "internalRole": "modeler" },
+      { "externalRole": "VIEWER", "internalRole": "user" }
+    ],
+    "sessionTimeout": 480,
+    "allowAnonymous": false
+  },
+  "branding": {
+    "displayName": "Your Agency Fire Modeling",
+    "logoUrl": "/configuration/CHANGE_ME/assets/logo.png",
+    "primaryColor": "#2563eb",
+    "secondaryColor": "#1e40af"
+  },
+  "engines": [
+    {
+      "engineType": "firestarr",
+      "enabled": true,
+      "settings": {}
+    },
+    {
+      "engineType": "wise",
+      "enabled": false,
+      "settings": {}
+    }
+  ],
+  "dataSources": {
+    "weather": [
+      {
+        "id": "agency-weather",
+        "name": "Agency Weather Stations",
+        "urls": ["https://api.your-agency.gov/weather"],
+        "type": "API",
+        "kind": "REST",
+        "isDefault": true
+      }
+    ],
+    "wildfirePoints": [
+      {
+        "id": "agency-hotspots",
+        "name": "Agency Hotspot Feed",
+        "urls": ["https://gis.your-agency.gov/arcgis/services/hotspots/MapServer/WFSServer"],
+        "type": "OWS",
+        "kind": "WFS",
+        "isDefault": true
+      }
+    ],
+    "fuelTypes": [
+      {
+        "id": "agency-fuels",
+        "name": "Agency Fuel Grid",
+        "urls": ["https://gis.your-agency.gov/arcgis/services/fuels/ImageServer/WCSServer"],
+        "type": "OWS",
+        "kind": "WCS",
+        "isDefault": true
+      }
+    ]
+  },
+  "roles": [
+    {
+      "internalRole": "admin",
+      "permissions": ["*"]
+    },
+    {
+      "internalRole": "fban",
+      "permissions": ["model:create", "model:view", "model:export", "model:delete"]
+    },
+    {
+      "internalRole": "modeler",
+      "permissions": ["model:create", "model:view", "model:export"]
+    },
+    {
+      "internalRole": "user",
+      "permissions": ["model:view"]
+    },
+    {
+      "internalRole": "anonymous",
+      "permissions": []
+    }
+  ],
+  "exportOptions": {
+    "allowZipDownload": true,
+    "allowShareableLink": true,
+    "allowAgencyStorage": true,
+    "availableFormats": ["geojson", "kml", "shapefile"]
+  },
+  "features": {
+    "enabled": ["model-setup", "model-review", "export"],
+    "suppressedEngines": [],
+    "suppressedFeatures": []
+  },
+  "suppressDefaultSources": true
+}
