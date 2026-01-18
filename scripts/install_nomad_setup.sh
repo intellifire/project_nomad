@@ -275,28 +275,126 @@ step2_infrastructure() {
 }
 
 # ============================================
+# Dataset Configuration
+# ============================================
+
+# Prompt user for dataset source - use existing or download new
+prompt_dataset_source() {
+    echo -e "${CYAN}FireSTARR Dataset${NC}"
+    echo "    The dataset includes fuel grids, DEM data (~50GB)."
+    echo ""
+    echo -e "    ${GREEN}1) Use existing dataset${NC}"
+    echo "       Point to an already-downloaded FireSTARR dataset"
+    echo ""
+    echo -e "    ${GREEN}2) Download dataset${NC}"
+    echo "       Download the dataset during installation"
+    echo ""
+    echo -e "    ${YELLOW}3) Skip for now${NC}"
+    echo "       Configure dataset location later"
+    echo ""
+
+    local choice
+    read -p "Select an option [1-3] (default: 2): " choice
+    choice="${choice:-2}"
+
+    case "$choice" in
+        1)
+            # Use existing dataset
+            prompt_existing_dataset
+            ;;
+        2)
+            # Download new - just get the target path
+            prompt_new_dataset_path
+            DATASET_INSTALL_MODE="download"
+            ;;
+        3)
+            # Skip - use default path but don't download
+            local default_dataset="${FIRESTARR_DATASET_PATH:-$HOME/firestarr_data}"
+            FIRESTARR_DATASET_PATH="$default_dataset"
+            DATASET_INSTALL_MODE="skip"
+            print_info "Skipping dataset configuration - you'll need to set this up later"
+            ;;
+        *)
+            prompt_new_dataset_path
+            DATASET_INSTALL_MODE="download"
+            ;;
+    esac
+}
+
+# Option 1: Use existing dataset
+prompt_existing_dataset() {
+    echo ""
+    echo -e "${CYAN}Existing Dataset Location${NC}"
+    echo "    Point to a directory containing the FireSTARR dataset."
+    echo "    Expected structure: {path}/generated/grid/100m/"
+    echo ""
+
+    local default_dataset="${FIRESTARR_DATASET_PATH:-$HOME/firestarr_data}"
+    read -p "Dataset path [$default_dataset]: " input_dataset
+    input_dataset="${input_dataset:-$default_dataset}"
+
+    # Expand ~ if present
+    input_dataset="${input_dataset/#\~/$HOME}"
+
+    # Convert to absolute path
+    if [[ ! "$input_dataset" = /* ]]; then
+        input_dataset="$(pwd)/$input_dataset"
+    fi
+
+    # Validate dataset exists
+    if [ -d "$input_dataset/generated/grid" ]; then
+        print_success "Dataset found: $input_dataset"
+        FIRESTARR_DATASET_PATH="$input_dataset"
+        DATASET_INSTALL_MODE="existing"
+    else
+        print_warning "Dataset structure not found at: $input_dataset"
+        echo "    Expected: $input_dataset/generated/grid/"
+        echo ""
+        read -p "Use this path anyway and download later? [Y/n] " -n 1 -r
+        echo ""
+        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+            FIRESTARR_DATASET_PATH="$input_dataset"
+            DATASET_INSTALL_MODE="download"
+        else
+            # Recurse to let them try again
+            prompt_dataset_source
+            return
+        fi
+    fi
+}
+
+# Option 2: Download new dataset - get target path
+prompt_new_dataset_path() {
+    echo ""
+    echo -e "${CYAN}Dataset Download Location${NC}"
+    echo "    Where to download the FireSTARR dataset (~50GB required)."
+    echo ""
+
+    local default_dataset="${FIRESTARR_DATASET_PATH:-$HOME/firestarr_data}"
+    read -p "Dataset path [$default_dataset]: " input_dataset
+    input_dataset="${input_dataset:-$default_dataset}"
+
+    # Expand ~ if present
+    input_dataset="${input_dataset/#\~/$HOME}"
+
+    # Convert to absolute path
+    if [[ ! "$input_dataset" = /* ]]; then
+        input_dataset="$(pwd)/$input_dataset"
+    fi
+
+    FIRESTARR_DATASET_PATH="$input_dataset"
+    print_success "Dataset will be downloaded to: $FIRESTARR_DATASET_PATH"
+}
+
+# ============================================
 # Step 3: Path Configuration
 # ============================================
 
 step3_paths() {
     display_menu "Step 3: Path Configuration"
 
-    # Dataset path (always required)
-    echo -e "${CYAN}FireSTARR Dataset Path${NC}"
-    echo "    Location for fuel grids, DEM data, and simulation working directories."
-    echo "    This path needs ~50GB of space and must be an absolute path."
-    echo ""
-
-    # Try to get default from existing .env or use sensible default
-    local default_dataset="${FIRESTARR_DATASET_PATH:-$HOME/firestarr_data}"
-    read -p "Dataset path [$default_dataset]: " input_dataset
-    FIRESTARR_DATASET_PATH="${input_dataset:-$default_dataset}"
-
-    # Validate/convert to absolute path
-    if [[ ! "$FIRESTARR_DATASET_PATH" = /* ]]; then
-        FIRESTARR_DATASET_PATH="$(pwd)/$FIRESTARR_DATASET_PATH"
-    fi
-    print_success "Dataset path: $FIRESTARR_DATASET_PATH"
+    # Dataset configuration
+    prompt_dataset_source
     echo ""
 
     # Sims output (usually under dataset path)
@@ -1134,17 +1232,23 @@ install_all_docker() {
         update_env_value "FIRESTARR_IMAGE" "$FIRESTARR_IMAGE"
     fi
 
-    # 3. Install dataset
-    if [ -d "$FIRESTARR_DATASET_PATH/generated/grid" ]; then
-        print_success "Dataset already installed"
-    else
-        echo ""
-        read -p "Install FireSTARR dataset now? [Y/n] " -n 1 -r
-        echo ""
-        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-            install_dataset
-        fi
-    fi
+    # 3. Install dataset based on mode selected in wizard
+    case "$DATASET_INSTALL_MODE" in
+        existing)
+            print_success "Using existing dataset: $FIRESTARR_DATASET_PATH"
+            ;;
+        download)
+            echo ""
+            read -p "Install FireSTARR dataset now? [Y/n] " -n 1 -r
+            echo ""
+            if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+                install_dataset
+            fi
+            ;;
+        skip|"")
+            print_warning "Dataset installation skipped"
+            ;;
+    esac
 
     # 4. Ensure sims directory
     ensure_sims_writable
@@ -1180,17 +1284,23 @@ install_nomad_metal_firestarr_docker() {
         update_env_value "FIRESTARR_IMAGE" "$FIRESTARR_IMAGE"
     fi
 
-    # 3. Install dataset
-    if [ -d "$FIRESTARR_DATASET_PATH/generated/grid" ]; then
-        print_success "Dataset already installed"
-    else
-        echo ""
-        read -p "Install FireSTARR dataset now? [Y/n] " -n 1 -r
-        echo ""
-        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-            install_dataset
-        fi
-    fi
+    # 3. Install dataset based on mode selected in wizard
+    case "$DATASET_INSTALL_MODE" in
+        existing)
+            print_success "Using existing dataset: $FIRESTARR_DATASET_PATH"
+            ;;
+        download)
+            echo ""
+            read -p "Install FireSTARR dataset now? [Y/n] " -n 1 -r
+            echo ""
+            if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+                install_dataset
+            fi
+            ;;
+        skip|"")
+            print_warning "Dataset installation skipped"
+            ;;
+    esac
 
     # 4. Ensure sims directory
     ensure_sims_writable
@@ -1223,17 +1333,23 @@ install_all_metal() {
     # 1. Generate .env
     generate_env_file
 
-    # 2. Install dataset
-    if [ -d "$FIRESTARR_DATASET_PATH/generated/grid" ]; then
-        print_success "Dataset already installed"
-    else
-        echo ""
-        read -p "Install FireSTARR dataset now? [Y/n] " -n 1 -r
-        echo ""
-        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-            install_dataset
-        fi
-    fi
+    # 2. Install dataset based on mode selected in wizard
+    case "$DATASET_INSTALL_MODE" in
+        existing)
+            print_success "Using existing dataset: $FIRESTARR_DATASET_PATH"
+            ;;
+        download)
+            echo ""
+            read -p "Install FireSTARR dataset now? [Y/n] " -n 1 -r
+            echo ""
+            if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+                install_dataset
+            fi
+            ;;
+        skip|"")
+            print_warning "Dataset installation skipped"
+            ;;
+    esac
 
     # 3. Ensure sims directory
     ensure_sims_writable
@@ -1283,17 +1399,23 @@ install_nomad_docker_firestarr_metal() {
     # 1. Generate .env
     generate_env_file
 
-    # 2. Install dataset
-    if [ -d "$FIRESTARR_DATASET_PATH/generated/grid" ]; then
-        print_success "Dataset already installed"
-    else
-        echo ""
-        read -p "Install FireSTARR dataset now? [Y/n] " -n 1 -r
-        echo ""
-        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-            install_dataset
-        fi
-    fi
+    # 2. Install dataset based on mode selected in wizard
+    case "$DATASET_INSTALL_MODE" in
+        existing)
+            print_success "Using existing dataset: $FIRESTARR_DATASET_PATH"
+            ;;
+        download)
+            echo ""
+            read -p "Install FireSTARR dataset now? [Y/n] " -n 1 -r
+            echo ""
+            if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+                install_dataset
+            fi
+            ;;
+        skip|"")
+            print_warning "Dataset installation skipped"
+            ;;
+    esac
 
     # 3. Ensure sims directory
     ensure_sims_writable
@@ -1431,7 +1553,13 @@ print_summary() {
     echo "    Deployment Mode:         $NOMAD_DEPLOYMENT_MODE"
     echo "    Nomad Infrastructure:    $NOMAD_INFRA"
     echo "    FireSTARR Infrastructure: $FIRESTARR_INFRA"
-    echo "    Dataset Path:            $FIRESTARR_DATASET_PATH"
+    if [ "$DATASET_INSTALL_MODE" = "existing" ]; then
+    echo "    Dataset Path:            $FIRESTARR_DATASET_PATH (existing)"
+    elif [ "$DATASET_INSTALL_MODE" = "download" ]; then
+    echo "    Dataset Path:            $FIRESTARR_DATASET_PATH (will download)"
+    else
+    echo "    Dataset Path:            $FIRESTARR_DATASET_PATH (skipped)"
+    fi
     if [ -n "$FIRESTARR_IMAGE" ]; then
     echo "    FireSTARR Image:         $FIRESTARR_IMAGE"
     fi
