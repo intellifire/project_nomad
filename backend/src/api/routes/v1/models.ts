@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as fs from 'fs';
 import { asyncHandler, simpleAuthMiddleware } from '../../middleware/index.js';
+import { logger } from '../../../infrastructure/logging/index.js';
 import {
   FireModel,
   createFireModelId,
@@ -150,12 +151,12 @@ router.post(
 
     // Build execution options
     const geometryType = body.ignition.type === 'point' ? GeometryType.Point : GeometryType.Polygon;
-    console.log(`[ModelsRoute] Creating ignition geometry: type=${body.ignition.type} -> ${geometryType}`);
+    logger.model(`Creating ignition geometry: type=${body.ignition.type} -> ${geometryType}`, modelId);
     const ignitionGeometry = new SpatialGeometry({
       type: geometryType,
       coordinates: body.ignition.coordinates,
     });
-    console.log(`[ModelsRoute] Ignition geometry created: ${ignitionGeometry.type}, coords length: ${Array.isArray(body.ignition.coordinates[0]) ? body.ignition.coordinates.length : 1}`);
+    logger.model(`Ignition geometry created: ${ignitionGeometry.type}, coords length: ${Array.isArray(body.ignition.coordinates[0]) ? body.ignition.coordinates.length : 1}`, modelId);
     const timeRange = new TimeRange(
       new Date(body.timeRange.start),
       new Date(body.timeRange.end)
@@ -192,9 +193,9 @@ router.post(
               for (const result of results) {
                 await resultRepo.save(result);
               }
-              console.log(`[ModelsRoute] Harvested ${results.length} results for model ${modelId}`);
+              logger.model(`Harvested ${results.length} results`, modelId);
             } catch (harvestError) {
-              console.warn(`[ModelsRoute] Failed to harvest results for model ${modelId}:`, harvestError);
+              logger.warn(`Failed to harvest results for model ${modelId}: ${harvestError}`, 'Model');
               // Continue anyway - results can still be lazy-loaded on first read
             }
           } else if (status.state === 'failed') {
@@ -203,7 +204,7 @@ router.post(
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
-          console.error(`[ModelsRoute] Execution failed for model ${modelId}:`, message);
+          logger.error(`Execution failed: ${message}`, 'Model', { modelId });
           await jobQueue.fail(jobId, message);
           await modelRepo.save(model.withStatus(ModelStatus.Failed));
         }
@@ -211,7 +212,7 @@ router.post(
     } else {
       const executionService = getModelExecutionService();
       executionService.execute(model).catch((error) => {
-        console.error(`[ModelsRoute] Legacy execution failed:`, error);
+        logger.error(`Legacy execution failed: ${error}`, 'Model');
       });
     }
 
@@ -529,12 +530,12 @@ router.post(
 
     // Create ignition geometry
     const geometryType = body.ignition.type === 'point' ? GeometryType.Point : GeometryType.Polygon;
-    console.log(`[ModelsRoute /fire/run] Creating ignition geometry: type=${body.ignition.type} -> ${geometryType}`);
+    logger.model(`Creating ignition geometry: type=${body.ignition.type} -> ${geometryType}`, id);
     const ignitionGeometry = new SpatialGeometry({
       type: geometryType,
       coordinates: body.ignition.coordinates,
     });
-    console.log(`[ModelsRoute /fire/run] Ignition geometry created: ${ignitionGeometry.type}, coords length: ${Array.isArray(body.ignition.coordinates[0]) ? body.ignition.coordinates.length : 1}`);
+    logger.model(`Ignition geometry created: ${ignitionGeometry.type}, coords length: ${Array.isArray(body.ignition.coordinates[0]) ? body.ignition.coordinates.length : 1}`, id);
 
     // Create time range
     const timeRange = new TimeRange(
@@ -576,13 +577,13 @@ router.post(
       // Initialize and execute asynchronously
       (async () => {
         try {
-          console.log(`[ModelsRoute] Initializing FireSTARR engine for model ${id}`);
+          logger.engine(`Initializing FireSTARR engine`, 'FireSTARR', id);
           await engine.initialize(queuedModel, executionOptions);
 
           // Mark job as running (sets startedAt timestamp)
           await jobQueue.updateStatus(jobId, JobStatus.Running);
 
-          console.log(`[ModelsRoute] Starting FireSTARR execution for model ${id}`);
+          logger.engine(`Starting execution`, 'FireSTARR', id);
           await engine.execute(id as FireModelId);
 
           // Check execution status
@@ -598,9 +599,9 @@ router.post(
               for (const result of results) {
                 await resultRepo.save(result);
               }
-              console.log(`[ModelsRoute] Harvested ${results.length} results for model ${id}`);
+              logger.model(`Harvested ${results.length} results`, id);
             } catch (harvestError) {
-              console.warn(`[ModelsRoute] Failed to harvest results for model ${id}:`, harvestError);
+              logger.warn(`Failed to harvest results for model ${id}: ${harvestError}`, 'Model');
               // Continue anyway - results can still be lazy-loaded on first read
             }
           } else if (status.state === 'failed') {
@@ -609,7 +610,7 @@ router.post(
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
-          console.error(`[ModelsRoute] Execution failed for model ${id}:`, message);
+          logger.error(`Execution failed: ${message}`, 'Model', { modelId: id });
           await jobQueue.fail(jobId, message);
           await modelRepo.save(queuedModel.withStatus(ModelStatus.Failed));
         }
@@ -618,7 +619,7 @@ router.post(
       // For other engine types, use the legacy execution service
       const executionService = getModelExecutionService();
       executionService.execute(queuedModel).catch((error) => {
-        console.error(`[ModelsRoute] Legacy execution failed:`, error);
+        logger.error(`Legacy execution failed: ${error}`, 'Model');
       });
     }
 
@@ -695,7 +696,7 @@ router.get(
   '/models/:id/results',
   asyncHandler(async (req, res) => {
     const { id } = req.params;
-    console.log(`[ModelsRoute:results] Getting results for model ${id}`);
+    logger.debug(`Getting results for model ${id}`, 'Results');
 
     const modelRepo = getModelRepository();
     const model = await modelRepo.findById(createFireModelId(id));
@@ -705,12 +706,12 @@ router.get(
 
     // Try to get results service - engine may not be configured
     try {
-      console.log(`[ModelsRoute:results] Getting engine and service`);
+      logger.debug(`Getting engine and service`, 'Results');
       const engine = getFireSTARREngine();
       const resultsService = getModelResultsService(engine);
 
       // Get results
-      console.log(`[ModelsRoute:results] Calling getResults`);
+      logger.debug(`Calling getResults`, 'Results');
       const result = await resultsService.getResults(
         id as FireModelId,
         model.name,
@@ -718,18 +719,18 @@ router.get(
         model.userId
       );
 
-      console.log(`[ModelsRoute:results] Got result, success=${result.success}`);
+      logger.debug(`Got result, success=${result.success}`, 'Results');
       if (!result.success) {
-        console.log(`[ModelsRoute:results] Result failed, throwing error`);
+        logger.debug(`Result failed, throwing error`, 'Results');
         throw result.error;
       }
 
-      console.log(`[ModelsRoute:results] Returning result.value with status=${result.value.executionSummary.status}`);
+      logger.debug(`Returning result.value with status=${result.value.executionSummary.status}`, 'Results');
       res.json(result.value);
     } catch (error) {
       // Engine not configured - return empty results
       const message = error instanceof Error ? error.message : String(error);
-      console.warn(`[ModelsRoute:results] Caught error: ${message}`);
+      logger.warn(`Error getting results: ${message}`, 'Results');
 
       res.json({
         modelId: id,
@@ -949,7 +950,7 @@ router.get(
           smoothPerimeter = config.smoothPerimeter;
         }
       } catch (e) {
-        console.warn(`[ModelsRoute:perimeters] Failed to read output-config.json: ${e}`);
+        logger.warn(`Failed to read output-config.json: ${e}`, 'Perimeters');
       }
     }
 

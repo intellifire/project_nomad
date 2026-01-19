@@ -1,11 +1,13 @@
 import { Request, Response, NextFunction, RequestHandler } from 'express';
 import { randomUUID } from 'crypto';
+import { logger } from '../../infrastructure/logging/index.js';
 
 /**
- * Simple request logging middleware.
+ * Request logging middleware with file persistence.
  *
  * Logs request start and completion with timing.
  * Adds correlation ID to request headers if not present.
+ * All logs are persisted to rotating log files.
  */
 export const requestLogger: RequestHandler = (
   req: Request,
@@ -18,19 +20,15 @@ export const requestLogger: RequestHandler = (
   if (!req.headers['x-correlation-id']) {
     req.headers['x-correlation-id'] = randomUUID();
   }
-  const correlationId = req.headers['x-correlation-id'];
+  const correlationId = req.headers['x-correlation-id'] as string;
 
   // Log request start
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] [${correlationId}] --> ${req.method} ${req.path}`);
+  logger.apiStart(req.method, req.path, correlationId);
 
   // Log response when finished
   res.on('finish', () => {
     const duration = Date.now() - startTime;
-    const finishTimestamp = new Date().toISOString();
-    console.log(
-      `[${finishTimestamp}] [${correlationId}] <-- ${req.method} ${req.path} ${res.statusCode} (${duration}ms)`
-    );
+    logger.api(req.method, req.path, res.statusCode, duration, correlationId);
   });
 
   next();

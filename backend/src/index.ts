@@ -14,6 +14,7 @@ import {
   simpleAuthMiddleware,
 } from './api/index.js';
 import { initDatabase, initializeRepositories, getJobRepository } from './infrastructure/database/index.js';
+import { logger } from './infrastructure/logging/index.js';
 
 // Load .env from project root (parent directory)
 dotenv.config({ path: resolve(process.cwd(), '..', '.env') });
@@ -25,21 +26,21 @@ const PORT = process.env.PORT || 3001;
  * Initialize database and repositories
  */
 async function initializeDatabaseLayer(): Promise<void> {
-  console.log('[Startup] Initializing database...');
+  logger.startup('Initializing database...');
   await initDatabase();
 
   // Initialize repositories (database-agnostic layer)
   initializeRepositories();
-  console.log('[Startup] Repositories initialized');
+  logger.startup('Repositories initialized');
 
   // Startup recovery: mark interrupted jobs as failed
   const jobRepo = getJobRepository();
   const count = await jobRepo.markRunningAsFailed();
   if (count > 0) {
-    console.log(`[Startup] Marked ${count} interrupted jobs as failed`);
+    logger.startup(`Marked ${count} interrupted jobs as failed`);
   }
 
-  console.log('[Startup] Database ready');
+  logger.startup('Database ready');
 }
 
 // ============================================
@@ -69,7 +70,7 @@ function getCorsOptions(): CorsOptions {
       allowedOrigins.push(...process.env.NOMAD_CORS_ORIGINS.split(',').map((o) => o.trim()));
     }
 
-    console.log(`[CORS] ACN mode - allowed origins: ${allowedOrigins.join(', ') || '(none)'}`);
+    logger.info(`ACN mode - allowed origins: ${allowedOrigins.join(', ') || '(none)'}`, 'CORS');
 
     return {
       origin: (origin, callback) => {
@@ -81,7 +82,7 @@ function getCorsOptions(): CorsOptions {
         if (allowedOrigins.includes(origin)) {
           callback(null, true);
         } else {
-          console.warn(`[CORS] Blocked origin: ${origin}`);
+          logger.warn(`Blocked origin: ${origin}`, 'CORS');
           callback(new Error(`Origin ${origin} not allowed`));
         }
       },
@@ -90,7 +91,7 @@ function getCorsOptions(): CorsOptions {
   }
 
   // SAN mode: allow all origins
-  console.log('[CORS] SAN mode - all origins allowed');
+  logger.info('SAN mode - all origins allowed', 'CORS');
   return {
     origin: true,
     credentials: true,
@@ -113,10 +114,10 @@ app.use(requestLogger);
 
 // 4. Authentication - mode-specific
 if (process.env.NOMAD_DEPLOYMENT_MODE === 'ACN') {
-  console.log('[Startup] ACN mode: Agency authentication enabled');
+  logger.startup('ACN mode: Agency authentication enabled');
   app.use(acnAuthMiddleware);
 } else {
-  console.log('[Startup] SAN mode: Simple authentication enabled');
+  logger.startup('SAN mode: Simple authentication enabled');
   app.use(simpleAuthMiddleware);
 }
 
@@ -154,7 +155,7 @@ const __dirname = dirname(__filename);
 const frontendDistPath = resolve(__dirname, '../../frontend/dist');
 
 if (isProduction && existsSync(frontendDistPath)) {
-  console.log(`[Startup] Production mode: serving frontend from ${frontendDistPath}`);
+  logger.startup(`Production mode: serving frontend from ${frontendDistPath}`);
 
   // Serve static files (JS, CSS, images, etc.)
   app.use(express.static(frontendDistPath));
@@ -169,8 +170,8 @@ if (isProduction && existsSync(frontendDistPath)) {
     res.sendFile(join(frontendDistPath, 'index.html'));
   });
 } else if (isProduction) {
-  console.warn(`[Startup] Production mode but frontend not found at ${frontendDistPath}`);
-  console.warn('[Startup] Run "npm run build" to build the frontend');
+  logger.warn(`Production mode but frontend not found at ${frontendDistPath}`, 'Startup');
+  logger.warn('Run "npm run build" to build the frontend', 'Startup');
 }
 
 // ============================================
@@ -189,11 +190,18 @@ app.use(errorHandler);
 
 async function startServer(): Promise<void> {
   try {
+    // Log startup with log directory info
+    logger.startup(`Log directory: ${logger.getLogDir()}`);
+
     // Initialize database first
     await initializeDatabaseLayer();
 
     // Start listening
     app.listen(PORT, () => {
+      logger.startup(`Server started on port ${PORT}`);
+      logger.startup(`API: http://localhost:${PORT}/api/v1`);
+      logger.startup(`Docs: http://localhost:${PORT}/api/docs`);
+      // Also log to console for visual banner (even in production)
       console.log(`
 ╔════════════════════════════════════════════╗
 ║         Project Nomad Backend              ║
@@ -205,7 +213,7 @@ async function startServer(): Promise<void> {
       `);
     });
   } catch (error) {
-    console.error('[Startup] Failed to start server:', error);
+    logger.error(`Failed to start server: ${error}`, 'Startup');
     process.exit(1);
   }
 }

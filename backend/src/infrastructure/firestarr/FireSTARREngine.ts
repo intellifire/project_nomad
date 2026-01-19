@@ -31,6 +31,7 @@ import { FireSTARRInputGenerator, createFireSTARRInputGenerator } from './FireST
 import { FireSTARROutputParser, getFireSTARROutputParser } from './FireSTARROutputParser.js';
 import { getWeatherService } from '../weather/index.js';
 import type { WeatherDataPoint } from '../weather/types.js';
+import { logger } from '../logging/index.js';
 
 /** FireSTARR Docker service name */
 const FIRESTARR_SERVICE = 'firestarr-app';
@@ -99,7 +100,7 @@ export class FireSTARREngine implements IFireModelingEngine {
   }
 
   async initialize(model: FireModel, options: ExecutionOptions): Promise<void> {
-    console.log(`[FireSTARREngine] Initializing model ${model.id}`);
+    logger.engine(`Initializing model`, 'FireSTARR', model.id);
 
     // Convert ExecutionOptions to FireSTARRParams
     const params = await this.buildParams(model, options);
@@ -121,7 +122,7 @@ export class FireSTARREngine implements IFireModelingEngine {
     const configPath = join(inputResult.value.workingDir, 'output-config.json');
     const { writeFile } = await import('fs/promises');
     await writeFile(configPath, JSON.stringify(outputConfig, null, 2));
-    console.log(`[FireSTARREngine] Saved output config to ${configPath}`);
+    logger.engine(`Saved output config to ${configPath}`, 'FireSTARR', model.id);
 
     // Store execution state
     this.executions.set(model.id, {
@@ -135,7 +136,7 @@ export class FireSTARREngine implements IFireModelingEngine {
       outputConfig,
     });
 
-    console.log(`[FireSTARREngine] Model ${model.id} initialized successfully`);
+    logger.engine(`Model initialized successfully`, 'FireSTARR', model.id);
   }
 
   async execute(modelId: FireModelId): Promise<void> {
@@ -144,7 +145,7 @@ export class FireSTARREngine implements IFireModelingEngine {
       throw new Error(`Model ${modelId} not initialized`);
     }
 
-    console.log(`[FireSTARREngine] Starting execution for model ${modelId}`);
+    logger.engine(`Starting execution`, 'FireSTARR', modelId);
 
     // Update status
     const startTime = new Date();
@@ -158,7 +159,7 @@ export class FireSTARREngine implements IFireModelingEngine {
 
     // Build command
     const command = this.buildCommand(state.params, state.inputResult);
-    console.log(`[FireSTARREngine] Command: ${command.join(' ')}`);
+    logger.engine(`Command: ${command.join(' ')}`, 'FireSTARR', modelId);
 
     // Create output callback for progress tracking
     const onOutput: OutputCallback = (line, stream) => {
@@ -180,9 +181,9 @@ export class FireSTARREngine implements IFireModelingEngine {
 
       // Log output
       if (stream === 'stderr') {
-        console.error(`[FireSTARR] ${line}`);
+        logger.error(line, 'FireSTARR:output');
       } else {
-        console.log(`[FireSTARR] ${line}`);
+        logger.info(line, 'FireSTARR:output');
       }
     };
 
@@ -216,7 +217,7 @@ export class FireSTARREngine implements IFireModelingEngine {
         completedAt: failedAt,
         updatedAt: failedAt,
       };
-      console.error(`[FireSTARREngine] Execution failed:`, result.error.message);
+      logger.error(`Execution failed: ${result.error.message}`, 'FireSTARR', { modelId });
       return;
     }
 
@@ -233,7 +234,7 @@ export class FireSTARREngine implements IFireModelingEngine {
         completedAt: failedAt,
         updatedAt: failedAt,
       };
-      console.error(`[FireSTARREngine] Exit code ${containerResult.exitCode}`);
+      logger.error(`Exit code ${containerResult.exitCode}`, 'FireSTARR', { modelId });
       return;
     }
 
@@ -253,7 +254,7 @@ export class FireSTARREngine implements IFireModelingEngine {
         completedAt: completedTime,
         updatedAt: completedTime,
       };
-      console.log(`[FireSTARREngine] Execution completed successfully`);
+      logger.engine(`Execution completed successfully`, 'FireSTARR', modelId);
     } else {
       state.status = {
         state: 'failed',
@@ -263,7 +264,7 @@ export class FireSTARREngine implements IFireModelingEngine {
         completedAt: completedTime,
         updatedAt: completedTime,
       };
-      console.error(`[FireSTARREngine] Execution failed:`, summary.errors);
+      logger.error(`Execution failed: ${summary.errors.join('; ')}`, 'FireSTARR', { modelId });
     }
   }
 
@@ -288,7 +289,7 @@ export class FireSTARREngine implements IFireModelingEngine {
     // Fall back to standard path structure using same resolution as InputGenerator
     const datasetPath = process.env.FIRESTARR_DATASET_PATH;
     if (!datasetPath) {
-      console.warn('[FireSTARREngine] FIRESTARR_DATASET_PATH not set');
+      logger.warn('FIRESTARR_DATASET_PATH not set', 'FireSTARR');
       return null;
     }
     // Resolve paths from project root (parent of backend dir) to match InputGenerator
@@ -311,7 +312,7 @@ export class FireSTARREngine implements IFireModelingEngine {
       // Fall back to getWorkingDirectory which checks the filesystem
       workingDir = this.getWorkingDirectory(modelId);
       if (workingDir) {
-        console.log(`[FireSTARREngine] Using fallback working directory for ${modelId}: ${workingDir}`);
+        logger.engine(`Using fallback working directory: ${workingDir}`, 'FireSTARR', modelId);
       }
     }
 
@@ -342,7 +343,7 @@ export class FireSTARREngine implements IFireModelingEngine {
       })
     );
 
-    console.log(`[FireSTARREngine] Retrieved ${results.length} results for model ${modelId}`);
+    logger.engine(`Retrieved ${results.length} results`, 'FireSTARR', modelId);
     return results;
   }
 
@@ -356,7 +357,7 @@ export class FireSTARREngine implements IFireModelingEngine {
     const executorWithCancel = this.executor as { cancelJob?: (jobId: string) => boolean };
     if (executorWithCancel.cancelJob) {
       const killed = executorWithCancel.cancelJob(modelId);
-      console.log(`[FireSTARREngine] Cancel request for ${modelId}: ${killed ? 'process killed' : 'no active process'}`);
+      logger.engine(`Cancel request: ${killed ? 'process killed' : 'no active process'}`, 'FireSTARR', modelId);
     }
 
     // Update status
@@ -371,7 +372,7 @@ export class FireSTARREngine implements IFireModelingEngine {
       updatedAt: cancelledAt,
     };
 
-    console.log(`[FireSTARREngine] Cancelled model ${modelId}`);
+    logger.engine(`Cancelled model`, 'FireSTARR', modelId);
   }
 
   async cleanup(modelId: FireModelId, keepResults = false): Promise<void> {
@@ -380,7 +381,7 @@ export class FireSTARREngine implements IFireModelingEngine {
       await this.inputGenerator.cleanup(modelId, keepResults);
       this.executions.delete(modelId);
     }
-    console.log(`[FireSTARREngine] Cleaned up model ${modelId}`);
+    logger.engine(`Cleaned up model`, 'FireSTARR', modelId);
   }
 
   async validateLocation(location: Coordinates): Promise<{
@@ -453,7 +454,7 @@ export class FireSTARREngine implements IFireModelingEngine {
       };
     } catch (error) {
       // If fuel grid check fails, fall back to basic validation
-      console.warn('[FireSTARREngine] Fuel grid validation failed, allowing location:', error);
+      logger.warn(`Fuel grid validation failed, allowing location: ${error}`, 'FireSTARR');
       return {
         valid: true,
         utmZone,
@@ -504,7 +505,7 @@ export class FireSTARREngine implements IFireModelingEngine {
 
       return data[0] ?? null;
     } catch (error) {
-      console.error('[FireSTARREngine] Failed to sample fuel grid:', error);
+      logger.error(`Failed to sample fuel grid: ${error}`, 'FireSTARR');
       return null;
     }
   }
@@ -658,7 +659,7 @@ export class FireSTARREngine implements IFireModelingEngine {
     const longitude = inputResult.perimeterCentroid?.longitude ?? params.longitude;
 
     if (inputResult.perimeterCentroid) {
-      console.log(`[FireSTARREngine] Using corrected centroid: lat=${latitude.toFixed(6)}, lon=${longitude.toFixed(6)} (original: lat=${params.latitude.toFixed(6)}, lon=${params.longitude.toFixed(6)})`);
+      logger.debug(`Using corrected centroid: lat=${latitude.toFixed(6)}, lon=${longitude.toFixed(6)} (original: lat=${params.latitude.toFixed(6)}, lon=${params.longitude.toFixed(6)})`, 'FireSTARR');
     }
 
     const args: string[] = [
