@@ -1073,7 +1073,7 @@ prompt_existing_firestarr() {
 
     if [ -f "$settings_file" ]; then
         print_warning "Existing settings.ini found at: $settings_file"
-        echo "    Nomad will update RASTER_ROOT to point to the Nomad dataset."
+        echo "    Nomad will update RASTER_ROOT and FUEL_LOOKUP_TABLE to point to the Nomad dataset."
         echo ""
         read -p "Continue? [Y/n] " -n 1 -r
         echo ""
