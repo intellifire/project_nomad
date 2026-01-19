@@ -693,43 +693,31 @@ detect_architecture() {
 # Detect PROJ data directory (required for coordinate transformations)
 # Sets PROJ_DATA_PATH if found
 detect_proj_data() {
-    print_step "Detecting PROJ data directory..."
+    print_step "Detecting PROJ installation..."
 
-    # Common PROJ data locations
-    local proj_paths=(
-        "/opt/homebrew/share/proj"      # macOS Homebrew (Apple Silicon)
-        "/usr/local/share/proj"         # macOS Homebrew (Intel) / Linux manual
-        "/usr/share/proj"               # Linux system package
-        "/usr/local/opt/proj/share/proj" # macOS Homebrew alternate
-    )
+    # Test if PROJ is installed and working
+    if echo "55.0 -116.0" | cs2cs EPSG:4326 EPSG:32611 &> /dev/null; then
+        print_success "PROJ is installed and working"
 
-    # Check if PROJ_DATA or PROJ_LIB is already set
-    if [ -n "${PROJ_DATA:-}" ] && [ -f "${PROJ_DATA}/proj.db" ]; then
-        PROJ_DATA_PATH="$PROJ_DATA"
-        print_success "PROJ data found (from PROJ_DATA env): $PROJ_DATA_PATH"
-        return 0
-    fi
+        # Find proj.db location
+        local proj_db_path
+        proj_db_path=$(find /opt/homebrew /usr/local /usr -name "proj.db" 2>/dev/null | head -1)
 
-    if [ -n "${PROJ_LIB:-}" ] && [ -f "${PROJ_LIB}/proj.db" ]; then
-        PROJ_DATA_PATH="$PROJ_LIB"
-        print_success "PROJ data found (from PROJ_LIB env): $PROJ_DATA_PATH"
-        return 0
-    fi
-
-    # Search common paths
-    for path in "${proj_paths[@]}"; do
-        if [ -f "$path/proj.db" ]; then
-            PROJ_DATA_PATH="$path"
+        if [ -n "$proj_db_path" ]; then
+            PROJ_DATA_PATH=$(dirname "$proj_db_path")
             print_success "PROJ data found: $PROJ_DATA_PATH"
             return 0
+        else
+            print_error "PROJ works but proj.db not found - unexpected state"
+            PROJ_DATA_PATH=""
+            return 1
         fi
-    done
+    fi
 
-    # Not found - try to help the user
-    print_warning "PROJ data directory not found"
+    # PROJ not working - offer to install
+    print_warning "PROJ is not installed or not working"
     echo ""
     echo "    FireSTARR requires PROJ for coordinate transformations."
-    echo "    The proj.db file was not found in common locations."
     echo ""
 
     if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -741,23 +729,25 @@ detect_proj_data() {
             if command -v brew &> /dev/null; then
                 print_step "Installing PROJ via Homebrew..."
                 if brew install proj; then
-                    # Re-detect after install
-                    for path in "${proj_paths[@]}"; do
-                        if [ -f "$path/proj.db" ]; then
-                            PROJ_DATA_PATH="$path"
-                            print_success "PROJ installed and found: $PROJ_DATA_PATH"
+                    # Re-test after install
+                    if echo "55.0 -116.0" | cs2cs EPSG:4326 EPSG:32611 &> /dev/null; then
+                        local proj_db_path
+                        proj_db_path=$(find /opt/homebrew /usr/local -name "proj.db" 2>/dev/null | head -1)
+                        if [ -n "$proj_db_path" ]; then
+                            PROJ_DATA_PATH=$(dirname "$proj_db_path")
+                            print_success "PROJ installed: $PROJ_DATA_PATH"
                             return 0
                         fi
-                    done
+                    fi
                 fi
-                print_error "PROJ installation failed or proj.db not found after install"
+                print_error "PROJ installation failed"
             else
                 print_error "Homebrew not found. Install PROJ manually: brew install proj"
             fi
         fi
     else
         echo "    On Linux, install PROJ with your package manager:"
-        echo "        Ubuntu/Debian: sudo apt install proj-data"
+        echo "        Ubuntu/Debian: sudo apt install proj-bin proj-data"
         echo "        Fedora/RHEL:   sudo dnf install proj"
         echo ""
     fi
