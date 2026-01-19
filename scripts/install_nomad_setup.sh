@@ -220,56 +220,33 @@ step1_deployment_mode() {
 step2_infrastructure() {
     display_menu "Step 2: Infrastructure"
 
-    echo -e "    ${GREEN}1) All Docker (Recommended)${NC}"
+    echo -e "    ${GREEN}1) Docker (Recommended)${NC}"
     echo "       Everything runs in containers"
     echo "       - Easiest setup, consistent across platforms"
     echo "       - Requires: Docker Desktop or Docker Engine"
     echo ""
-    echo -e "    ${YELLOW}2) All Metal${NC}"
+    echo -e "    ${YELLOW}2) Metal${NC}"
     echo "       Everything runs natively on host"
     echo "       - Maximum performance, no containerization overhead"
     echo "       - Requires: Node.js >= 20, GDAL libraries, FireSTARR binary"
     echo ""
-    echo -e "    ${YELLOW}3) Nomad Docker + FireSTARR Metal${NC}"
-    echo "       Nomad GUI/API in containers, native FireSTARR"
-    echo "       - Good for high-performance modeling with easy Nomad setup"
-    echo "       - Requires: Docker, FireSTARR binary"
-    echo ""
-    echo -e "    ${YELLOW}4) Nomad Metal + FireSTARR Docker${NC}"
-    echo "       Native development environment, containerized modeling"
-    echo "       - Ideal for Nomad development with easy FireSTARR setup"
-    echo "       - Requires: Node.js >= 20, GDAL libraries, Docker"
-    echo ""
 
     local choice
-    choice=$(get_selection 4 1)
+    choice=$(get_selection 2 1)
 
     case $choice in
         1)
             NOMAD_INFRA="docker"
             FIRESTARR_INFRA="docker"
             FIRESTARR_EXECUTION_MODE="docker"
-            print_success "Selected: All Docker"
+            print_success "Selected: Docker"
             ;;
         2)
             check_node_early
             NOMAD_INFRA="metal"
             FIRESTARR_INFRA="metal"
             FIRESTARR_EXECUTION_MODE="binary"
-            print_success "Selected: All Metal"
-            ;;
-        3)
-            NOMAD_INFRA="docker"
-            FIRESTARR_INFRA="metal"
-            FIRESTARR_EXECUTION_MODE="binary"
-            print_success "Selected: Nomad Docker + FireSTARR Metal"
-            ;;
-        4)
-            check_node_early
-            NOMAD_INFRA="metal"
-            FIRESTARR_INFRA="docker"
-            FIRESTARR_EXECUTION_MODE="docker"
-            print_success "Selected: Nomad Metal + FireSTARR Docker"
+            print_success "Selected: Metal"
             ;;
     esac
 }
@@ -1615,70 +1592,6 @@ install_all_docker() {
     echo "Access Nomad at: http://localhost:$NOMAD_FRONTEND_HOST_PORT"
 }
 
-install_nomad_metal_firestarr_docker() {
-    print_step "Installing: Nomad Metal + FireSTARR Docker configuration"
-    echo ""
-
-    # 1. Generate .env
-    generate_env_file
-
-    # 2. Configure FireSTARR image
-    if [ -z "$FIRESTARR_IMAGE" ]; then
-        if [ -f "$ENV_FILE" ]; then
-            source "$ENV_FILE"
-        fi
-        VERSION="${VERSION:-0.9.5.4}"
-        configure_firestarr_image
-        update_env_value "FIRESTARR_IMAGE" "$FIRESTARR_IMAGE"
-    fi
-
-    # 3. Install dataset based on mode selected in wizard
-    case "$DATASET_INSTALL_MODE" in
-        existing)
-            print_success "Using existing dataset: $FIRESTARR_DATASET_PATH"
-            ;;
-        download)
-            echo ""
-            read -p "Install FireSTARR dataset now? [Y/n] " -n 1 -r
-            echo ""
-            if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-                install_dataset
-            fi
-            ;;
-        skip|"")
-            print_warning "Dataset installation skipped"
-            ;;
-    esac
-
-    # 4. Ensure sims directory
-    ensure_sims_writable
-
-    # 5. Pull FireSTARR image
-    print_step "Pulling FireSTARR Docker image..."
-    run_cmd docker compose -f "$PROJECT_DIR/docker-compose.yaml" pull firestarr-app
-
-    # 6. Install Node.js dependencies
-    print_step "Installing Node.js dependencies..."
-    run_cmd npm --prefix "$PROJECT_DIR" install
-
-    # 7. Build backend and frontend
-    print_step "Building Nomad..."
-    run_cmd npm --prefix "$PROJECT_DIR" run build
-
-    print_success "Nomad Metal + FireSTARR Docker installation complete!"
-    echo ""
-    echo "To start Project Nomad (development):"
-    echo "    cd $PROJECT_DIR"
-    echo "    npm run dev"
-    echo ""
-    echo "To start Project Nomad (production):"
-    echo "    cd $PROJECT_DIR"
-    echo "    npm run start"
-    echo ""
-    echo "Access at: http://localhost:${NOMAD_PORT:-3001}"
-    echo "FireSTARR will run in Docker containers when needed."
-}
-
 install_all_metal() {
     print_step "Installing: All Metal configuration"
     echo ""
@@ -1753,77 +1666,6 @@ install_all_metal() {
     echo "    npm run start"
     echo ""
     echo "Access at: http://localhost:${NOMAD_PORT:-3001}"
-}
-
-install_nomad_docker_firestarr_metal() {
-    print_step "Installing: Nomad Docker + FireSTARR Metal configuration"
-    echo ""
-
-    # 1. Generate .env
-    generate_env_file
-
-    # 2. Install dataset based on mode selected in wizard
-    case "$DATASET_INSTALL_MODE" in
-        existing)
-            print_success "Using existing dataset: $FIRESTARR_DATASET_PATH"
-            ;;
-        download)
-            echo ""
-            read -p "Install FireSTARR dataset now? [Y/n] " -n 1 -r
-            echo ""
-            if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-                install_dataset
-            fi
-            ;;
-        skip|"")
-            print_warning "Dataset installation skipped"
-            ;;
-    esac
-
-    # 3. Ensure sims directory
-    ensure_sims_writable
-
-    # 4. Install/configure FireSTARR binary based on selected mode
-    case "$FIRESTARR_INSTALL_MODE" in
-        archive)
-            # Install from archive
-            if install_firestarr_from_archive "$FIRESTARR_ARCHIVE_SOURCE" "$FIRESTARR_INSTALL_DIR" "$FIRESTARR_DATASET_PATH"; then
-                update_env_value "FIRESTARR_BINARY_PATH" "$FIRESTARR_BINARY_PATH"
-            fi
-            ;;
-        existing)
-            # Use existing installation, update settings.ini
-            update_existing_firestarr_settings "$FIRESTARR_BINARY_PATH" "$FIRESTARR_DATASET_PATH"
-            update_env_value "FIRESTARR_BINARY_PATH" "$FIRESTARR_BINARY_PATH"
-            ;;
-        skip|"")
-            print_warning "FireSTARR binary not configured"
-            echo "    You'll need to set FIRESTARR_BINARY_PATH in .env"
-            ;;
-    esac
-
-    # 5. Detect PROJ data directory (required for coordinate transformations)
-    if detect_proj_data; then
-        update_env_value "PROJ_DATA" "$PROJ_DATA_PATH"
-    else
-        print_warning "PROJ not configured - FireSTARR coordinate transformations may fail"
-        echo "    Install PROJ and re-run installer, or manually set PROJ_DATA in .env"
-    fi
-
-    # 6. Build Nomad containers
-    print_step "Building Nomad containers..."
-    run_cmd docker compose -f "$PROJECT_DIR/docker-compose.yaml" build nomad-backend nomad-frontend
-
-    print_success "Nomad Docker + FireSTARR Metal installation complete!"
-    echo ""
-    echo "To start Project Nomad:"
-    echo "    cd $PROJECT_DIR"
-    echo "    docker compose up -d nomad-backend nomad-frontend"
-    echo ""
-    source "$ENV_FILE"
-    echo "Access Nomad at: http://localhost:$NOMAD_FRONTEND_HOST_PORT"
-    echo ""
-    echo "FireSTARR will run as native binary at: $FIRESTARR_BINARY_PATH"
 }
 
 # ============================================
@@ -2002,18 +1844,12 @@ main() {
     fi
 
     # Run appropriate installation
-    case "${NOMAD_INFRA}_${FIRESTARR_INFRA}" in
-        docker_docker)
+    case "$NOMAD_INFRA" in
+        docker)
             install_all_docker
             ;;
-        metal_metal)
+        metal)
             install_all_metal
-            ;;
-        docker_metal)
-            install_nomad_docker_firestarr_metal
-            ;;
-        metal_docker)
-            install_nomad_metal_firestarr_docker
             ;;
     esac
 
