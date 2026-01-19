@@ -6,6 +6,7 @@ import {
   NotFoundError,
   EngineError,
 } from '../../domain/errors/index.js';
+import { logger } from '../../infrastructure/logging/index.js';
 
 /**
  * Standard API error response format
@@ -43,6 +44,7 @@ function createErrorResponse(
  *
  * Maps domain errors to appropriate HTTP status codes and
  * returns a consistent error response format.
+ * All errors are logged to rotating log files.
  *
  * Must be registered LAST in the middleware chain.
  */
@@ -56,13 +58,13 @@ export const errorHandler: ErrorRequestHandler = (
   const correlationId = (req.headers['x-correlation-id'] as string) || randomUUID();
   const isProduction = process.env.NODE_ENV === 'production';
 
-  // Log error server-side (always include stack in logs)
-  console.error(`[${correlationId}] Error:`, {
-    name: err.name,
-    message: err.message,
+  // Log error server-side with full context
+  logger.error(`${err.name}: ${err.message}`, 'ErrorHandler', {
+    correlationId,
     path: req.path,
     method: req.method,
     stack: err.stack,
+    errorCode: err instanceof DomainError ? err.code : undefined,
   });
 
   // Handle ValidationError (400)
