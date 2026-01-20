@@ -155,8 +155,19 @@ check_node_early() {
         echo "    Node.js >= $required_major is required for native installation."
         echo ""
         echo "    To install Node.js:"
-        echo "      macOS:   brew install node@$required_major"
-        echo "      Or use nvm: nvm install $required_major"
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            echo "      brew install node@$required_major"
+        elif [[ "$OSTYPE" == "linux"* ]]; then
+            echo "      # Using NodeSource (recommended):"
+            echo "      curl -fsSL https://deb.nodesource.com/setup_$required_major.x | sudo -E bash -"
+            echo "      sudo apt-get install -y nodejs"
+            echo ""
+            echo "      # Or using nvm:"
+            echo "      curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash"
+            echo "      nvm install $required_major"
+        else
+            echo "      Visit: https://nodejs.org/en/download/"
+        fi
         echo ""
         exit 1
     fi
@@ -171,8 +182,18 @@ check_node_early() {
         print_error "Node.js $node_version is installed, but >= $required_major is required"
         echo ""
         echo "    To upgrade Node.js:"
-        echo "      macOS:   brew install node@$required_major"
-        echo "      Or use nvm: nvm install $required_major && nvm use $required_major"
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            echo "      brew install node@$required_major"
+        elif [[ "$OSTYPE" == "linux"* ]]; then
+            echo "      # Using NodeSource:"
+            echo "      curl -fsSL https://deb.nodesource.com/setup_$required_major.x | sudo -E bash -"
+            echo "      sudo apt-get install -y nodejs"
+            echo ""
+            echo "      # Or using nvm:"
+            echo "      nvm install $required_major && nvm use $required_major"
+        else
+            echo "      Visit: https://nodejs.org/en/download/"
+        fi
         echo ""
         exit 1
     fi
