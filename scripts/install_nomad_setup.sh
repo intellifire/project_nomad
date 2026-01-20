@@ -1743,7 +1743,17 @@ install_all_docker() {
     # 4. Ensure sims directory
     ensure_sims_writable
 
-    # 5. Pull/build Docker images
+    # 5. Verify disk space for Docker images (need ~10GB)
+    echo ""
+    print_step "Checking remaining disk space for Docker images..."
+    if ! check_disk_space "$FIRESTARR_DATASET_PATH" 10 "Docker images"; then
+        print_error "Insufficient disk space remaining for Docker images"
+        echo "    Docker needs ~10GB to build/pull images for frontend, backend, and FireSTARR."
+        echo "    Free up disk space or use a larger volume before continuing."
+        exit 1
+    fi
+
+    # 6. Pull/build Docker images
     print_step "Building/pulling Docker images..."
     run_cmd docker compose -f "$PROJECT_DIR/docker-compose.yaml" build
     run_cmd docker compose -f "$PROJECT_DIR/docker-compose.yaml" pull firestarr-app
