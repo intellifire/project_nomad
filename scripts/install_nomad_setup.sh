@@ -234,6 +234,44 @@ check_glibc_early() {
     fi
 }
 
+# Check required shared libraries for FireSTARR binary (Linux only)
+check_firestarr_libs_early() {
+    # Only check on Linux
+    [[ "$OSTYPE" != "linux"* ]] && return 0
+
+    local missing_libs=()
+
+    # Check for libtiff.so.6 (Ubuntu 22.04 ships libtiff.so.5)
+    if ! ldconfig -p 2>/dev/null | grep -q "libtiff.so.6"; then
+        missing_libs+=("libtiff.so.6")
+    fi
+
+    # Check for libproj.so.25 (Ubuntu 22.04 ships libproj.so.22)
+    if ! ldconfig -p 2>/dev/null | grep -q "libproj.so.25"; then
+        missing_libs+=("libproj.so.25")
+    fi
+
+    if [ ${#missing_libs[@]} -gt 0 ]; then
+        echo ""
+        print_error "Missing shared libraries required for FireSTARR"
+        echo ""
+        echo "    The FireSTARR binary requires the following libraries:"
+        for lib in "${missing_libs[@]}"; do
+            echo "      - $lib (not found)"
+        done
+        echo ""
+        echo "    Your system may have older versions of these libraries."
+        echo "    Ubuntu 22.04 ships with libtiff.so.5 and libproj.so.22,"
+        echo "    but FireSTARR requires libtiff.so.6 and libproj.so.25."
+        echo ""
+        echo "    Options:"
+        echo "      1. Use Docker mode instead (recommended)"
+        echo "      2. Install newer versions from source or third-party repos"
+        echo ""
+        exit 1
+    fi
+}
+
 # ============================================
 # Step 1: Deployment Mode
 # ============================================
@@ -300,6 +338,7 @@ step2_infrastructure() {
         2)
             check_node_early
             check_glibc_early
+            check_firestarr_libs_early
             NOMAD_INFRA="metal"
             FIRESTARR_INFRA="metal"
             FIRESTARR_EXECUTION_MODE="binary"
