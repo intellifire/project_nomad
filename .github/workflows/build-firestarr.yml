@@ -1,0 +1,127 @@
+name: Build FireSTARR
+
+on:
+  workflow_dispatch:
+    inputs:
+      firestarr_ref:
+        description: 'FireSTARR branch/tag to build'
+        default: 'main'
+        type: string
+  release:
+    types: [published]
+
+env:
+  # Pin vcpkg to 2024.12.16 release for reproducibility
+  VCPKG_COMMIT: 'b4624c3a701b11248d88a8e87f4d1984dc5e018a'
+
+jobs:
+  build-linux:
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout Nomad (for workflow context)
+        uses: actions/checkout@v4
+
+      - name: Clone firestarr-cpp
+        run: |
+          git clone https://github.com/CWFMF/firestarr-cpp.git firestarr
+          cd firestarr
+          git checkout ${{ github.event.inputs.firestarr_ref || 'main' }}
+          echo "Building FireSTARR at $(git rev-parse --short HEAD)"
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: ${{ env.VCPKG_COMMIT }}
+
+      - name: Install dependencies via vcpkg
+        run: |
+          vcpkg install \
+            libgeotiff \
+            tiff \
+            curl \
+            proj \
+            --triplet x64-linux
+
+      - name: Configure CMake
+        run: |
+          cmake -S firestarr -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_FLAGS="-march=x86-64-v3" \
+            -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
+
+      - name: Build
+        run: cmake --build build --config Release -j$(nproc)
+
+      - name: Locate binary
+        id: locate
+        run: |
+          # Find the built executable
+          BINARY=$(find build -type f -name "firestarr" -executable | head -1)
+          if [ -z "$BINARY" ]; then
+            echo "ERROR: Could not find firestarr binary"
+            find build -type f -executable
+            exit 1
+          fi
+          echo "binary=$BINARY" >> $GITHUB_OUTPUT
+          echo "Found binary at: $BINARY"
+
+      - name: Check binary dependencies
+        run: |
+          echo "=== Binary info ==="
+          file ${{ steps.locate.outputs.binary }}
+          echo ""
+          echo "=== Dynamic dependencies ==="
+          ldd ${{ steps.locate.outputs.binary }} || true
+
+      - name: Package artifact
+        run: |
+          mkdir -p dist
+          cp ${{ steps.locate.outputs.binary }} dist/firestarr
+
+          # Bundle data files if they exist
+          [ -f firestarr/fuel.lut ] && cp firestarr/fuel.lut dist/
+          [ -f firestarr/settings.ini ] && cp firestarr/settings.ini dist/
+          [ -f firestarr/data/fuel.lut ] && cp firestarr/data/fuel.lut dist/
+          [ -f firestarr/data/settings.ini ] && cp firestarr/data/settings.ini dist/
+
+          # Create version info
+          cd firestarr && git rev-parse HEAD > ../dist/VERSION && cd ..
+
+          # List contents
+          echo "=== Package contents ==="
+          ls -la dist/
+
+          # Create tarball
+          tar -czvf firestarr-linux-${{ matrix.os }}.tar.gz -C dist .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firestarr-linux-${{ matrix.os }}
+          path: firestarr-linux-${{ matrix.os }}.tar.gz
+          retention-days: 30
+
+  publish:
+    needs: [build-linux]
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: List artifacts
+        run: find . -type f -name "*.tar.gz"
+
+      - name: Attach to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            firestarr-linux-ubuntu-22.04/firestarr-linux-ubuntu-22.04.tar.gz
+            firestarr-linux-ubuntu-24.04/firestarr-linux-ubuntu-24.04.tar.gz
