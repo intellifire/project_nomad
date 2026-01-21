@@ -138,12 +138,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install proj libgeotiff libtiff curl
+          brew install proj libgeotiff libtiff curl tbb
 
       - name: Configure CMake
         run: |
           cmake -S firestarr -B build \
             -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="$(brew --prefix)" \
             -DCMAKE_RUNTIME_OUTPUT_DIRECTORY="$(pwd)/build/bin"
 
       - name: Build
@@ -230,7 +231,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          C:\vcpkg\vcpkg install proj geotiff tiff curl --triplet x64-windows
+          C:\vcpkg\vcpkg install proj libgeotiff tiff curl --triplet x64-windows
         shell: pwsh
 
       - name: Configure CMake
