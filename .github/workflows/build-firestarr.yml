@@ -38,7 +38,9 @@ jobs:
             libgeotiff-dev \
             libtiff-dev \
             libcurl4-openssl-dev \
-            libproj-dev
+            libproj-dev \
+            proj-bin \
+            cmake
 
       - name: Configure CMake
         run: |
