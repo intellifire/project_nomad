@@ -108,8 +108,206 @@ jobs:
           path: firestarr-linux-${{ matrix.os }}.tar.gz
           retention-days: 30
 
+  build-macos:
+    strategy:
+      matrix:
+        include:
+          - os: macos-13
+            arch: x64
+          - os: macos-14
+            arch: arm64
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout Nomad (for workflow context)
+        uses: actions/checkout@v4
+
+      - name: Clone firestarr-cpp
+        run: |
+          git clone https://github.com/CWFMF/firestarr-cpp.git firestarr
+          cd firestarr
+          git checkout ${{ github.event.inputs.firestarr_ref || 'main' }}
+          COMMIT=$(git rev-parse --short HEAD)
+          echo "Building FireSTARR at $COMMIT"
+          # CMakeLists.txt expects ../.env with VERSION
+          echo "VERSION=dev-$COMMIT" > ../.env
+          # Remove post-build copy that fails in CI (BSD sed syntax)
+          sed -i '' '128,130d' CMakeLists.txt
+          echo "Verifying removal:"
+          grep -n "add_custom_command" CMakeLists.txt || echo "POST_BUILD removed successfully"
+
+      - name: Install dependencies
+        run: |
+          brew install proj libgeotiff libtiff curl
+
+      - name: Configure CMake
+        run: |
+          cmake -S firestarr -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_RUNTIME_OUTPUT_DIRECTORY="$(pwd)/build/bin"
+
+      - name: Build
+        run: cmake --build build --config Release -j$(sysctl -n hw.ncpu)
+
+      - name: Locate binary
+        id: locate
+        run: |
+          # Find the built executable
+          BINARY=$(find build -type f -name "firestarr" -perm +111 | head -1)
+          if [ -z "$BINARY" ]; then
+            echo "ERROR: Could not find firestarr binary"
+            find build -type f -perm +111
+            exit 1
+          fi
+          echo "binary=$BINARY" >> $GITHUB_OUTPUT
+          echo "Found binary at: $BINARY"
+
+      - name: Check binary dependencies
+        run: |
+          echo "=== Binary info ==="
+          file ${{ steps.locate.outputs.binary }}
+          echo ""
+          echo "=== Dynamic dependencies ==="
+          otool -L ${{ steps.locate.outputs.binary }} || true
+
+      - name: Package artifact
+        run: |
+          mkdir -p dist
+          cp ${{ steps.locate.outputs.binary }} dist/firestarr
+
+          # Bundle data files if they exist
+          [ -f firestarr/fuel.lut ] && cp firestarr/fuel.lut dist/
+          [ -f firestarr/settings.ini ] && cp firestarr/settings.ini dist/
+          [ -f firestarr/data/fuel.lut ] && cp firestarr/data/fuel.lut dist/
+          [ -f firestarr/data/settings.ini ] && cp firestarr/data/settings.ini dist/
+
+          # Create version info
+          cd firestarr && git rev-parse HEAD > ../dist/VERSION && cd ..
+
+          # List contents
+          echo "=== Package contents ==="
+          ls -la dist/
+
+          # Create tarball
+          tar -czvf firestarr-macos-${{ matrix.arch }}.tar.gz -C dist .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firestarr-macos-${{ matrix.arch }}
+          path: firestarr-macos-${{ matrix.arch }}.tar.gz
+          retention-days: 30
+
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Nomad (for workflow context)
+        uses: actions/checkout@v4
+
+      - name: Clone firestarr-cpp
+        run: |
+          git clone https://github.com/CWFMF/firestarr-cpp.git firestarr
+          cd firestarr
+          git checkout ${{ github.event.inputs.firestarr_ref || 'main' }}
+          $COMMIT = git rev-parse --short HEAD
+          echo "Building FireSTARR at $COMMIT"
+          # CMakeLists.txt expects ../.env with VERSION
+          "VERSION=dev-$COMMIT" | Out-File -FilePath ..\.env -Encoding utf8
+          # Remove post-build copy that fails in CI (lines 128-130)
+          $content = Get-Content CMakeLists.txt
+          $content | Select-Object -Index (0..126 + 130..($content.Length-1)) | Set-Content CMakeLists.txt
+          echo "Verifying removal:"
+          Select-String -Path CMakeLists.txt -Pattern "add_custom_command" || echo "POST_BUILD removed successfully"
+        shell: pwsh
+
+      - name: Setup vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
+          C:\vcpkg\bootstrap-vcpkg.bat
+          echo "VCPKG_ROOT=C:\vcpkg" >> $env:GITHUB_ENV
+        shell: pwsh
+
+      - name: Install dependencies
+        run: |
+          C:\vcpkg\vcpkg install proj geotiff tiff curl --triplet x64-windows
+        shell: pwsh
+
+      - name: Configure CMake
+        run: |
+          cmake -S firestarr -B build `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake `
+            -DVCPKG_TARGET_TRIPLET=x64-windows `
+            -DCMAKE_RUNTIME_OUTPUT_DIRECTORY="${{ github.workspace }}\build\bin"
+        shell: pwsh
+
+      - name: Build
+        run: cmake --build build --config Release -j $env:NUMBER_OF_PROCESSORS
+        shell: pwsh
+
+      - name: Locate binary
+        id: locate
+        run: |
+          $BINARY = Get-ChildItem -Path build -Recurse -Filter "firestarr.exe" | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $BINARY) {
+            echo "ERROR: Could not find firestarr.exe"
+            Get-ChildItem -Path build -Recurse -Filter "*.exe" | Select-Object FullName
+            exit 1
+          }
+          echo "binary=$BINARY" >> $env:GITHUB_OUTPUT
+          echo "Found binary at: $BINARY"
+        shell: pwsh
+
+      - name: Check binary dependencies
+        run: |
+          echo "=== Binary info ==="
+          ${{ steps.locate.outputs.binary }}
+          echo ""
+          echo "=== Binary size ==="
+          (Get-Item "${{ steps.locate.outputs.binary }}").Length / 1MB | ForEach-Object { "{0:N2} MB" -f $_ }
+        shell: pwsh
+
+      - name: Package artifact
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+
+          Copy-Item "${{ steps.locate.outputs.binary }}" dist\firestarr.exe
+
+          # Copy required DLLs from vcpkg
+          $vcpkgBin = "C:\vcpkg\installed\x64-windows\bin"
+          if (Test-Path $vcpkgBin) {
+            Get-ChildItem "$vcpkgBin\*.dll" | Copy-Item -Destination dist\
+          }
+
+          # Bundle data files if they exist
+          if (Test-Path firestarr\fuel.lut) { Copy-Item firestarr\fuel.lut dist\ }
+          if (Test-Path firestarr\settings.ini) { Copy-Item firestarr\settings.ini dist\ }
+          if (Test-Path firestarr\data\fuel.lut) { Copy-Item firestarr\data\fuel.lut dist\ }
+          if (Test-Path firestarr\data\settings.ini) { Copy-Item firestarr\data\settings.ini dist\ }
+
+          # Create version info
+          cd firestarr
+          git rev-parse HEAD | Out-File -FilePath ..\dist\VERSION -Encoding utf8
+          cd ..
+
+          # List contents
+          echo "=== Package contents ==="
+          Get-ChildItem dist
+
+          # Create zip
+          Compress-Archive -Path dist\* -DestinationPath firestarr-windows-x64.zip
+        shell: pwsh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firestarr-windows-x64
+          path: firestarr-windows-x64.zip
+          retention-days: 30
+
   publish:
-    needs: [build-linux]
+    needs: [build-linux, build-macos, build-windows]
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
     permissions:
@@ -120,7 +318,9 @@ jobs:
         uses: actions/download-artifact@v4
 
       - name: List artifacts
-        run: find . -type f -name "*.tar.gz"
+        run: |
+          echo "=== All artifacts ==="
+          find . -type f \( -name "*.tar.gz" -o -name "*.zip" \)
 
       - name: Attach to release
         uses: softprops/action-gh-release@v2
@@ -128,3 +328,6 @@ jobs:
           files: |
             firestarr-linux-ubuntu-22.04/firestarr-linux-ubuntu-22.04.tar.gz
             firestarr-linux-ubuntu-24.04/firestarr-linux-ubuntu-24.04.tar.gz
+            firestarr-macos-x64/firestarr-macos-x64.tar.gz
+            firestarr-macos-arm64/firestarr-macos-arm64.tar.gz
+            firestarr-windows-x64/firestarr-windows-x64.zip
