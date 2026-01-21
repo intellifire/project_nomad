@@ -44,9 +44,14 @@ jobs:
 
       - name: Configure CMake
         run: |
+          # Debug: find PROJ cmake config
+          find /usr -name "*PROJ*cmake*" -o -name "*proj*cmake*" 2>/dev/null || true
+          find /usr -name "PROJConfig.cmake" -o -name "proj-config.cmake" 2>/dev/null || true
+
           cmake -S firestarr -B build \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_CXX_FLAGS="-march=x86-64-v3"
+            -DCMAKE_CXX_FLAGS="-march=x86-64-v3" \
+            -DCMAKE_PREFIX_PATH="/usr/lib/x86_64-linux-gnu/cmake"
 
       - name: Build
         run: cmake --build build --config Release -j$(nproc)
