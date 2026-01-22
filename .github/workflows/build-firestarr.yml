@@ -163,15 +163,19 @@ jobs:
           export CXX=$(brew --prefix)/bin/g++-${GCC_VERSION}
           echo "Using GCC: $CXX"
 
-          # TBB is required for std::execution with GCC on macOS
+          # Set up Homebrew paths for libraries
+          BREW_PREFIX=$(brew --prefix)
           TBB_ROOT=$(brew --prefix tbb)
+          echo "Homebrew prefix: $BREW_PREFIX"
           echo "TBB location: $TBB_ROOT"
 
           cmake -S firestarr -B build \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_COMPILER=$CC \
             -DCMAKE_CXX_COMPILER=$CXX \
-            -DCMAKE_PREFIX_PATH="$(brew --prefix);${TBB_ROOT}" \
+            -DCMAKE_PREFIX_PATH="${BREW_PREFIX};${TBB_ROOT}" \
+            -DCMAKE_LIBRARY_PATH="${BREW_PREFIX}/lib" \
+            -DCMAKE_INCLUDE_PATH="${BREW_PREFIX}/include" \
             -DTBB_ROOT="${TBB_ROOT}" \
             -DCMAKE_RUNTIME_OUTPUT_DIRECTORY="$(pwd)/build/bin"
 
