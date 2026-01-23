@@ -565,6 +565,16 @@ step3_paths() {
         NOMAD_PORT="${input_port:-3001}"
         print_success "Server port: $NOMAD_PORT"
         echo ""
+
+        echo -e "${CYAN}Server Hostname${NC}"
+        echo "    The hostname or IP address users will use to access Nomad."
+        echo "    For local-only access, use 'localhost'."
+        echo "    For network access, use the server's IP or hostname."
+        echo ""
+        read -p "Server hostname [localhost]: " input_hostname
+        NOMAD_SERVER_HOSTNAME="${input_hostname:-localhost}"
+        print_success "Server hostname: $NOMAD_SERVER_HOSTNAME"
+        echo ""
     fi
 
     # Port configuration (Docker Nomad)
@@ -1855,6 +1865,10 @@ generate_env_file() {
 
     if [ -n "$NOMAD_PORT" ]; then
         update_env_value "PORT" "$NOMAD_PORT"
+        # Metal mode: set API URL using configured hostname and port
+        local metal_hostname="${NOMAD_SERVER_HOSTNAME:-localhost}"
+        update_env_value "VITE_API_PORT" "$NOMAD_PORT"
+        update_env_value "VITE_API_BASE_URL" "http://${metal_hostname}:${NOMAD_PORT}"
     fi
 
     if [ -n "$NOMAD_FRONTEND_HOST_PORT" ]; then
@@ -2081,7 +2095,7 @@ install_all_metal() {
     echo "    cd $PROJECT_DIR"
     echo "    npm run start"
     echo ""
-    echo "Access at: http://localhost:${NOMAD_PORT:-3001}"
+    echo "Access at: http://${NOMAD_SERVER_HOSTNAME:-localhost}:${NOMAD_PORT:-3001}"
 }
 
 # ============================================
