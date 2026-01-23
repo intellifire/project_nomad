@@ -165,6 +165,25 @@ sudo apt-get install gdal-bin libgdal-dev
 
 **Docker:** The backend Dockerfile includes GDAL automatically.
 
+### FireSTARR (Metal Mode on Linux)
+
+When running FireSTARR natively on Linux (not in Docker), additional requirements apply:
+
+- **glibc** >= 2.34 (Ubuntu 22.04+)
+- **libtiff** >= 6.0 (libtiff.so.6)
+- **libproj** >= 25 (libproj.so.25) with **PROJ database schema >= 6**
+
+The installer validates these requirements and offers to auto-fix PROJ on Ubuntu by adding the ubuntugis-unstable PPA. If you encounter PROJ schema version errors:
+
+```bash
+# Ubuntu: Update PROJ data from ubuntugis-unstable PPA
+sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable
+sudo apt update
+sudo apt install --only-upgrade proj-data
+```
+
+**Docker mode** includes all dependencies and is recommended for systems that don't meet these requirements.
+
 ## Docker Deployment
 
 ```bash
