@@ -6,9 +6,16 @@
 
 /**
  * Base URL for API requests that need absolute URLs (e.g., tile URLs, downloads).
- * Uses VITE_API_BASE_URL from environment, defaulting to localhost:3001 for development.
+ * VITE_API_BASE_URL must be configured in .env - no fallback to catch config errors early.
  */
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL;
+if (!configuredBaseUrl) {
+  throw new Error(
+    'VITE_API_BASE_URL is not configured. ' +
+    'Set it in .env (e.g., VITE_API_BASE_URL=http://localhost:3001) and rebuild.'
+  );
+}
+export const API_BASE_URL = configuredBaseUrl;
 
 /** Relative API path for proxied requests */
 const API_BASE = '/api/v1';
