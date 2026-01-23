@@ -119,6 +119,21 @@ Where `<date>` is the actual calendar date (e.g., `2024-06-15`).
 
 ## Common Issues
 
+### PROJ Database Schema Version (Linux Metal Mode)
+```
+[FATAL] proj_create: /usr/share/proj/proj.db contains DATABASE.LAYOUT.VERSION.MINOR = 2 whereas a number >= 6 is expected
+```
+**Cause:** The system's PROJ database is too old for FireSTARR. This is common on Ubuntu when libproj is installed from a PPA but proj-data is from the default repos.
+
+**Solution:** Update proj-data from ubuntugis-unstable PPA:
+```bash
+sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable
+sudo apt update
+sudo apt install --only-upgrade proj-data
+```
+
+The Project Nomad installer (`scripts/install_nomad_setup.sh`) automatically validates PROJ schema version and offers to fix this on Ubuntu.
+
 ### Platform Warning (Apple Silicon)
 ```
 WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8)
