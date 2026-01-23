@@ -2082,7 +2082,11 @@ install_all_metal() {
     print_step "Installing Node.js dependencies..."
     run_cmd npm --prefix "$PROJECT_DIR" install
 
-    # 8. Build backend and frontend
+    # 8. Clear Vite cache to ensure fresh build with new .env values
+    print_step "Clearing Vite cache..."
+    rm -rf "$PROJECT_DIR/frontend/node_modules/.vite" "$PROJECT_DIR/frontend/dist" 2>/dev/null || true
+
+    # 9. Build backend and frontend
     print_step "Building Nomad..."
     run_cmd npm --prefix "$PROJECT_DIR" run build
 
