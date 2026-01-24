@@ -12,59 +12,43 @@ A national fire modeling GUI system for Canadian wildfire management.
 
 ## Mission
 
-Democratizing fire modeling to save lives through accessible, modern interfaces that integrate multiple fire behavior prediction engines.
+Democratizing fire modeling to save lives through accessible, modern interfaces.
 
 ## Overview
 
-Project Nomad is a TypeScript React GUI for fire modeling systems (WISE, FireSTARR). It provides a MapBox GL-based map interface for fire behavior analysis and prediction modeling in wildfire management operations.
+Project Nomad is a TypeScript React GUI for fire modeling. It provides a MapBox GL-based map interface for fire behavior analysis and prediction modeling in wildfire management operations.
 
 **Current Status**: Phase 1 MVP Complete. Working SAN deployment with FireSTARR integration, full visualization pipeline, and installer for easy deployment.
 
-## Deployment Modes
+## Deployment
 
 ### SAN (Stand Alone Nomad)
-Self-hosted PWA for individual users or small teams:
+Self-hosted application for individual users or small teams:
 - Bundled frontend with local backend
-- SpatiaLite for spatial data storage
-- File-based authentication
+- SQLite for data storage
+- Simple file-based authentication
+- Docker or Metal (bare metal) infrastructure modes
 - Ideal for field operations or standalone deployments
 
-### ACN (Agency Centric Nomad)
-Component integrated into existing agency infrastructure:
-- Embeddable React component
-- PostGIS spatial database integration
-- Protocol-based authentication (OIDC/OAuth 2.0, SAML 2.0)
-- Configuration via Git submodules for agency-specific branding and data sources
+## Fire Modeling Engine
 
-**For ACN integration, see [EMBEDDING.md](EMBEDDING.md)** - complete guide for embedding the dashboard in your agency's application.
-
-## Fire Modeling Engines
-
-### FireSTARR (Primary)
+### FireSTARR
 Open-source probabilistic fire modeling:
 - Monte Carlo simulation for burn probability
 - Canadian FBP System implementation
 - Fast C++ execution
 - Active development
 
-### WISE (Legacy Support)
-Deterministic fire growth modeling:
-- Prometheus heritage (Huygens wavelet propagation)
-- Production-proven in Canadian agencies
-- Integration via Fire Engine Abstraction Layer
-- Transition path to FireSTARR
-
-## Core Features (Planned)
+## Core Features
 
 **Model Setup Wizard**
-- Ignition input (point, line, polygon drawing on map)
+- Ignition input (point drawing on map)
 - Temporal configuration (start time, duration)
-- Engine selection (WISE/FireSTARR, deterministic/probabilistic)
-- Weather data integration (SpotWX, agency stations)
+- Weather data integration (SpotWX)
 
 **Model Review**
 - Fire perimeter visualization on MapBox GL
-- Intensity grids, burn probability maps
+- Burn probability maps
 - Time-stepped animation
 - Export to multiple formats
 
@@ -73,7 +57,6 @@ Deterministic fire growth modeling:
 - National DEM
 - ECCC weather data
 - MODIS/VIIRS hotspots
-- Agency-specific data via configuration
 
 ## Technical Stack
 
@@ -82,22 +65,21 @@ Deterministic fire growth modeling:
 | Frontend | TypeScript, React |
 | Map | MapBox GL JS |
 | Backend | Node.js, Express, TypeScript |
-| Spatial DB | SpatiaLite (SAN) / PostGIS (ACN) |
-| Model Engines | FireSTARR, WISE (via abstraction layer) |
+| Database | SQLite |
+| Model Engine | FireSTARR |
+| Infrastructure | Docker or Metal (bare metal) |
 
 ## Documentation
 
 ### Component Embedding
-For agencies integrating the Nomad dashboard into existing applications:
+For embedding the Nomad dashboard in external applications:
 - **[EMBEDDING.md](EMBEDDING.md)** - Consumer entry point for embedding
 - **[openNomad/README.md](frontend/src/openNomad/README.md)** - Complete adapter implementation guide
 - **[docs/examples/](docs/examples/)** - Runnable integration examples
 
 ### SME Documentation
-Comprehensive technical references for fire modeling integration:
-
+Technical references for fire modeling:
 - **FireSTARR**: `Documentation/Research/SME_Data/FireSTARR/`
-- **WISE**: `Documentation/Research/SME_Data/WISE/`
 
 ### Project Specification
 - `draft_plan.md` - Detailed architecture and workflow specification
@@ -141,107 +123,63 @@ project_nomad/
 │               ├── nomad_master_plan.md
 │               └── SST/      # Single Source of Truth diagrams
 ├── EMBEDDING.md              # Component embedding guide
-├── assets/logo/              # Project branding
-└── configuration/            # Agency configuration
+└── assets/logo/              # Project branding
 ```
 
-## System Requirements
+## Installation
 
-### Backend
-- **Node.js** >= 20.0.0
-- **GDAL** native libraries (for raster processing)
+The interactive installer handles all configuration and dependencies:
 
-#### Installing GDAL
-
-**macOS (Homebrew):**
 ```bash
-brew install gdal
+git clone https://github.com/WISE-Developers/project_nomad.git
+cd project_nomad
+./scripts/install_nomad_setup.sh
 ```
 
-**Ubuntu/Debian:**
-```bash
-sudo apt-get install gdal-bin libgdal-dev
-```
+The installer will guide you through:
+1. **Infrastructure selection** - Docker (recommended) or Metal (bare metal)
+2. **FireSTARR dataset** - Download or use existing (~50GB national fuel/DEM data)
+3. **FireSTARR binary** - Download or use existing
+4. **Configuration** - Paths, ports, and environment setup
 
-**Docker:** The backend Dockerfile includes GDAL automatically.
+The installer validates all prerequisites and offers to fix common issues automatically.
 
-### FireSTARR (Metal Mode on Linux)
+### Quick Start (Docker)
 
-When running FireSTARR natively on Linux (not in Docker), additional requirements apply:
-
-- **glibc** >= 2.34 (Ubuntu 22.04+)
-- **libtiff** >= 6.0 (libtiff.so.6)
-- **libproj** >= 25 (libproj.so.25) with **PROJ database schema >= 6**
-
-The installer validates these requirements and offers to auto-fix PROJ on Ubuntu by adding the ubuntugis-unstable PPA. If you encounter PROJ schema version errors:
+For Docker deployments, the installer configures everything. After running the installer:
 
 ```bash
-# Ubuntu: Update PROJ data from ubuntugis-unstable PPA
-sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable
-sudo apt update
-sudo apt install --only-upgrade proj-data
-```
-
-**Docker mode** includes all dependencies and is recommended for systems that don't meet these requirements.
-
-## Docker Deployment
-
-```bash
-docker compose build
 docker compose up -d
 ```
 
-### Security Considerations
+Access the application at http://localhost:8080
 
-**Docker Socket Mount Warning**: The backend container mounts the host's Docker socket (`/var/run/docker.sock`) to spawn FireSTARR model containers. This grants the backend container **root-equivalent access to the host machine**.
+### Quick Start (Metal)
 
-Implications:
-- Any process with Docker socket access can start privileged containers
-- Can mount arbitrary host filesystem paths
-- Effectively allows container escape
+For bare metal deployments, the installer builds the application. After running the installer:
 
-**Recommendations:**
-- Only deploy in trusted network environments
-- Do not expose the backend directly to the public internet without additional hardening
-- Consider a reverse proxy with authentication for production deployments
-- For high-security environments, implement a job queue architecture where a dedicated worker (outside the container) handles model execution
+```bash
+npm start
+```
 
-This architecture is acceptable for:
-- Local development
-- Internal agency deployments behind firewalls
-- Trusted research environments
+Access the application at http://localhost:3001
 
 ## Development
 
 ```bash
-npm run build          # Compile TypeScript
-npm run dev            # Watch mode
+npm install
+npm run dev            # Watch mode (frontend + backend)
 npm test               # Run tests
 npm run lint           # ESLint
 ```
 
-## MVP Outputs
-
-Both deployment modes produce:
-- Formatted input folder for FireSTARR/WISE
-- CLI command for model execution
-- Status tracking and notifications
-- Visualization on map
-- Export in standard GIS formats
-
-## Related Projects
-
-- **WiseGuy**: Fire Engine Abstraction Layer
-  - Provides engine abstraction for WISE integration
-  - Pattern for multi-engine support
-
 ## Contributing
 
-Project Nomad is in early planning. Contact the maintainers for collaboration opportunities.
+Contributions welcome. See open issues or contact the maintainers.
 
 ## License
 
-TBD
+AGPLv3 - See [LICENSE](LICENSE) for details.
 
 ---
 
