@@ -60,8 +60,9 @@ jobs:
           echo "Building FireSTARR at $COMMIT"
           echo "VERSION=dev-$COMMIT" > ../.env
 
-          # Remove post-build copy that fails in CI (pattern-based, not line numbers)
-          sed -i '/add_custom_command.*POST_BUILD/,/)$/d' CMakeLists.txt
+          # Remove post-build copy that fails in CI
+          # The add_custom_command block spans multiple lines, so delete each relevant line
+          sed -i '/POST_BUILD/d; /COMMAND.*copy.*TARGET_FILE/d; /add_custom_command(TARGET.*firestarr/d' CMakeLists.txt
           echo "Verifying removal:"
           grep -n "POST_BUILD" CMakeLists.txt || echo "POST_BUILD removed successfully"
 
@@ -150,8 +151,9 @@ jobs:
           echo "Building FireSTARR at $COMMIT"
           echo "VERSION=dev-$COMMIT" > ../.env
 
-          # Remove post-build copy that fails in CI (pattern-based, not line numbers)
-          sed -i '/add_custom_command.*POST_BUILD/,/)$/d' CMakeLists.txt
+          # Remove post-build copy that fails in CI
+          # The add_custom_command block spans multiple lines, so delete each relevant line
+          sed -i '/POST_BUILD/d; /COMMAND.*copy.*TARGET_FILE/d; /add_custom_command(TARGET.*firestarr/d' CMakeLists.txt
           echo "Verifying removal:"
           grep -n "POST_BUILD" CMakeLists.txt || echo "POST_BUILD removed successfully"
 
@@ -255,7 +257,7 @@ jobs:
               COMMIT=$(git rev-parse --short HEAD)
               echo "VERSION=dev-$COMMIT" > ../.env
 
-              sed -i "/add_custom_command.*POST_BUILD/,/)$/d" CMakeLists.txt
+              sed -i '/POST_BUILD/d; /COMMAND.*copy.*TARGET_FILE/d; /add_custom_command(TARGET.*firestarr/d' CMakeLists.txt
 
               cd ..
               cmake -S firestarr -B build \
@@ -301,7 +303,7 @@ jobs:
           echo "VERSION=dev-$COMMIT" > ../.env
 
           # Remove post-build copy that fails in CI (BSD sed syntax)
-          sed -i '' '/add_custom_command.*POST_BUILD/,/)$/d' CMakeLists.txt
+          sed -i '' '/POST_BUILD/d; /COMMAND.*copy.*TARGET_FILE/d; /add_custom_command(TARGET.*firestarr/d' CMakeLists.txt
           echo "Verifying removal:"
           grep -n "add_custom_command" CMakeLists.txt || echo "POST_BUILD removed successfully"
 
@@ -411,10 +413,9 @@ jobs:
           echo "Building FireSTARR at $COMMIT"
           "VERSION=dev-$COMMIT" | Out-File -FilePath ..\.env -Encoding utf8
 
-          # Remove post-build copy that fails in CI (pattern-based)
-          $content = Get-Content CMakeLists.txt -Raw
-          $content = $content -replace '(?ms)add_custom_command\([^)]*POST_BUILD[^)]*\)', ''
-          $content | Set-Content CMakeLists.txt -NoNewline
+          # Remove post-build copy that fails in CI
+          $lines = Get-Content CMakeLists.txt | Where-Object { $_ -notmatch 'POST_BUILD|COMMAND.*copy.*TARGET_FILE|add_custom_command\(TARGET.*firestarr' }
+          $lines | Set-Content CMakeLists.txt
           echo "Verifying removal (should show no POST_BUILD):"
           Select-String -Path CMakeLists.txt -Pattern "POST_BUILD" || echo "POST_BUILD removed successfully"
 
