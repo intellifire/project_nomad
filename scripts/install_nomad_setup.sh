@@ -1802,7 +1802,18 @@ install_firestarr_from_archive() {
     # Download if URL
     if [[ "$archive_source" =~ ^https?:// ]]; then
         print_step "Downloading archive..."
-        archive_file="/tmp/firestarr_download_$$.zip"
+        # Preserve original extension from URL for correct extraction
+        local url_ext=""
+        if [[ "$archive_source" =~ \.(tar\.gz|tgz)$ ]]; then
+            url_ext=".tar.gz"
+        elif [[ "$archive_source" =~ \.tar$ ]]; then
+            url_ext=".tar"
+        elif [[ "$archive_source" =~ \.zip$ ]]; then
+            url_ext=".zip"
+        else
+            url_ext=".zip"  # Default fallback
+        fi
+        archive_file="/tmp/firestarr_download_$$${url_ext}"
 
         if [ "$DRY_RUN" = true ]; then
             print_dry_run "Would download: $archive_source -> $archive_file"
