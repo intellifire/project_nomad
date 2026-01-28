@@ -144,6 +144,157 @@ get_selection() {
 # Early Prerequisite Checks (fail fast)
 # ============================================
 
+# Check and install basic tools the installer itself needs
+# This runs FIRST, before any menus, to avoid mid-install failures
+check_installer_prerequisites() {
+    print_step "Checking installer prerequisites..."
+
+    # Tools the installer script itself needs
+    local required_tools=(git curl tar unzip)
+    local missing_tools=()
+
+    for tool in "${required_tools[@]}"; do
+        if ! command -v "$tool" &> /dev/null; then
+            missing_tools+=("$tool")
+        fi
+    done
+
+    if [ ${#missing_tools[@]} -eq 0 ]; then
+        print_success "All installer prerequisites available"
+        return 0
+    fi
+
+    # Try to auto-install on Linux
+    if [[ "$OSTYPE" == "linux"* ]]; then
+        print_step "Installing missing tools: ${missing_tools[*]}..."
+        if sudo apt update -qq && sudo apt install -y -qq "${missing_tools[@]}"; then
+            print_success "Installed: ${missing_tools[*]}"
+            return 0
+        else
+            print_error "Failed to install: ${missing_tools[*]}"
+        fi
+    fi
+
+    # macOS or failed Linux install - report what's missing
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        print_error "Missing tools: ${missing_tools[*]}"
+        echo ""
+        echo "    Install with: brew install ${missing_tools[*]}"
+        echo ""
+    fi
+
+    exit 1
+}
+
+# Comprehensive dependency check for metal mode - checks EVERYTHING at once
+check_metal_deps_early() {
+    local missing=()
+    local warnings=()
+
+    # Node.js
+    if ! command -v node &> /dev/null; then
+        missing+=("node (Node.js >= 20)")
+    else
+        local node_major
+        node_major=$(node -v 2>/dev/null | sed 's/v//' | cut -d. -f1)
+        if [ -z "$node_major" ] || [ "$node_major" -lt 20 ]; then
+            missing+=("node >= 20 (found: $(node -v 2>/dev/null || echo 'unknown'))")
+        fi
+    fi
+
+    # npm
+    if ! command -v npm &> /dev/null; then
+        missing+=("npm")
+    fi
+
+    # GDAL - check it exists AND works
+    if ! command -v gdalinfo &> /dev/null; then
+        missing+=("gdal-bin (gdalinfo)")
+    else
+        # Test that gdalinfo actually works (catches library issues)
+        if ! gdalinfo --version &> /dev/null; then
+            missing+=("gdal-bin (installed but broken - try reinstalling)")
+        fi
+    fi
+
+    # gdal_polygonize.py (needed for contour generation)
+    if ! command -v gdal_polygonize.py &> /dev/null; then
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            missing+=("gdal_polygonize.py (brew install gdal)")
+        else
+            missing+=("python3-gdal (apt install python3-gdal)")
+        fi
+    fi
+
+    # sqlite3 (for PROJ validation)
+    if ! command -v sqlite3 &> /dev/null; then
+        if [[ "$OSTYPE" == "linux"* ]]; then
+            # Auto-install sqlite3 on Linux
+            sudo apt install -y -qq sqlite3 2>/dev/null || missing+=("sqlite3")
+        else
+            missing+=("sqlite3")
+        fi
+    fi
+
+    # Linux-specific: check glibc version
+    if [[ "$OSTYPE" == "linux"* ]]; then
+        local glibc_version
+        glibc_version=$(ldd --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+$' || echo "")
+        if [ -n "$glibc_version" ]; then
+            local glibc_major glibc_minor
+            glibc_major=$(echo "$glibc_version" | cut -d. -f1)
+            glibc_minor=$(echo "$glibc_version" | cut -d. -f2)
+            if [ "$glibc_major" -lt 2 ] || { [ "$glibc_major" -eq 2 ] && [ "$glibc_minor" -lt 38 ]; }; then
+                missing+=("glibc >= 2.38 (found: $glibc_version) - need Ubuntu 24.04+")
+            fi
+        fi
+
+        # Check libproj.so.25
+        if ! ldconfig -p 2>/dev/null | grep -q "libproj.so.25"; then
+            missing+=("libproj25 (apt install libproj25)")
+        else
+            # Check PROJ version via proj.db
+            local proj_db="/usr/share/proj/proj.db"
+            if [ -f "$proj_db" ] && command -v sqlite3 &> /dev/null; then
+                local proj_version
+                proj_version=$(sqlite3 "$proj_db" "SELECT value FROM metadata WHERE key = 'PROJ.VERSION';" 2>/dev/null || echo "")
+                if [ -n "$proj_version" ]; then
+                    local proj_major
+                    proj_major=$(echo "$proj_version" | cut -d. -f1)
+                    if [ "$proj_major" -lt 9 ] 2>/dev/null; then
+                        missing+=("PROJ >= 9.0 (found: $proj_version)")
+                    fi
+                fi
+            fi
+        fi
+    fi
+
+    # Report all missing deps at once
+    if [ ${#missing[@]} -gt 0 ]; then
+        echo ""
+        print_error "Missing dependencies for metal mode:"
+        echo ""
+        for dep in "${missing[@]}"; do
+            echo "    ✖ $dep"
+        done
+        echo ""
+
+        if [[ "$OSTYPE" == "linux"* ]]; then
+            echo "    Install on Ubuntu/Debian:"
+            echo "        sudo apt install nodejs npm gdal-bin libgdal-dev libproj25 sqlite3"
+            echo ""
+        elif [[ "$OSTYPE" == "darwin"* ]]; then
+            echo "    Install on macOS:"
+            echo "        brew install node gdal sqlite3"
+            echo ""
+        fi
+
+        return 1
+    fi
+
+    return 0
+}
+
 # Check Node.js version early - exits if Node is missing or too old
 check_node_early() {
     local required_major=20
@@ -418,14 +569,21 @@ step2_infrastructure() {
             print_success "Selected: Docker"
             ;;
         2)
-            check_node_early
-            check_glibc_early
-            check_firestarr_libs_early
-            check_proj_schema_early
+            # Check ALL metal dependencies at once - fail fast with complete list
+            if ! check_metal_deps_early; then
+                echo ""
+                print_error "Cannot proceed with metal mode - missing dependencies"
+                echo ""
+                echo "    Options:"
+                echo "      1. Install the missing dependencies and re-run installer"
+                echo "      2. Re-run installer and choose Docker mode instead"
+                echo ""
+                exit 1
+            fi
             NOMAD_INFRA="metal"
             FIRESTARR_INFRA="metal"
             FIRESTARR_EXECUTION_MODE="binary"
-            print_success "Selected: Metal"
+            print_success "Selected: Metal - all dependencies satisfied"
             ;;
     esac
 }
@@ -2331,6 +2489,9 @@ print_summary() {
 
 main() {
     print_header
+
+    # Check installer's own prerequisites FIRST (git, curl, tar, unzip)
+    check_installer_prerequisites
 
     # Change to project directory
     cd "$PROJECT_DIR"
