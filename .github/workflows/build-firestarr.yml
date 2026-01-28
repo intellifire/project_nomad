@@ -76,29 +76,19 @@ jobs:
       - name: Checkout Nomad (for Dockerfile)
         uses: actions/checkout@v4
 
-      - name: Check for ARM64 release
-        id: check-arm64
-        run: |
-          VERSION="${{ inputs.firestarr_version }}"
-          # Check if ARM64 binary exists in release
-          if curl -s -f -I "https://github.com/CWFMF/firestarr-cpp/releases/download/${VERSION}/firestarr-ubuntu-arm64-Release.tar.gz" > /dev/null 2>&1; then
-            echo "has_arm64=true" >> $GITHUB_OUTPUT
-          else
-            echo "has_arm64=false" >> $GITHUB_OUTPUT
-            echo "No ARM64 binary in release $VERSION - skipping"
-          fi
-
       - name: Download FireSTARR release
-        if: steps.check-arm64.outputs.has_arm64 == 'true'
         run: |
           VERSION="${{ inputs.firestarr_version }}"
-          echo "Downloading FireSTARR ARM64 $VERSION"
+          URL="https://github.com/CWFMF/firestarr-cpp/releases/download/${VERSION}/firestarr-ubuntu-arm64-gcc-Release.tar.gz"
+          echo "Downloading FireSTARR ARM64 $VERSION from $URL"
 
           mkdir -p docker-context
           cd docker-context
 
-          curl -L -o firestarr.tar.gz \
-            "https://github.com/CWFMF/firestarr-cpp/releases/download/${VERSION}/firestarr-ubuntu-arm64-Release.tar.gz"
+          if ! curl -f -L -o firestarr.tar.gz "$URL"; then
+            echo "::error::ARM64 binary not found in release $VERSION"
+            exit 1
+          fi
 
           tar -xzf firestarr.tar.gz
           chmod +x firestarr
@@ -106,15 +96,12 @@ jobs:
           ls -la
 
       - name: Set up QEMU
-        if: steps.check-arm64.outputs.has_arm64 == 'true'
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        if: steps.check-arm64.outputs.has_arm64 == 'true'
         uses: docker/setup-buildx-action@v3
 
       - name: Login to GHCR
-        if: steps.check-arm64.outputs.has_arm64 == 'true'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -122,7 +109,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
-        if: steps.check-arm64.outputs.has_arm64 == 'true'
         uses: docker/build-push-action@v6
         with:
           context: docker-context
