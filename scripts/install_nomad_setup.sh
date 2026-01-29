@@ -1008,21 +1008,21 @@ detect_architecture() {
     fi
 
     # Determine recommended image based on detection
-    # All images now from wise-developers/firestarr with unstable tag
+    # Images from CWFMF firestarr-cpp repository
     case "$arch" in
         arm64|aarch64)
-            RECOMMENDED_IMAGE="ghcr.io/wise-developers/project_nomad/firestarr:latest-arm64"
+            RECOMMENDED_IMAGE="ghcr.io/cwfmf/firestarr-cpp/firestarr:latest-arm64"
             ;;
         x86_64)
             if [ "$DETECTED_AVX2" = true ] || [ "$DETECTED_AVX" = true ]; then
-                RECOMMENDED_IMAGE="ghcr.io/wise-developers/project_nomad/firestarr:latest"
+                RECOMMENDED_IMAGE="ghcr.io/cwfmf/firestarr-cpp/firestarr:latest"
             else
                 # No AVX - cannot run FireSTARR
                 RECOMMENDED_IMAGE=""
             fi
             ;;
         *)
-            RECOMMENDED_IMAGE="ghcr.io/wise-developers/project_nomad/firestarr:latest"
+            RECOMMENDED_IMAGE="ghcr.io/cwfmf/firestarr-cpp/firestarr:latest"
             ;;
     esac
 }
@@ -1073,8 +1073,8 @@ configure_firestarr_image() {
     echo "Available FireSTARR images:"
     echo ""
     echo "    1) Recommended: $expanded_image"
-    echo "    2) x86_64 (Linux/Windows):   ghcr.io/wise-developers/project_nomad/firestarr:latest"
-    echo "    3) ARM64 (Apple Silicon):    ghcr.io/wise-developers/project_nomad/firestarr:latest-arm64"
+    echo "    2) x86_64 (Linux/Windows):   ghcr.io/cwfmf/firestarr-cpp/firestarr:latest"
+    echo "    3) ARM64 (Apple Silicon):    ghcr.io/cwfmf/firestarr-cpp/firestarr:latest-arm64"
     echo "    4) Enter custom image"
     echo ""
     read -p "Select an option [1-4] (default: 1): " choice
@@ -1084,10 +1084,10 @@ configure_firestarr_image() {
             FIRESTARR_IMAGE="$expanded_image"
             ;;
         2)
-            FIRESTARR_IMAGE="ghcr.io/wise-developers/project_nomad/firestarr:latest"
+            FIRESTARR_IMAGE="ghcr.io/cwfmf/firestarr-cpp/firestarr:latest"
             ;;
         3)
-            FIRESTARR_IMAGE="ghcr.io/wise-developers/project_nomad/firestarr:latest-arm64"
+            FIRESTARR_IMAGE="ghcr.io/cwfmf/firestarr-cpp/firestarr:latest-arm64"
             ;;
         4)
             read -p "Enter custom image: " custom_image
