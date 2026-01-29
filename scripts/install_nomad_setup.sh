@@ -207,24 +207,7 @@ check_metal_deps_early() {
         missing+=("npm")
     fi
 
-    # GDAL - check it exists AND works
-    if ! command -v gdalinfo &> /dev/null; then
-        missing+=("gdal-bin (gdalinfo)")
-    else
-        # Test that gdalinfo actually works (catches library issues)
-        if ! gdalinfo --version &> /dev/null; then
-            missing+=("gdal-bin (installed but broken - try reinstalling)")
-        fi
-    fi
-
-    # gdal_polygonize.py (needed for contour generation)
-    if ! command -v gdal_polygonize.py &> /dev/null; then
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            missing+=("gdal_polygonize.py (brew install gdal)")
-        else
-            missing+=("python3-gdal (apt install python3-gdal)")
-        fi
-    fi
+    # NOTE: GDAL not required - FireSTARR bundles its own GDAL/PROJ
 
     # sqlite3 (for SAN mode database)
     if ! command -v sqlite3 &> /dev/null; then
@@ -264,11 +247,11 @@ check_metal_deps_early() {
 
         if [[ "$OSTYPE" == "linux"* ]]; then
             echo "    Install on Ubuntu/Debian:"
-            echo "        sudo apt install nodejs npm gdal-bin python3-gdal sqlite3"
+            echo "        sudo apt install nodejs npm sqlite3"
             echo ""
         elif [[ "$OSTYPE" == "darwin"* ]]; then
             echo "    Install on macOS:"
-            echo "        brew install node gdal sqlite3"
+            echo "        brew install node sqlite3"
             echo ""
         fi
 
@@ -743,115 +726,7 @@ step3_paths() {
 # GDAL Validation (Comprehensive)
 # ============================================
 
-# Validate GDAL installation - checks not just existence but actual functionality
-# Returns 0 if GDAL is working, 1 if there are issues
-validate_gdal() {
-    print_step "Validating GDAL installation..."
-
-    # Check if gdalinfo command exists
-    if ! command -v gdalinfo &> /dev/null; then
-        print_error "GDAL not found"
-        echo ""
-        echo "    Install GDAL:"
-        echo "    - macOS: brew install gdal"
-        echo "    - Ubuntu: apt install gdal-bin libgdal-dev python3-gdal"
-        echo "    - Fedora: dnf install gdal gdal-devel python3-gdal"
-        echo ""
-        return 1
-    fi
-
-    # Test that gdalinfo actually works (catches library loading issues)
-    local gdal_test_output
-    gdal_test_output=$(gdalinfo --version 2>&1)
-    local gdal_test_exit=$?
-
-    if [ $gdal_test_exit -ne 0 ]; then
-        print_error "GDAL is installed but not working"
-        echo ""
-        echo "    Error output:"
-        echo "$gdal_test_output" | sed 's/^/        /'
-        echo ""
-
-        # Check for common Homebrew icu4c version mismatch
-        if echo "$gdal_test_output" | grep -q "libicu"; then
-            print_warning "Detected ICU library version mismatch (common Homebrew issue)"
-            echo ""
-            echo "    This typically happens when Homebrew updates icu4c but"
-            echo "    GDAL was compiled against an older version."
-            echo ""
-            echo "    Fix with:"
-            echo "        brew reinstall gdal"
-            echo ""
-            echo "    If that doesn't work, try:"
-            echo "        brew uninstall gdal && brew install gdal"
-            echo ""
-        fi
-        return 1
-    fi
-
-    print_success "gdalinfo working: $gdal_test_output"
-
-    # Check for gdal_polygonize.py (used by ContourGenerator)
-    if ! command -v gdal_polygonize.py &> /dev/null; then
-        print_warning "gdal_polygonize.py not found in PATH"
-        echo "    This is needed for generating contour polygons."
-        echo ""
-
-        # Try to find it
-        local polygonize_path=""
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            # macOS Homebrew locations
-            polygonize_path=$(find /opt/homebrew/bin /usr/local/bin -name "gdal_polygonize.py" 2>/dev/null | head -1)
-        else
-            # Linux common locations
-            polygonize_path=$(find /usr/bin /usr/local/bin -name "gdal_polygonize.py" 2>/dev/null | head -1)
-        fi
-
-        if [ -n "$polygonize_path" ]; then
-            print_info "Found at: $polygonize_path"
-            echo "    Ensure this is in your PATH or create a symlink."
-        else
-            echo "    Install Python GDAL bindings:"
-            echo "    - macOS: brew install gdal (includes Python bindings)"
-            echo "    - Ubuntu: apt install python3-gdal"
-            echo "    - Fedora: dnf install python3-gdal"
-        fi
-        echo ""
-        # This is a warning, not an error - backend can work without polygonize
-    else
-        # Test that gdal_polygonize.py actually works
-        local polygonize_test_output
-        polygonize_test_output=$(gdal_polygonize.py --help 2>&1 | head -1)
-        local polygonize_test_exit=$?
-
-        if [ $polygonize_test_exit -ne 0 ] || echo "$polygonize_test_output" | grep -qi "error\|traceback\|library not loaded"; then
-            print_error "gdal_polygonize.py is installed but not working"
-            echo ""
-            echo "    Error output:"
-            echo "$polygonize_test_output" | head -20 | sed 's/^/        /'
-            echo ""
-
-            # Check for ICU mismatch
-            if echo "$polygonize_test_output" | grep -q "libicu"; then
-                print_warning "Detected ICU library version mismatch"
-                echo ""
-                echo "    Fix with: brew reinstall gdal"
-                echo ""
-            fi
-            return 1
-        fi
-        print_success "gdal_polygonize.py working"
-    fi
-
-    # Check for gdalwarp (used for reprojection)
-    if command -v gdalwarp &> /dev/null; then
-        print_success "gdalwarp available"
-    else
-        print_warning "gdalwarp not found - some reprojection features may not work"
-    fi
-
-    return 0
-}
+# NOTE: validate_gdal removed - FireSTARR bundles its own GDAL/PROJ
 
 # ============================================
 # Disk Space Validation
@@ -976,10 +851,7 @@ validate_prerequisites() {
             print_success "npm available"
         fi
 
-        # GDAL validation (comprehensive check)
-        if ! validate_gdal; then
-            ((errors++))
-        fi
+        # NOTE: GDAL validation removed - FireSTARR bundles its own
     fi
 
     # FireSTARR binary requirements (metal FireSTARR)
