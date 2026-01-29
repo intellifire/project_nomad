@@ -51,7 +51,7 @@ services:
   # It's a template used by `docker compose run firestarr-app <command>`.
   # The backend's DockerExecutor spawns ephemeral containers for each job.
   firestarr-app:
-    image: ${FIRESTARR_IMAGE:-ghcr.io/cwfmf/firestarr:dev-${VERSION}}
+    image: ${FIRESTARR_IMAGE:-ghcr.io/cwfmf/firestarr-cpp/firestarr:latest}
     profiles: ["modeling"]  # Prevents auto-start with `docker compose up`
     # Update settings.ini RASTER_ROOT to match our mount point before running
     entrypoint: ["/bin/sh", "-c", "sed -i 's|RASTER_ROOT.*|RASTER_ROOT = /appl/data/generated/grid/100m|' /appl/firestarr/settings.ini && exec \"$$@\"", "--"]
