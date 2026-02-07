@@ -151,3 +151,187 @@ test.describe('Model Setup Wizard', () => {
     }
   });
 });
+
+/**
+ * Tests for the Time Range step date picker.
+ * Verifies the date picker is clickable and editable.
+ *
+ * Reference: GitHub Issue - Date Picker Click/Input Not Working
+ */
+test.describe('Time Range Date Picker', () => {
+  test.beforeEach(async ({ page }) => {
+    // Navigate to the app
+    await page.goto('/');
+    await page.waitForTimeout(1000);
+
+    // Check if app loaded
+    const rootContent = await page.locator('#root').innerHTML().catch(() => '');
+    if (rootContent.trim() === '') {
+      test.skip();
+      return;
+    }
+
+    // Dismiss splash screen if present
+    const enterButton = page.getByRole('button', { name: 'Enter' });
+    if (await enterButton.isVisible().catch(() => false)) {
+      await enterButton.click();
+      await page.waitForTimeout(500);
+    }
+
+    // Dismiss notification banner if present
+    const notNowButton = page.getByRole('button', { name: 'Not now' });
+    if (await notNowButton.isVisible().catch(() => false)) {
+      await notNowButton.click();
+      await page.waitForTimeout(300);
+    }
+  });
+
+  test('date picker should be visible and interactable', async ({ page }) => {
+    // Open the wizard
+    const newModelButton = page.getByRole('button', { name: /New Fire Model/i });
+    if (!await newModelButton.isVisible().catch(() => false)) {
+      test.skip();
+      return;
+    }
+    await newModelButton.click();
+    await page.waitForTimeout(500);
+
+    // Click "Upload File" and upload a GeoJSON to proceed to step 2
+    const uploadButton = page.getByRole('button', { name: /Upload File/i });
+    await uploadButton.click();
+    await page.waitForTimeout(300);
+
+    // Click the upload zone to trigger file chooser
+    const uploadZone = page.getByText('Click or drag file to upload');
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await uploadZone.click();
+    const fileChooser = await fileChooserPromise;
+
+    // Create a temp GeoJSON file content
+    const geoJsonContent = JSON.stringify({
+      type: 'Feature',
+      properties: {},
+      geometry: { type: 'Point', coordinates: [-115.5, 54.5] }
+    });
+
+    // Set the file (using a buffer approach)
+    await fileChooser.setFiles({
+      name: 'test.geojson',
+      mimeType: 'application/json',
+      buffer: Buffer.from(geoJsonContent)
+    });
+    await page.waitForTimeout(500);
+
+    // Click Continue to go to Time Range step
+    const continueButton = page.getByRole('button', { name: 'Continue' });
+    await continueButton.click();
+    await page.waitForTimeout(500);
+
+    // Verify we're on step 2
+    const step2Heading = page.getByRole('heading', { name: 'Time Range' });
+    await expect(step2Heading).toBeVisible();
+
+    // Find and verify the date picker input is visible
+    const datePicker = page.getByRole('textbox', { name: 'Date picker' });
+    await expect(datePicker).toBeVisible();
+
+    // Verify the date picker has a value
+    const dateValue = await datePicker.inputValue();
+    expect(dateValue).toMatch(/^\d{4}-\d{2}-\d{2}$/); // YYYY-MM-DD format
+  });
+
+  test('date picker should accept manual input', async ({ page }) => {
+    // Open the wizard and navigate to step 2
+    const newModelButton = page.getByRole('button', { name: /New Fire Model/i });
+    if (!await newModelButton.isVisible().catch(() => false)) {
+      test.skip();
+      return;
+    }
+    await newModelButton.click();
+    await page.waitForTimeout(500);
+
+    // Upload file to proceed
+    const uploadButton = page.getByRole('button', { name: /Upload File/i });
+    await uploadButton.click();
+    const uploadZone = page.getByText('Click or drag file to upload');
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await uploadZone.click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles({
+      name: 'test.geojson',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify({
+        type: 'Feature', properties: {},
+        geometry: { type: 'Point', coordinates: [-115.5, 54.5] }
+      }))
+    });
+    await page.waitForTimeout(500);
+
+    // Continue to step 2
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.waitForTimeout(500);
+
+    // Get the date picker
+    const datePicker = page.getByRole('textbox', { name: 'Date picker' });
+    await expect(datePicker).toBeVisible();
+
+    // Clear and type a new date
+    await datePicker.fill('2026-06-15');
+    await page.waitForTimeout(300);
+
+    // Verify the date was accepted
+    const newValue = await datePicker.inputValue();
+    expect(newValue).toBe('2026-06-15');
+  });
+
+  test('quick select buttons should update date picker', async ({ page }) => {
+    // Open the wizard and navigate to step 2
+    const newModelButton = page.getByRole('button', { name: /New Fire Model/i });
+    if (!await newModelButton.isVisible().catch(() => false)) {
+      test.skip();
+      return;
+    }
+    await newModelButton.click();
+    await page.waitForTimeout(500);
+
+    // Upload file to proceed
+    const uploadButton = page.getByRole('button', { name: /Upload File/i });
+    await uploadButton.click();
+    const uploadZone = page.getByText('Click or drag file to upload');
+    const fileChooserPromise = page.waitForEvent('filechooser');
+    await uploadZone.click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles({
+      name: 'test.geojson',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify({
+        type: 'Feature', properties: {},
+        geometry: { type: 'Point', coordinates: [-115.5, 54.5] }
+      }))
+    });
+    await page.waitForTimeout(500);
+
+    // Continue to step 2
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.waitForTimeout(500);
+
+    // Get initial date
+    const datePicker = page.getByRole('textbox', { name: 'Date picker' });
+    const initialDate = await datePicker.inputValue();
+
+    // Click Yesterday button
+    const yesterdayButton = page.getByRole('button', { name: /Yesterday/i });
+    await yesterdayButton.click();
+    await page.waitForTimeout(300);
+
+    // Verify date changed
+    const afterYesterday = await datePicker.inputValue();
+
+    // Calculate expected yesterday date
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const expectedYesterday = yesterday.toISOString().split('T')[0];
+
+    expect(afterYesterday).toBe(expectedYesterday);
+  });
+});

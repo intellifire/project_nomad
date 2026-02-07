@@ -91,7 +91,7 @@ const datePickerWrapperStyle: React.CSSProperties = {
   gap: '8px',
 };
 
-const dateDisplayButtonStyle: React.CSSProperties = {
+const dateInputContainerStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   gap: '12px',
@@ -101,14 +101,25 @@ const dateDisplayButtonStyle: React.CSSProperties = {
   border: '2px solid #e0e0e0',
   cursor: 'pointer',
   transition: 'all 0.2s',
-  textAlign: 'left',
   minWidth: '200px',
 };
 
-const dateDisplayButtonHoverStyle: React.CSSProperties = {
-  ...dateDisplayButtonStyle,
+const dateInputContainerHoverStyle: React.CSSProperties = {
+  ...dateInputContainerStyle,
   borderColor: '#ff6b35',
   boxShadow: '0 2px 8px rgba(255, 107, 53, 0.2)',
+};
+
+const styledDateInputStyle: React.CSSProperties = {
+  border: 'none',
+  background: 'transparent',
+  fontSize: '16px',
+  fontWeight: 500,
+  color: '#333',
+  cursor: 'pointer',
+  outline: 'none',
+  flex: 1,
+  minWidth: '140px',
 };
 
 const timeInputStyle: React.CSSProperties = {
@@ -177,25 +188,6 @@ function getFireSeasonStartDate(): string {
   const year = now.getMonth() < FIRE_SEASON_START_MONTH ? now.getFullYear() : now.getFullYear();
   const fireSeasonStart = new Date(year, FIRE_SEASON_START_MONTH, FIRE_SEASON_START_DAY);
   return fireSeasonStart.toISOString().split('T')[0];
-}
-
-/**
- * Format date for human-readable display
- */
-function formatDateDisplay(dateStr: string): string {
-  if (!dateStr) return 'Select a date...';
-
-  try {
-    const date = new Date(dateStr + 'T00:00:00');
-    return date.toLocaleDateString(undefined, {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  } catch {
-    return dateStr;
-  }
 }
 
 /**
@@ -319,13 +311,6 @@ export function TemporalStep() {
     }
   }, []); // Only run once on mount
 
-  // Open native date picker when clicking the display button
-  const handleDateDisplayClick = useCallback(() => {
-    dateInputRef.current?.showPicker?.();
-    dateInputRef.current?.focus();
-    dateInputRef.current?.click();
-  }, []);
-
   // Update start date
   const handleDateChange = useCallback(
     (newDate: string) => {
@@ -446,38 +431,23 @@ export function TemporalStep() {
 
         {/* Date and Time Pickers */}
         <div style={inputRowStyle}>
-          {/* Date Picker - clickable display with hidden input */}
+          {/* Date Picker - visible styled input */}
           <div style={datePickerWrapperStyle}>
-            <button
-              type="button"
-              style={isDateHovered ? dateDisplayButtonHoverStyle : dateDisplayButtonStyle}
-              onClick={handleDateDisplayClick}
+            <div
+              style={isDateHovered ? dateInputContainerHoverStyle : dateInputContainerStyle}
               onMouseEnter={() => setIsDateHovered(true)}
               onMouseLeave={() => setIsDateHovered(false)}
-              aria-label="Select date"
             >
               <i className="fa-solid fa-calendar" style={{ fontSize: '18px', color: '#ff6b35' }} />
-              <span style={{ fontSize: '16px', fontWeight: 500, color: '#333', flex: 1 }}>
-                {formatDateDisplay(temporal.startDate)}
-              </span>
-              <i className="fa-solid fa-chevron-down" style={{ fontSize: '12px', color: '#999' }} />
-            </button>
-            <input
-              ref={dateInputRef}
-              type="date"
-              value={temporal.startDate}
-              onChange={handleDateInputChange}
-              style={{
-                position: 'absolute',
-                opacity: 0,
-                width: '100%',
-                height: '100%',
-                cursor: 'pointer',
-                top: 0,
-                left: 0,
-              }}
-              aria-label="Date picker"
-            />
+              <input
+                ref={dateInputRef}
+                type="date"
+                value={temporal.startDate}
+                onChange={handleDateInputChange}
+                style={styledDateInputStyle}
+                aria-label="Date picker"
+              />
+            </div>
           </div>
 
           {/* Time Picker */}
