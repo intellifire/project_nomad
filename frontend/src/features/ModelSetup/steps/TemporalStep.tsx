@@ -3,11 +3,13 @@
  *
  * Second wizard step for setting simulation start time and duration.
  * Features improved date picker with quick-select buttons and human-readable format.
+ * Uses MaskedDateInput to enforce YYYY-MM-DD format and prevent 6-digit years.
  */
 
 import React, { useCallback, useMemo, useRef, useEffect } from 'react';
 import { useWizardData } from '../../Wizard';
 import type { ModelSetupData } from '../types';
+import { MaskedDateInput } from '../../../components/MaskedDateInput';
 
 const containerStyle: React.CSSProperties = {
   display: 'flex',
@@ -108,18 +110,6 @@ const dateInputContainerHoverStyle: React.CSSProperties = {
   ...dateInputContainerStyle,
   borderColor: '#ff6b35',
   boxShadow: '0 2px 8px rgba(255, 107, 53, 0.2)',
-};
-
-const styledDateInputStyle: React.CSSProperties = {
-  border: 'none',
-  background: 'transparent',
-  fontSize: '16px',
-  fontWeight: 500,
-  color: '#333',
-  cursor: 'pointer',
-  outline: 'none',
-  flex: 1,
-  minWidth: '140px',
 };
 
 const timeInputStyle: React.CSSProperties = {
@@ -275,7 +265,6 @@ function getActiveQuickSelect(dateStr: string): string | null {
  */
 export function TemporalStep() {
   const { data, setField } = useWizardData<ModelSetupData>();
-  const dateInputRef = useRef<HTMLInputElement>(null);
   const timeInputRef = useRef<HTMLInputElement>(null);
   const [isDateHovered, setIsDateHovered] = React.useState(false);
 
@@ -321,14 +310,6 @@ export function TemporalStep() {
       });
     },
     [setField, temporal]
-  );
-
-  // Handle native input change
-  const handleDateInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      handleDateChange(e.target.value);
-    },
-    [handleDateChange]
   );
 
   // Update start time
@@ -431,7 +412,7 @@ export function TemporalStep() {
 
         {/* Date and Time Pickers */}
         <div style={inputRowStyle}>
-          {/* Date Picker - visible styled input */}
+          {/* Date Picker - masked input enforcing YYYY-MM-DD format */}
           <div style={datePickerWrapperStyle}>
             <div
               style={isDateHovered ? dateInputContainerHoverStyle : dateInputContainerStyle}
@@ -439,12 +420,9 @@ export function TemporalStep() {
               onMouseLeave={() => setIsDateHovered(false)}
             >
               <i className="fa-solid fa-calendar" style={{ fontSize: '18px', color: '#ff6b35' }} />
-              <input
-                ref={dateInputRef}
-                type="date"
+              <MaskedDateInput
                 value={temporal.startDate}
-                onChange={handleDateInputChange}
-                style={styledDateInputStyle}
+                onChange={handleDateChange}
                 aria-label="Date picker"
               />
             </div>
