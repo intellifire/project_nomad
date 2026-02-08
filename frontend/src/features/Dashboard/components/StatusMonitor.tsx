@@ -401,32 +401,6 @@ const pulseIndicatorStyle: React.CSSProperties = {
   animation: 'pulse 1.5s infinite',
 };
 
-const progressContainerStyle: React.CSSProperties = {
-  position: 'relative',
-  height: '20px',
-  backgroundColor: '#f0f0f0',
-  borderRadius: '10px',
-  overflow: 'hidden',
-};
-
-const progressBarStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  height: '100%',
-  borderRadius: '10px',
-  transition: 'width 0.3s ease',
-};
-
-const progressTextStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  fontSize: '11px',
-  fontWeight: 600,
-  color: '#333',
-};
 
 // Spinner styles for engines that don't support progress updates (e.g., FireSTARR)
 const runningIndicatorContainerStyle: React.CSSProperties = {
