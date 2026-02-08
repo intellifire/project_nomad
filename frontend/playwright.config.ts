@@ -1,20 +1,24 @@
 import { defineConfig, devices } from '@playwright/test';
-
-/**
- * Read environment variables from .env file if it exists.
- * @see https://playwright.dev/docs/test-configuration
- */
 import * as path from 'path';
+import * as dotenv from 'dotenv';
+
+// Load .env from project root (parent of frontend/)
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+
+const port = process.env.VITE_DEV_PORT;
+if (!port) {
+  throw new Error('VITE_DEV_PORT is not set in .env — cannot configure Playwright');
+}
+
+const baseURL = `http://localhost:${port}`;
 
 /**
  * Playwright configuration for Project Nomad E2E testing.
  * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
-  // Directory containing E2E test files
   testDir: './e2e',
 
-  // Run tests in files in parallel
   fullyParallel: true,
 
   // Fail the build on CI if you accidentally left test.only in the source code
@@ -26,53 +30,31 @@ export default defineConfig({
   // Opt out of parallel tests on CI
   workers: process.env.CI ? 1 : undefined,
 
-  // Reporter configuration
   reporter: [
     ['html', { open: 'never' }],
     ['list'],
   ],
 
-  // Shared settings for all projects
   use: {
-    // Base URL to use in navigation
-    baseURL: 'http://localhost:5173',
-
-    // Collect trace when retrying the failed test
+    baseURL,
+    headless: !!process.env.CI,
     trace: 'on-first-retry',
-
-    // Screenshot on failure
     screenshot: 'only-on-failure',
-
-    // Video recording on failure
     video: 'on-first-retry',
   },
 
-  // Configure projects for browser testing
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-    // Add more browsers as needed:
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
-    // Mobile viewport testing
-    // {
-    //   name: 'mobile-chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
   ],
 
-  // Run local dev server before starting the tests
+  // Start full stack (backend + frontend) from project root
   webServer: {
     command: 'npm run dev',
-    url: 'http://localhost:5173',
+    cwd: path.resolve(__dirname, '..'),
+    url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },
