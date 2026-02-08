@@ -180,25 +180,6 @@ function getFireSeasonStartDate(): string {
   return fireSeasonStart.toISOString().split('T')[0];
 }
 
-/**
- * Format time for display
- */
-function formatTimeDisplay(timeStr: string): string {
-  if (!timeStr) return '12:00';
-
-  try {
-    const [hours, minutes] = timeStr.split(':');
-    const date = new Date();
-    date.setHours(parseInt(hours, 10), parseInt(minutes, 10));
-    return date.toLocaleTimeString(undefined, {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
-  } catch {
-    return timeStr;
-  }
-}
 
 /**
  * Format duration for display
