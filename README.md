@@ -27,7 +27,7 @@ Self-hosted application for individual users or small teams:
 - Bundled frontend with local backend
 - SQLite for data storage
 - Simple file-based authentication
-- Docker or Metal (bare metal) infrastructure modes
+- Container or Metal (bare metal) infrastructure modes
 - Ideal for field operations or standalone deployments
 
 ## Fire Modeling Engine
@@ -67,7 +67,16 @@ Open-source probabilistic fire modeling:
 | Backend | Node.js, Express, TypeScript |
 | Database | SQLite |
 | Model Engine | FireSTARR |
-| Infrastructure | Docker or Metal (bare metal) |
+| Infrastructure | Container or Metal (bare metal) |
+
+## System Requirements
+
+| Component | Minimum | Details |
+|-----------|---------|---------|
+| **Nomad** | 2 cores, 4 GB RAM, 2 GB disk | [Full requirements](NOMAD_REQUIREMENTS.md) |
+| **FireSTARR** | 2 cores, 8 GB RAM, 50 GB disk (dataset) | [Full requirements](FIRESTARR_REQUIREMENTS.md) |
+
+Container mode requires a Docker-compatible API and Docker Compose v2. Bare metal mode requires Node.js >= 20, GDAL, and SQLite. See the requirements documents for complete details.
 
 ## Documentation
 
@@ -81,49 +90,23 @@ For embedding the Nomad dashboard in external applications:
 Technical references for fire modeling:
 - **FireSTARR**: `Documentation/Research/SME_Data/FireSTARR/`
 
-### Project Specification
-- `draft_plan.md` - Detailed architecture and workflow specification
-
-### Configuration
-- `demo.json` - Example data source configuration
-
 ## Project Structure
 
 ```
 project_nomad/
-├── frontend/
-│   └── src/
-│       ├── App.tsx           # Main orchestration
-│       ├── features/         # Feature modules
-│       │   ├── Map/          # MapBox GL integration
-│       │   ├── Wizard/       # Reusable wizard component
-│       │   ├── ModelSetup/   # Fire model setup workflow
-│       │   ├── ModelReview/  # Results visualization
-│       │   ├── Dashboard/    # Draft models management
-│       │   ├── Export/       # Output export
-│       │   └── Notifications/# Job status notifications
-│       ├── openNomad/        # Embeddable component API
-│       │   ├── api.ts        # IOpenNomadAPI interface
-│       │   ├── customization/# White-label theming
-│       │   ├── default/      # SAN mode implementation
-│       │   └── examples/     # Integration examples
-│       ├── services/         # API communication
-│       ├── components/       # Shared components
-│       └── shared/utils/     # Utilities
-├── backend/
-│   └── src/                  # Express API server
-├── docs/
-│   └── examples/             # Runnable integration examples
-│       ├── react-minimal/    # React + Vite example
-│       └── vanilla-js/       # UMD script tag example
-├── Documentation/
-│   └── persist/
-│       └── SMEKB/Nomad/      # SME Knowledge Base
-│           └── plan/
-│               ├── nomad_master_plan.md
-│               └── SST/      # Single Source of Truth diagrams
-├── EMBEDDING.md              # Component embedding guide
-└── assets/logo/              # Project branding
+├── frontend/                  # React TypeScript frontend
+├── backend/                   # Express API server
+├── scripts/                   # Installer and setup scripts
+├── docker/                    # Container build files
+├── configuration/             # Agency configuration (submodules)
+├── docs/examples/             # Integration examples (React, vanilla JS)
+├── Documentation/             # SME knowledge base and project docs
+├── NOMAD_REQUIREMENTS.md      # Nomad system requirements
+├── FIRESTARR_REQUIREMENTS.md  # FireSTARR system requirements
+├── EMBEDDING.md               # Guide for embedding Nomad in other apps
+├── install.sh                 # Run this to install
+├── docker-compose.yaml        # Container deployment
+└── docker-compose.dev.yaml    # Development deployment
 ```
 
 ## Installation
@@ -133,36 +116,36 @@ The interactive installer handles all configuration and dependencies:
 ```bash
 git clone https://github.com/WISE-Developers/project_nomad.git
 cd project_nomad
-./scripts/install_nomad_setup.sh
+./install.sh
 ```
 
 The installer will guide you through:
-1. **Infrastructure selection** - Docker (recommended) or Metal (bare metal)
+1. **Infrastructure selection** - Container (recommended) or Metal (bare metal)
 2. **FireSTARR dataset** - Download or use existing (~50GB national fuel/DEM data)
 3. **FireSTARR binary** - Download or use existing
 4. **Configuration** - Paths, ports, and environment setup
 
 The installer validates all prerequisites and offers to fix common issues automatically.
 
-### Quick Start (Docker)
+### Quick Start (Container)
 
-For Docker deployments, the installer configures everything. After running the installer:
+After running the installer:
 
 ```bash
 docker compose up -d
 ```
 
-Access the application at http://localhost:8080
+Access the application at <http://localhost:3901>
 
 ### Quick Start (Metal)
 
-For bare metal deployments, the installer builds the application. After running the installer:
+After running the installer:
 
 ```bash
 npm start
 ```
 
-Access the application at http://localhost:3001
+Access the application at <http://localhost:4901>
 
 ## Development
 
