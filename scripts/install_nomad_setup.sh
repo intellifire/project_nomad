@@ -13,7 +13,16 @@
 set -e
 
 # Installer version
-INSTALLER_VERSION="2.0.0"
+INSTALLER_VERSION="2.1.0"
+
+# FireSTARR image and binary source configuration
+# Change these to test different versions (e.g., "unstable" for pre-release)
+FIRESTARR_REGISTRY="ghcr.io/cwfmf/firestarr-cpp"
+FIRESTARR_IMAGE_NAME="firestarr"
+FIRESTARR_IMAGE_TAG="latest"
+FIRESTARR_IMAGE_TAG_ARM64="latest-arm64"
+FIRESTARR_BINARY_RELEASE_TAG="firestarr-latest"
+FIRESTARR_BINARY_RELEASE_REPO="https://github.com/CWFMF/firestarr-cpp/releases/download"
 
 # Script directory (for calling other scripts)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -1080,21 +1089,21 @@ detect_architecture() {
     fi
 
     # Determine recommended image based on detection
-    # Images from CWFMF firestarr-cpp repository
+    local base_image="${FIRESTARR_REGISTRY}/${FIRESTARR_IMAGE_NAME}"
     case "$arch" in
         arm64|aarch64)
-            RECOMMENDED_IMAGE="ghcr.io/cwfmf/firestarr-cpp/firestarr:latest-arm64"
+            RECOMMENDED_IMAGE="${base_image}:${FIRESTARR_IMAGE_TAG_ARM64}"
             ;;
         x86_64)
             if [ "$DETECTED_AVX2" = true ] || [ "$DETECTED_AVX" = true ]; then
-                RECOMMENDED_IMAGE="ghcr.io/cwfmf/firestarr-cpp/firestarr:latest"
+                RECOMMENDED_IMAGE="${base_image}:${FIRESTARR_IMAGE_TAG}"
             else
                 # No AVX - cannot run FireSTARR
                 RECOMMENDED_IMAGE=""
             fi
             ;;
         *)
-            RECOMMENDED_IMAGE="ghcr.io/cwfmf/firestarr-cpp/firestarr:latest"
+            RECOMMENDED_IMAGE="${base_image}:${FIRESTARR_IMAGE_TAG}"
             ;;
     esac
 }
@@ -1142,11 +1151,15 @@ configure_firestarr_image() {
     local expanded_image
     expanded_image=$(eval echo "$RECOMMENDED_IMAGE")
 
+    local base_image="${FIRESTARR_REGISTRY}/${FIRESTARR_IMAGE_NAME}"
+    local image_x64="${base_image}:${FIRESTARR_IMAGE_TAG}"
+    local image_arm64="${base_image}:${FIRESTARR_IMAGE_TAG_ARM64}"
+
     echo "Available FireSTARR images:"
     echo ""
     echo "    1) Recommended: $expanded_image"
-    echo "    2) x86_64 (Linux/Windows):   ghcr.io/cwfmf/firestarr-cpp/firestarr:latest"
-    echo "    3) ARM64 (Apple Silicon):    ghcr.io/cwfmf/firestarr-cpp/firestarr:latest-arm64"
+    echo "    2) x86_64 (Linux/Windows):   $image_x64"
+    echo "    3) ARM64 (Apple Silicon):    $image_arm64"
     echo "    4) Enter custom image"
     echo ""
     read -p "Select an option [1-4] (default: 1): " choice
@@ -1156,10 +1169,10 @@ configure_firestarr_image() {
             FIRESTARR_IMAGE="$expanded_image"
             ;;
         2)
-            FIRESTARR_IMAGE="ghcr.io/cwfmf/firestarr-cpp/firestarr:latest"
+            FIRESTARR_IMAGE="$image_x64"
             ;;
         3)
-            FIRESTARR_IMAGE="ghcr.io/cwfmf/firestarr-cpp/firestarr:latest-arm64"
+            FIRESTARR_IMAGE="$image_arm64"
             ;;
         4)
             read -p "Enter custom image: " custom_image
@@ -1204,8 +1217,7 @@ get_default_firestarr_url() {
     arch=$(uname -m)
     os_name=$(uname -s | tr '[:upper:]' '[:lower:]')
 
-    # local base_url="https://github.com/WISE-Developers/project_nomad/releases/download/firestarr-latest"
-    local base_url="https://github.com/CWFMF/firestarr-cpp/releases/download/firestarr-latest"
+    local base_url="${FIRESTARR_BINARY_RELEASE_REPO}/${FIRESTARR_BINARY_RELEASE_TAG}"
     
     local asset_name=""
 
