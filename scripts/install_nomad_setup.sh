@@ -1850,7 +1850,7 @@ ensure_sims_writable() {
     fi
 
     print_step "Setting sims directory permissions..."
-    chmod 777 "$sims_dir"
+    chmod 755 "$sims_dir"
     print_success "sims directory is writable"
 }
 
