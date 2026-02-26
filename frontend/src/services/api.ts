@@ -6,16 +6,11 @@
 
 /**
  * Base URL for API requests that need absolute URLs (e.g., tile URLs, downloads).
- * VITE_API_BASE_URL must be configured in .env - no fallback to catch config errors early.
+ * In SAN mode, set VITE_API_BASE_URL in .env at build time.
+ * In ACN/embedded mode, the host app provides baseUrl via createDefaultAdapter() —
+ * this value is not needed and may be undefined.
  */
-const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL;
-if (!configuredBaseUrl) {
-  throw new Error(
-    'VITE_API_BASE_URL is not configured. ' +
-    'Set it in .env (e.g., VITE_API_BASE_URL=http://your-server:4901) and rebuild.'
-  );
-}
-export const API_BASE_URL = configuredBaseUrl;
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string | undefined;
 
 /** Relative API path for proxied requests */
 const API_BASE = '/api/v1';
