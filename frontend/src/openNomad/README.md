@@ -430,6 +430,21 @@ function createResultsModule(authToken: string): IOpenNomadAPI['results'] {
 }
 ```
 
+### Authenticated Fetch
+
+All HTTP requests from consumer components should use `api.fetch()` instead of bare `fetch()`:
+
+```typescript
+// WRONG — bypasses adapter auth in ACN mode
+const response = await fetch(url);
+
+// CORRECT — uses adapter-managed authentication
+const response = await api.fetch(url);
+```
+
+In SAN mode, `api.fetch()` is a passthrough to `globalThis.fetch()`.
+In ACN mode, `api.fetch()` automatically attaches agency auth headers.
+
 ## DashboardContainer Props
 
 The `DashboardContainer` component accepts the following props:

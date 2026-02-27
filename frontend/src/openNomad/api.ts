@@ -656,6 +656,30 @@ export interface AgencyConfig {
  */
 export interface IOpenNomadAPI {
   // ===========================================================================
+  // Authenticated Fetch
+  // ===========================================================================
+
+  /**
+   * Make an authenticated fetch request through the adapter.
+   * In SAN mode: plain fetch (same-origin, no special headers needed).
+   * In ACN mode: attaches agency auth headers via the adapter's config.
+   *
+   * @param url - The URL to fetch
+   * @param init - Optional RequestInit (method, headers, body, etc.)
+   * @returns The fetch Response
+   */
+  fetch(url: string, init?: RequestInit): Promise<Response>;
+
+  /**
+   * Get the base URL for API requests.
+   * In SAN mode: returns '' (empty string, same-origin).
+   * In ACN mode: returns the agency's API base URL.
+   *
+   * @returns The base URL string
+   */
+  getBaseUrl(): string;
+
+  // ===========================================================================
   // Auth Module
   // ===========================================================================
 

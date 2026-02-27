@@ -205,6 +205,32 @@ export function createDefaultAdapter(options?: DefaultAdapterOptions): IOpenNoma
 
   return {
     // =========================================================================
+    // Authenticated Fetch
+    // =========================================================================
+
+    /**
+     * Make an authenticated fetch request.
+     *
+     * DEFAULT BEHAVIOR: Plain passthrough to globalThis.fetch (same-origin, no special headers).
+     *
+     * AGENCY NOTE: Your adapter should attach agency auth headers here.
+     */
+    async fetch(url: string, init?: RequestInit): Promise<Response> {
+      return globalThis.fetch(url, init);
+    },
+
+    /**
+     * Get the base URL for API requests.
+     *
+     * DEFAULT BEHAVIOR: Returns empty string (same-origin requests).
+     *
+     * AGENCY NOTE: Return your agency's API base URL.
+     */
+    getBaseUrl(): string {
+      return '';
+    },
+
+    // =========================================================================
     // Auth Module
     // =========================================================================
 

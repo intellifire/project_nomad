@@ -525,5 +525,16 @@ export function createAgencyAdapter(options: AgencyAdapterOptions): IOpenNomadAP
     results,
     spatial,
     config,
+
+    async fetch(url: string, init?: RequestInit): Promise<Response> {
+      return globalThis.fetch(url, {
+        ...init,
+        headers: { ...headers, ...init?.headers },
+      });
+    },
+
+    getBaseUrl(): string {
+      return apiBaseUrl;
+    },
   };
 }
