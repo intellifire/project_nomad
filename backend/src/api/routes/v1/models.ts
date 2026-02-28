@@ -44,8 +44,6 @@ interface RunModelRequestBody {
   weather: WeatherConfig;
   scenarios?: number;
   outputMode?: 'probabilistic' | 'pseudo-deterministic';
-  confidenceInterval?: number;
-  smoothPerimeter?: boolean;
 }
 
 /**
@@ -167,8 +165,8 @@ router.post(
       weatherConfig: body.weather,
       simulationCount: body.scenarios ?? 100,
       outputMode: body.outputMode === 'pseudo-deterministic' ? 'pseudo-deterministic' : 'probabilistic',
-      confidenceInterval: body.confidenceInterval ?? 50,
-      smoothPerimeter: body.smoothPerimeter ?? false,
+      confidenceInterval: 1,
+      smoothPerimeter: false,
     };
 
     // Start execution (FireSTARR)
@@ -383,8 +381,6 @@ interface ExecuteRequestBody {
   weather: WeatherConfig;
   scenarios?: number;
   outputMode?: 'probabilistic' | 'pseudo-deterministic';
-  confidenceInterval?: number;
-  smoothPerimeter?: boolean;
 }
 
 /**
@@ -550,8 +546,8 @@ router.post(
       weatherConfig: body.weather,
       simulationCount: body.scenarios ?? 100,
       outputMode: body.outputMode === 'pseudo-deterministic' ? 'pseudo-deterministic' : 'probabilistic',
-      confidenceInterval: body.confidenceInterval ?? 50,
-      smoothPerimeter: body.smoothPerimeter ?? false,
+      confidenceInterval: 1,
+      smoothPerimeter: false,
     };
 
     // Update model status to queued
@@ -936,14 +932,14 @@ router.get(
 
     // Read output-config.json to get confidence settings
     const configPath = `${workingDir}/output-config.json`;
-    let confidenceInterval = 80; // default
-    let smoothPerimeter = true; // default
+    let confidenceInterval = 1; // default
+    let smoothPerimeter = false; // default
 
     if (fs.existsSync(configPath)) {
       try {
         const configContent = fs.readFileSync(configPath, 'utf-8');
         const config = JSON.parse(configContent);
-        if (config.confidenceInterval && config.confidenceInterval >= 10 && config.confidenceInterval <= 90) {
+        if (config.confidenceInterval && config.confidenceInterval >= 1 && config.confidenceInterval <= 90) {
           confidenceInterval = config.confidenceInterval;
         }
         if (typeof config.smoothPerimeter === 'boolean') {
@@ -1008,8 +1004,8 @@ router.get(
  *             properties:
  *               confidenceInterval:
  *                 type: number
- *                 description: Confidence interval (10-90), represents threshold (e.g., 50 = pixels >= 0.5)
- *                 minimum: 10
+ *                 description: Confidence interval (1-90), represents threshold (e.g., 50 = pixels >= 0.5)
+ *                 minimum: 1
  *                 maximum: 90
  *               smoothPerimeter:
  *                 type: boolean
@@ -1052,9 +1048,9 @@ router.post(
     const { confidenceInterval, smoothPerimeter = false, simplifyTolerance = 0.0001 } = req.body;
 
     // Validate confidence interval
-    if (typeof confidenceInterval !== 'number' || confidenceInterval < 10 || confidenceInterval > 90) {
+    if (typeof confidenceInterval !== 'number' || confidenceInterval < 1 || confidenceInterval > 90) {
       throw new ValidationError('Invalid confidence interval', [
-        { field: 'confidenceInterval', message: 'Must be a number between 10 and 90' },
+        { field: 'confidenceInterval', message: 'Must be a number between 1 and 90' },
       ]);
     }
 

@@ -50,9 +50,20 @@ export interface ExecutionOptions {
   readonly weatherData?: WeatherDataPoint[];
   /** Output mode: probabilistic (rasters) or pseudo-deterministic (vector perimeters) */
   readonly outputMode?: OutputMode;
-  /** Confidence interval for perimeter generation (10-90, as percentage) */
+  /**
+   * Confidence interval for perimeter generation (1-90, as percentage).
+   * NOTE: As of issue #146 this value is hardcoded by the engine to 1 (captures all
+   * pixels with any burn probability > 0%) and is ignored from caller input during
+   * normal model execution. Custom values are still accepted by the POST /perimeters
+   * endpoint for advanced use.
+   */
   readonly confidenceInterval?: number;
-  /** Whether to smooth perimeter polygons */
+  /**
+   * Whether to smooth perimeter polygons.
+   * NOTE: As of issue #146 this value is hardcoded by the engine to false and is
+   * ignored from caller input during normal model execution. Custom values are still
+   * accepted by the POST /perimeters endpoint for advanced use.
+   */
   readonly smoothPerimeter?: boolean;
 }
 

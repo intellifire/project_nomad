@@ -122,10 +122,6 @@ export interface ExecuteModelRequest {
   scenarios?: number;
   /** Output mode - how to post-process results */
   outputMode?: 'probabilistic' | 'pseudo-deterministic';
-  /** Confidence interval for pseudo-deterministic perimeters (0.1-0.9) */
-  confidenceInterval?: number;
-  /** Whether to smooth perimeter polygons */
-  smoothPerimeter?: boolean;
 }
 
 export interface ExecuteModelResponse {
@@ -142,7 +138,6 @@ export interface ModelResponse {
   updatedAt?: string;
   userId: string | null;
   outputMode?: string | null;
-  confidenceInterval?: number | null;
   durationDays?: number | null;
 }
 
@@ -227,10 +222,6 @@ export interface RunModelRequest {
   scenarios?: number;
   /** Output mode - how to post-process results */
   outputMode?: 'probabilistic' | 'pseudo-deterministic';
-  /** Confidence interval for pseudo-deterministic perimeters (0.1-0.9) */
-  confidenceInterval?: number;
-  /** Whether to smooth perimeter polygons */
-  smoothPerimeter?: boolean;
 }
 
 export interface RunModelResponse {

@@ -300,18 +300,6 @@ export function ResultsSummary({
                   {outputConfig.outputMode === 'pseudo-deterministic' ? 'Fire Perimeters' : 'Probability Maps'}
                 </div>
               </div>
-              {outputConfig.outputMode === 'pseudo-deterministic' && (
-                <>
-                  <div style={statItemStyle}>
-                    <div style={statLabelStyle}>Confidence</div>
-                    <div style={statValueStyle}>{outputConfig.confidenceInterval}%</div>
-                  </div>
-                  <div style={statItemStyle}>
-                    <div style={statLabelStyle}>Smoothing</div>
-                    <div style={statValueStyle}>{outputConfig.smoothPerimeter ? 'Yes' : 'No'}</div>
-                  </div>
-                </>
-              )}
             </div>
           </div>
         </div>

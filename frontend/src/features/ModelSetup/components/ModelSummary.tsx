@@ -220,22 +220,6 @@ export function ModelSummary({ data }: ModelSummaryProps) {
                 : 'Not set'}
           </span>
         </div>
-        {data.model?.outputMode === 'pseudo-deterministic' && (
-          <>
-            <div style={rowStyle}>
-              <span style={labelStyle}>Confidence Threshold:</span>
-              <span style={valueStyle}>
-                {data.model?.confidenceInterval ? `${(data.model.confidenceInterval * 100).toFixed(0)}%` : 'Not set'}
-              </span>
-            </div>
-            <div style={rowStyle}>
-              <span style={labelStyle}>Smooth Perimeter:</span>
-              <span style={valueStyle}>
-                {data.model?.smoothPerimeter ? 'Yes' : 'No'}
-              </span>
-            </div>
-          </>
-        )}
       </div>
 
       {/* Weather Summary */}

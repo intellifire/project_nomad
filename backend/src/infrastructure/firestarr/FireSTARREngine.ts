@@ -112,10 +112,15 @@ export class FireSTARREngine implements IFireModelingEngine {
     }
 
     // Build output configuration for post-processing
+    // confidenceInterval and smoothPerimeter are hardcoded per #146:
+    // - confidenceInterval: 1 captures ALL pixels with any burn probability > 0%,
+    //   giving us the full fire spread envelope rather than a clipped subset.
+    // - smoothPerimeter: false preserves raw pixel-accurate boundaries.
+    // Whatever values arrive via options for these two fields are intentionally ignored.
     const outputConfig: OutputConfig = {
       outputMode: options.outputMode ?? 'probabilistic',
-      confidenceInterval: options.confidenceInterval ?? 50,
-      smoothPerimeter: options.smoothPerimeter ?? false,
+      confidenceInterval: 1,
+      smoothPerimeter: false,
     };
 
     // Save output config to working directory for persistence

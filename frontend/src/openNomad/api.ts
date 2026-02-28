@@ -236,10 +236,6 @@ export interface FWIStartingCodes {
 export interface OutputParams {
   /** Output mode: probabilistic (default) or pseudo-deterministic */
   mode: 'probabilistic' | 'pseudo-deterministic';
-  /** Confidence interval for pseudo-deterministic perimeters (0.1-0.9) */
-  confidenceInterval?: number;
-  /** Whether to smooth perimeter polygons */
-  smoothPerimeter?: boolean;
 }
 
 /**

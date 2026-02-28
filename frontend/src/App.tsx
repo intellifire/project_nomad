@@ -245,9 +245,6 @@ function AppContent() {
         weather: weatherConfig,
         scenarios: data.model.runType === 'probabilistic' ? 100 : 1,
         outputMode: data.model.outputMode,
-        // Convert from decimal (0.8) to percentage (80) for backend
-        confidenceInterval: data.model.confidenceInterval ? Math.round(data.model.confidenceInterval * 100) : 50,
-        smoothPerimeter: data.model.smoothPerimeter,
       });
 
       console.log('Model created and execution started:', result);

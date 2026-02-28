@@ -10,7 +10,7 @@ const testFile = '/Users/franconogarin/localcode/project_nomad/temp_firestarr_da
 console.log('Testing perimeter generation with reprojection fix...\n');
 
 const result = await generatePerimeterForFile(testFile, {
-  confidenceInterval: 50,
+  confidenceInterval: 1,
   smoothPerimeter: false,
 });
 

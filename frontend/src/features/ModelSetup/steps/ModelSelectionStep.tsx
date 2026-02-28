@@ -82,47 +82,6 @@ const radioStyle: React.CSSProperties = {
   display: 'none', // Hidden, the card is the clickable element
 };
 
-const formControlStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '8px',
-  marginTop: '12px',
-};
-
-const inputLabelStyle: React.CSSProperties = {
-  fontSize: '14px',
-  fontWeight: '500',
-  color: '#555',
-};
-
-const selectStyle: React.CSSProperties = {
-  padding: '8px 12px',
-  fontSize: '14px',
-  border: '1px solid #ddd',
-  borderRadius: '4px',
-  backgroundColor: 'white',
-  cursor: 'pointer',
-};
-
-const checkboxContainerStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  marginTop: '8px',
-};
-
-const checkboxStyle: React.CSSProperties = {
-  cursor: 'pointer',
-  width: '16px',
-  height: '16px',
-};
-
-const checkboxLabelStyle: React.CSSProperties = {
-  fontSize: '14px',
-  color: '#555',
-  cursor: 'pointer',
-};
-
 interface EngineOption {
   id: FireEngine;
   name: string;
@@ -184,8 +143,6 @@ export function ModelSelectionStep() {
     engine: 'firestarr',
     runType: 'deterministic',
     outputMode: 'probabilistic',
-    confidenceInterval: 0.5,
-    smoothPerimeter: false,
   };
 
   // Update engine selection
@@ -209,31 +166,6 @@ export function ModelSelectionStep() {
       setField('model', {
         ...model,
         outputMode,
-        // Set defaults when switching to pseudo-deterministic
-        confidenceInterval: outputMode === 'pseudo-deterministic' ? (model.confidenceInterval ?? 0.5) : undefined,
-        smoothPerimeter: outputMode === 'pseudo-deterministic' ? (model.smoothPerimeter ?? false) : undefined,
-      });
-    },
-    [setField, model]
-  );
-
-  // Update confidence interval
-  const handleConfidenceIntervalChange = useCallback(
-    (event: React.ChangeEvent<HTMLSelectElement>) => {
-      setField('model', {
-        ...model,
-        confidenceInterval: parseFloat(event.target.value),
-      });
-    },
-    [setField, model]
-  );
-
-  // Update smooth perimeter
-  const handleSmoothPerimeterChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      setField('model', {
-        ...model,
-        smoothPerimeter: event.target.checked,
       });
     },
     [setField, model]
@@ -331,48 +263,6 @@ export function ModelSelectionStep() {
             );
           })}
         </div>
-
-        {/* Conditional controls for Fire Perimeters mode */}
-        {model.outputMode === 'pseudo-deterministic' && (
-          <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-            {/* Confidence Threshold Dropdown */}
-            <div style={formControlStyle}>
-              <label htmlFor="confidenceInterval" style={inputLabelStyle}>
-                Confidence Threshold
-              </label>
-              <select
-                id="confidenceInterval"
-                value={model.confidenceInterval ?? 0.5}
-                onChange={handleConfidenceIntervalChange}
-                style={selectStyle}
-              >
-                <option value={0.1}>10%</option>
-                <option value={0.2}>20%</option>
-                <option value={0.3}>30%</option>
-                <option value={0.4}>40%</option>
-                <option value={0.5}>50%</option>
-                <option value={0.6}>60%</option>
-                <option value={0.7}>70%</option>
-                <option value={0.8}>80%</option>
-                <option value={0.9}>90%</option>
-              </select>
-            </div>
-
-            {/* Smooth Perimeter Checkbox */}
-            <div style={checkboxContainerStyle}>
-              <input
-                type="checkbox"
-                id="smoothPerimeter"
-                checked={model.smoothPerimeter ?? false}
-                onChange={handleSmoothPerimeterChange}
-                style={checkboxStyle}
-              />
-              <label htmlFor="smoothPerimeter" style={checkboxLabelStyle}>
-                Smooth polygon edges
-              </label>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Info box for probability maps */}
@@ -393,23 +283,6 @@ export function ModelSelectionStep() {
         </div>
       )}
 
-      {/* Info box for fire perimeters */}
-      {model.outputMode === 'pseudo-deterministic' && (
-        <div
-          style={{
-            padding: '12px',
-            backgroundColor: '#ebf5fb',
-            borderRadius: '4px',
-            fontSize: '13px',
-            borderLeft: '4px solid #3498db',
-            color: '#333',
-          }}
-        >
-          <strong>Note:</strong> Fire perimeter mode post-processes the probability maps into daily
-          polygon perimeters at your chosen confidence threshold. Lower thresholds (e.g., 10%) show
-          maximum possible spread, while higher thresholds (e.g., 90%) show the most likely core area.
-        </div>
-      )}
     </div>
   );
 }

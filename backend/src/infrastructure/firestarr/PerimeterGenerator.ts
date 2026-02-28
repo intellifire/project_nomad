@@ -17,7 +17,7 @@ import { ValidationError, NotFoundError } from '../../domain/errors/index.js';
  * Options for perimeter generation
  */
 export interface PerimeterGeneratorOptions {
-  /** Confidence interval (10-90), represents the threshold (e.g., 50 = pixels >= 0.5) */
+  /** Confidence interval (1-90), represents the threshold (e.g., 50 = pixels >= 0.5, 1 = pixels > 0%) */
   confidenceInterval: number;
   /** Whether to simplify the polygon */
   smoothPerimeter: boolean;
@@ -105,9 +105,9 @@ export async function generatePerimeters(
   const { confidenceInterval, smoothPerimeter, simplifyTolerance = 0.0001 } = options;
 
   // Validate confidence interval
-  if (confidenceInterval < 10 || confidenceInterval > 90) {
+  if (confidenceInterval < 1 || confidenceInterval > 90) {
     return Result.fail(
-      new ValidationError('Confidence interval must be between 10 and 90', [
+      new ValidationError('Confidence interval must be between 1 and 90', [
         { field: 'confidenceInterval', message: `Got ${confidenceInterval}` },
       ])
     );
@@ -386,9 +386,9 @@ export async function generatePerimeterForFile(
   }
 
   // Validate confidence interval
-  if (confidenceInterval < 10 || confidenceInterval > 90) {
+  if (confidenceInterval < 1 || confidenceInterval > 90) {
     return Result.fail(
-      new ValidationError('Confidence interval must be between 10 and 90', [
+      new ValidationError('Confidence interval must be between 1 and 90', [
         { field: 'confidenceInterval', message: `Got ${confidenceInterval}` },
       ])
     );

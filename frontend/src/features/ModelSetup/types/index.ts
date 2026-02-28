@@ -112,10 +112,6 @@ export interface ModelData {
   runType: RunType;
   /** Output mode - how to post-process FireSTARR results */
   outputMode: OutputMode;
-  /** Confidence interval for pseudo-deterministic perimeters (0.1-0.9) */
-  confidenceInterval?: number;
-  /** Whether to smooth perimeter polygons */
-  smoothPerimeter?: boolean;
 }
 
 /**
@@ -255,8 +251,6 @@ export const DEFAULT_MODEL_SETUP_DATA: ModelSetupData = {
     engine: 'firestarr',
     runType: 'deterministic',
     outputMode: 'probabilistic',
-    confidenceInterval: 0.5,
-    smoothPerimeter: false,
   },
   weather: {
     source: 'firestarr_csv',

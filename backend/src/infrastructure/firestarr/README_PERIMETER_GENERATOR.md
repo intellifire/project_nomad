@@ -17,8 +17,8 @@ The PerimeterGenerator service converts FireSTARR probability rasters (GeoTIFF f
 Request body:
 ```json
 {
-  "confidenceInterval": 50,
-  "smoothPerimeter": true,
+  "confidenceInterval": 1,
+  "smoothPerimeter": false,
   "simplifyTolerance": 0.0001
 }
 ```
@@ -40,8 +40,9 @@ Response:
 
 ### Parameters
 
-- **confidenceInterval** (required): Number between 10-90, representing the probability threshold
+- **confidenceInterval** (required): Number between 1-90, representing the probability threshold
   - Example: 50 = extract pixels where probability >= 0.5 (50%)
+  - Default/hardcoded value for engine execution: 1 (captures all pixels with any burn probability > 0%, producing the full fire spread envelope)
 - **smoothPerimeter** (optional): Whether to simplify the polygon (default: false)
 - **simplifyTolerance** (optional): Simplification tolerance in degrees (default: 0.0001 ≈ 10m)
 
@@ -78,7 +79,7 @@ Where:
 ## Error Handling
 
 - Returns 404 if model not found or has no results
-- Returns 400 if confidence interval is out of range (10-90)
+- Returns 400 if confidence interval is out of range (1-90)
 - Returns 400 if GDAL tools are not available
 - Logs warnings but continues processing if individual files fail
 
