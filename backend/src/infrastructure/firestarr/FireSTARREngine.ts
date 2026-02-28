@@ -595,6 +595,12 @@ export class FireSTARREngine implements IFireModelingEngine {
     // Extract previous day indices from first weather point
     const firstPoint = weatherPoints[0];
 
+    // Use weather data's source year, not the user-selected year (#147)
+    // FireSTARR needs the date to match the weather data's actual year
+    const weatherYear = firstPoint.datetime.getFullYear();
+    const startDate = new Date(options.timeRange.start);
+    startDate.setFullYear(weatherYear);
+
     // Calculate output date offsets based on simulation duration
     const durationMs = options.timeRange.end.getTime() - options.timeRange.start.getTime();
     const durationDays = Math.ceil(durationMs / (24 * 60 * 60 * 1000));
@@ -603,7 +609,7 @@ export class FireSTARREngine implements IFireModelingEngine {
     return {
       latitude,
       longitude,
-      startDate: options.timeRange.start,
+      startDate,
       startTime: this.formatTime(options.timeRange.start),
       weatherData,
       previousFFMC: firstPoint.ffmc,
