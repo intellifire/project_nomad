@@ -146,7 +146,7 @@ After installation completes:
 docker compose up -d
 ```
 
-Access Nomad at **http://localhost:3901**
+Access Nomad at **http://\<your-hostname\>:3901**
 
 ### Metal Mode
 
@@ -154,13 +154,15 @@ Access Nomad at **http://localhost:3901**
 npm start
 ```
 
-Access Nomad at **http://localhost:4901**
+Access Nomad at **http://\<your-hostname\>:4901**
+
+> The installer detects your hostname automatically and displays the correct URL at the end of setup.
 
 ## Verify It's Working
 
 ```bash
-# Health check
-curl http://localhost:4901/api/health
+# Health check (use the hostname shown by the installer)
+curl http://<your-hostname>:4901/api/health
 
 # Docker: check containers
 docker compose ps
