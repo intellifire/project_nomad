@@ -1,3 +1,6 @@
+# Build artifacts
+*.tgz
+
 # FireSTARR data directories (large binary files)
 firestarr_data/
 firestarr_config/

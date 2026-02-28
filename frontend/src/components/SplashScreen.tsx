@@ -97,7 +97,12 @@ export function SplashScreen({ onEnter }: SplashScreenProps) {
         }}
       >
         Fire Modeling System<br />
-        v{version}<br />
+        v{version} (<a
+          href="https://github.com/WISE-Developers/project_nomad/blob/main/CHANGES.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: '#60a5fa', textDecoration: 'underline' }}
+        >changes</a>) <br />
         SAN Mode (Stand Alone Nomad)
       </p>
 
