@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths-ignore:
       - 'CHANGES.md'
+      - 'frontend/package.json'
 
 permissions:
   contents: write

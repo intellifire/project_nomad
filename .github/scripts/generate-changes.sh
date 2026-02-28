@@ -21,7 +21,8 @@ CURRENT_VERSION=$(node -p "require('./frontend/package.json').version" 2>/dev/nu
 
     current_date=""
 
-    git log main --format="%H|%an|%ai|%s" | while IFS='|' read -r hash author date message; do
+    BRANCH="${BRANCH:-main}"
+    git log "$BRANCH" --format="%H|%an|%ai|%s" | while IFS='|' read -r hash author date message; do
         day="${date%% *}"
         time_part=$(echo "$date" | awk '{print $2}' | cut -d: -f1-2)
         short_hash="${hash:0:7}"

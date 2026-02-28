@@ -1,0 +1,71 @@
+name: LTS Release
+
+on:
+  pull_request:
+    branches: [lts]
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  lts-release:
+    runs-on: ubuntu-latest
+    if: >
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.ref == 'main'
+
+    steps:
+      - name: Checkout with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Apply patch bump
+        id: newversion
+        run: |
+          chmod +x .github/scripts/bump-version.sh
+          NEW_VERSION=$(.github/scripts/bump-version.sh patch)
+          echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=v${NEW_VERSION}-lts" >> $GITHUB_OUTPUT
+          echo "LTS version: v${NEW_VERSION}-lts"
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add frontend/package.json
+          git commit -m "chore: bump to v${{ steps.newversion.outputs.version }}-lts [skip ci]"
+          git push
+
+      - name: Create git tag
+        run: |
+          git tag "${{ steps.newversion.outputs.tag }}"
+          git push origin "${{ steps.newversion.outputs.tag }}"
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Build library and pack tarball
+        run: npm run build:lib && npm pack
+        working-directory: frontend
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.newversion.outputs.tag }}
+          name: "v${{ steps.newversion.outputs.version }} (LTS)"
+          prerelease: false
+          generate_release_notes: true
+          files: frontend/nomad-frontend-*.tgz
+          body: |
+            **LTS release** — long-term support channel.
+
+            Promoted from `main` at `v${{ steps.newversion.outputs.version }}`.

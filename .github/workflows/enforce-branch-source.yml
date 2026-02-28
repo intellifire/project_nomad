@@ -1,0 +1,30 @@
+name: Enforce Branch Source
+
+on:
+  pull_request:
+    branches: [main, lts]
+
+jobs:
+  enforce-branch-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR source branch
+        run: |
+          SOURCE="${{ github.head_ref }}"
+          TARGET="${{ github.base_ref }}"
+
+          if [[ "$TARGET" == "main" && "$SOURCE" != "dev" ]]; then
+            echo "::error::PRs to 'main' must come from 'dev'. Source was: '$SOURCE'"
+            echo ""
+            echo "Merge your work into 'dev' first, then open a PR from 'dev' to 'main'."
+            exit 1
+          fi
+
+          if [[ "$TARGET" == "lts" && "$SOURCE" != "main" ]]; then
+            echo "::error::PRs to 'lts' must come from 'main'. Source was: '$SOURCE'"
+            echo ""
+            echo "Only 'main' can be merged into 'lts'."
+            exit 1
+          fi
+
+          echo "Branch source check passed: '$SOURCE' → '$TARGET'"

@@ -1,0 +1,59 @@
+name: Dev Pre-Release
+
+on:
+  push:
+    branches: [dev]
+
+permissions:
+  contents: write
+
+jobs:
+  dev-prerelease:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-actions[bot]'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Determine dev tag
+        id: version
+        run: |
+          CURRENT=$(node -p "require('./frontend/package.json').version")
+          BUILD_NUMBER=${{ github.run_number }}
+          DEV_TAG="v${CURRENT}-dev.${BUILD_NUMBER}"
+          echo "current=${CURRENT}" >> $GITHUB_OUTPUT
+          echo "tag=${DEV_TAG}" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Build library and pack tarball
+        run: npm run build:lib && npm pack
+        working-directory: frontend
+
+      - name: Rename tarball with dev tag
+        working-directory: frontend
+        run: mv nomad-frontend-*.tgz "nomad-frontend-${{ steps.version.outputs.tag }}.tgz"
+
+      - name: Create pre-release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "${{ steps.version.outputs.tag }} (unstable)"
+          prerelease: true
+          generate_release_notes: true
+          files: frontend/nomad-frontend-*.tgz
+          body: |
+            **Unstable pre-release** — not for production use.
+
+            Branch: `dev`
+            Build: `${{ github.run_number }}`
+            Base version: `v${{ steps.version.outputs.current }}`
+            Commit: `${{ github.sha }}`
