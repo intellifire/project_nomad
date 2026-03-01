@@ -4,10 +4,14 @@ Auto-generated from git history. Do not edit manually.
 
 ---
 
-## v0.3.4
+## v0.3.5
 
 ### 2026-03-01
 
+- [`3a69561`](https://github.com/WISE-Developers/project_nomad/commit/3a69561706783d53a7506a279aca07bd97caeb18) Merge pull request #178 from WISE-Developers/dev — *Franco Nogarin, 09:10*
+- [`3e68e53`](https://github.com/WISE-Developers/project_nomad/commit/3e68e536cd2dc087d8e3b443199ef9b288ebe547) Merge bugfix/177-sync-version-to-dev: sync stable version back to dev (#177) — *Franco Nogarin, 09:09*
+- [`3ebd8fe`](https://github.com/WISE-Developers/project_nomad/commit/3ebd8fed55b9449b8a1edd86791da179e991d7e5) Sync version bump from main back to dev after stable release — *Franco Nogarin, 09:09*
+- [`a96622d`](https://github.com/WISE-Developers/project_nomad/commit/a96622d47088895c1d7d0eeb07635636e2df46ec) chore: release v0.3.4 [skip ci] — *github-actions[bot], 16:05*
 - [`d30c249`](https://github.com/WISE-Developers/project_nomad/commit/d30c24966fb3b204a23b3715f697cef003e73271) Merge pull request #176 from WISE-Developers/dev — *Franco Nogarin, 09:05*
 - [`a505ac4`](https://github.com/WISE-Developers/project_nomad/commit/a505ac474168281a1006cea7c4e4d6bb97abd981) Merge bugfix/175-cfs-bounds: fix CFS bounds and add data availability check (#175) — *Franco Nogarin, 09:04*
 - [`0257dcc`](https://github.com/WISE-Developers/project_nomad/commit/0257dccdfaa2a9e4c47a6215abc3abc579a776f8) Add CFS WMS data availability check before adding layer — *Franco Nogarin, 09:01*
