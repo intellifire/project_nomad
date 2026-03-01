@@ -11,6 +11,7 @@ import {
   TerrainControl,
   MapInfoControl,
   MapContextMenu,
+  RasterLegend,
   useDraw,
   useMap,
   useLayers,
@@ -563,6 +564,7 @@ function AppContent() {
           <TerrainControl position="top-right" />
           <MapInfoControl />
           <MapContextMenu />
+          <RasterLegend />
         </>
       )}
 
