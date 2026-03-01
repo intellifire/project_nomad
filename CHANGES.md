@@ -4,10 +4,15 @@ Auto-generated from git history. Do not edit manually.
 
 ---
 
-## v0.3.3
+## v0.3.4
 
 ### 2026-03-01
 
+- [`d30c249`](https://github.com/WISE-Developers/project_nomad/commit/d30c24966fb3b204a23b3715f697cef003e73271) Merge pull request #176 from WISE-Developers/dev — *Franco Nogarin, 09:05*
+- [`a505ac4`](https://github.com/WISE-Developers/project_nomad/commit/a505ac474168281a1006cea7c4e4d6bb97abd981) Merge bugfix/175-cfs-bounds: fix CFS bounds and add data availability check (#175) — *Franco Nogarin, 09:04*
+- [`0257dcc`](https://github.com/WISE-Developers/project_nomad/commit/0257dccdfaa2a9e4c47a6215abc3abc579a776f8) Add CFS WMS data availability check before adding layer — *Franco Nogarin, 09:01*
+- [`5fb01e5`](https://github.com/WISE-Developers/project_nomad/commit/5fb01e592ae3960c040d1243d07632c9774791ae) Fix CFS layer bounds: omit undefined bounds from MapBox addSource — *Franco Nogarin, 08:53*
+- [`69881ec`](https://github.com/WISE-Developers/project_nomad/commit/69881ec0f76a379078f0a584962f457119c8a924) chore: release v0.3.3 [skip ci] — *github-actions[bot], 15:12*
 - [`e91c1db`](https://github.com/WISE-Developers/project_nomad/commit/e91c1dbf36432b2f7b744acb87268bc1471d9887) Merge pull request #174 from WISE-Developers/dev — *Franco Nogarin, 08:12*
 - [`67638a1`](https://github.com/WISE-Developers/project_nomad/commit/67638a1b70a220f3dafcd9d1fa3d6cca89cb2c4e) Combine release and changelog into single workflow, remove update-changes.yml — *Franco Nogarin, 08:12*
 - [`f2a2d56`](https://github.com/WISE-Developers/project_nomad/commit/f2a2d56174825df7a0aae2a4ff99d9391f092f05) chore: auto-update CHANGES.md [skip ci] — *github-actions[bot], 15:00*
