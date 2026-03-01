@@ -4,10 +4,23 @@ Auto-generated from git history. Do not edit manually.
 
 ---
 
-## v0.3.0
+## v0.3.1
 
 ### 2026-03-01
 
+- [`a60a90f`](https://github.com/WISE-Developers/project_nomad/commit/a60a90f5d68d3ad4b5e4353c2dd7843054727549) Merge pull request #173 from WISE-Developers/dev — *Franco Nogarin, 08:00*
+- [`ae3ff84`](https://github.com/WISE-Developers/project_nomad/commit/ae3ff84d4f807b06cb7bd53ee70b2d1947a81a65) Fix update-changes race: pull --rebase before push to handle concurrent workflows — *Franco Nogarin, 07:59*
+
+---
+
+## v0.3.1
+
+### 2026-03-01
+
+- [`3f5244f`](https://github.com/WISE-Developers/project_nomad/commit/3f5244f63908e94303b36789594a245df0ac629d) chore: bump to v0.3.1 [skip ci] — *github-actions[bot], 14:55*
+- [`7611c5f`](https://github.com/WISE-Developers/project_nomad/commit/7611c5fa9a8b57a7607d2a7787e520d6d52518a5) Merge pull request #172 from WISE-Developers/dev — *Franco Nogarin, 07:55*
+- [`c9c1c51`](https://github.com/WISE-Developers/project_nomad/commit/c9c1c5124cce59713d8154e8f69db3594aa7fc61) Fix release workflow race: pull --rebase before push — *Franco Nogarin, 07:55*
+- [`65c7966`](https://github.com/WISE-Developers/project_nomad/commit/65c7966b93f3c29375615246de24cc603ec8efcf) chore: auto-update CHANGES.md [skip ci] — *github-actions[bot], 14:54*
 - [`401b277`](https://github.com/WISE-Developers/project_nomad/commit/401b2774a614cdee570d59e9dabd627ec25861ee) Merge pull request #171 from WISE-Developers/dev — *Franco Nogarin, 07:53*
 - [`c7966b1`](https://github.com/WISE-Developers/project_nomad/commit/c7966b1cfcd5f9502975fc9689bb909894951cfa) Fix update-changes workflow: use RELEASE_TOKEN to push to protected main — *Franco Nogarin, 07:53*
 - [`1017d3d`](https://github.com/WISE-Developers/project_nomad/commit/1017d3dd90c7fa98db7e0791f0c54a2913861020) Merge pull request #170 from WISE-Developers/dev — *Franco Nogarin, 07:09*
