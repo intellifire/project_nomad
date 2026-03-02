@@ -187,10 +187,14 @@ export interface DefaultAdapterOptions {
  * ```
  */
 export function createDefaultAdapter(options?: DefaultAdapterOptions): IOpenNomadAPI {
-  // Use provided baseUrl, fallback to env var, then current origin
+  // Use provided baseUrl, fallback to current origin (same-origin in SAN mode).
+  // VITE_API_BASE_URL is only needed for ACN/embedded mode where the API lives
+  // on a different origin. In SAN Docker deployments, the frontend and backend
+  // share the same container/port, so window.location.origin is always correct
+  // and avoids stale build-time URLs when ports change.
   const resolved = options?.baseUrl ??
-    ((typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) ||
-    (typeof window !== 'undefined' ? window.location.origin : null));
+    (typeof window !== 'undefined' ? window.location.origin : null) ??
+    ((typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || null);
 
   if (!resolved) {
     throw new Error(
