@@ -4,10 +4,21 @@ Auto-generated from git history. Do not edit manually.
 
 ---
 
-## v0.3.5
+## v0.3.6
+
+### 2026-03-02
+
+- [`6a43701`](https://github.com/WISE-Developers/project_nomad/commit/6a437013b469a3771eae814e8c5615ef024961cb) Merge pull request #182 from WISE-Developers/dev — *Franco Nogarin, 08:58*
+- [`e56e1d8`](https://github.com/WISE-Developers/project_nomad/commit/e56e1d8d067e5dbaa323a6d0fed209fe6721e123) Fix SAN CORS: allow all origins in standalone mode — *Franco Nogarin, 08:54*
+- [`069fb43`](https://github.com/WISE-Developers/project_nomad/commit/069fb4343cd082f7296e098787e2c102aa0c8fad) Fix SAN static file 500: move express.static before CORS middleware — *Franco Nogarin, 08:47*
+- [`3dd1590`](https://github.com/WISE-Developers/project_nomad/commit/3dd1590f09178b223f0daaca513bcd3886d273e0) SAN Docker: single container for API + frontend (closes #181) — *Franco Nogarin, 07:11*
 
 ### 2026-03-01
 
+- [`84e9cbd`](https://github.com/WISE-Developers/project_nomad/commit/84e9cbdd313c80bbcaa22e984403d9c605608e9a) Set NODE_ENV=development in backend dev script to enable CORS for Vite — *Franco Nogarin, 20:50*
+- [`7914f0e`](https://github.com/WISE-Developers/project_nomad/commit/7914f0e24f1879a414d9d928a6b35feab8fb7585) Allow Vite dev server origin in SAN mode CORS during development — *Franco Nogarin, 17:58*
+- [`fe8a0eb`](https://github.com/WISE-Developers/project_nomad/commit/fe8a0eb0cecc8a64e8ed66cf2319f9618bef6032) Fix model run returning 500 for validation errors (closes #179) — *Franco Nogarin, 17:47*
+- [`11b043c`](https://github.com/WISE-Developers/project_nomad/commit/11b043c2a6cc3c065c225b154a997dffdf2a7d72) chore: release v0.3.5 [skip ci] — *github-actions[bot], 16:10*
 - [`3a69561`](https://github.com/WISE-Developers/project_nomad/commit/3a69561706783d53a7506a279aca07bd97caeb18) Merge pull request #178 from WISE-Developers/dev — *Franco Nogarin, 09:10*
 - [`3e68e53`](https://github.com/WISE-Developers/project_nomad/commit/3e68e536cd2dc087d8e3b443199ef9b288ebe547) Merge bugfix/177-sync-version-to-dev: sync stable version back to dev (#177) — *Franco Nogarin, 09:09*
 - [`3ebd8fe`](https://github.com/WISE-Developers/project_nomad/commit/3ebd8fed55b9449b8a1edd86791da179e991d7e5) Sync version bump from main back to dev after stable release — *Franco Nogarin, 09:09*
