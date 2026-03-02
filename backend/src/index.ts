@@ -125,6 +125,39 @@ function getCorsOptions(): CorsOptions {
 }
 
 // ============================================
+// Static File Serving (Production Mode)
+// ============================================
+// Mounted BEFORE CORS/auth middleware — static files don't need CORS checks.
+// Vite emits <script type="module" crossorigin> which causes browsers to send
+// an Origin header even for same-origin requests. The SAN CORS policy blocks
+// all requests with an Origin header, so static files must bypass it entirely.
+
+const isProduction = process.env.NODE_ENV === 'production';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const frontendDistPath = resolve(__dirname, '../../frontend/dist');
+
+if (isProduction && existsSync(frontendDistPath)) {
+  logger.startup(`Production mode: serving frontend from ${frontendDistPath}`);
+
+  // Serve static files (JS, CSS, images, etc.)
+  app.use(express.static(frontendDistPath));
+
+  // SPA catch-all: serve index.html for any non-API route
+  // This enables client-side routing (React Router, etc.)
+  app.get('*', (req, res, next) => {
+    // Skip API routes - let them fall through to 404 handler
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(join(frontendDistPath, 'index.html'));
+  });
+} else if (isProduction) {
+  logger.warn(`Production mode but frontend not found at ${frontendDistPath}`, 'Startup');
+  logger.warn('Run "npm run build" to build the frontend', 'Startup');
+}
+
+// ============================================
 // Middleware (order matters!)
 // ============================================
 
@@ -172,44 +205,6 @@ setupSwagger(app);
 app.get('/api/health', (_req, res) => {
   res.redirect('/api/v1/health');
 });
-
-// ============================================
-// Static File Serving (Production Mode)
-// ============================================
-
-/**
- * In production mode, serve the built frontend from frontend/dist.
- * This allows running a single server for both API and UI.
- *
- * The frontend dist path is relative to the backend dist directory:
- * - Backend runs from: backend/dist/index.js
- * - Frontend built to: frontend/dist/
- * - Relative path: ../../frontend/dist
- */
-const isProduction = process.env.NODE_ENV === 'production';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const frontendDistPath = resolve(__dirname, '../../frontend/dist');
-
-if (isProduction && existsSync(frontendDistPath)) {
-  logger.startup(`Production mode: serving frontend from ${frontendDistPath}`);
-
-  // Serve static files (JS, CSS, images, etc.)
-  app.use(express.static(frontendDistPath));
-
-  // SPA catch-all: serve index.html for any non-API route
-  // This enables client-side routing (React Router, etc.)
-  app.get('*', (req, res, next) => {
-    // Skip API routes - let them fall through to 404 handler
-    if (req.path.startsWith('/api')) {
-      return next();
-    }
-    res.sendFile(join(frontendDistPath, 'index.html'));
-  });
-} else if (isProduction) {
-  logger.warn(`Production mode but frontend not found at ${frontendDistPath}`, 'Startup');
-  logger.warn('Run "npm run build" to build the frontend', 'Startup');
-}
 
 // ============================================
 // Error Handling (must be last)
