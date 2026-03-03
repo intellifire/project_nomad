@@ -4,6 +4,7 @@ on:
   pull_request:
     branches: [main]
     types: [closed]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -14,8 +15,9 @@ jobs:
   stable-release:
     runs-on: ubuntu-latest
     if: >
-      github.event.pull_request.merged == true &&
-      github.event.pull_request.head.ref == 'dev'
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+      github.event.pull_request.head.ref == 'dev')
 
     steps:
       - name: Checkout with full history
