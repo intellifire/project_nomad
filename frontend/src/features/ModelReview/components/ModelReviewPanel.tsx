@@ -96,7 +96,14 @@ export function ModelReviewPanel({
         // Fetch the GeoJSON preview
         const response = await api.fetch(previewUrl);
         if (!response.ok) {
-          throw new Error(`Failed to fetch GeoJSON: ${response.status}`);
+          let detail = `HTTP ${response.status}`;
+          try {
+            const body = await response.json();
+            if (body?.error?.message) {
+              detail = body.error.message;
+            }
+          } catch { /* response wasn't JSON */ }
+          throw new Error(detail);
         }
         const geoJson = await response.json();
         // Pass model info for better layer naming
@@ -109,7 +116,8 @@ export function ModelReviewPanel({
         onAddToMap(output, geoJson, modelInfo);
       } catch (err) {
         console.error('Failed to add to map:', err);
-        alert('Failed to load output data for map');
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        alert(`Failed to add to map: ${message}`);
       }
     },
     [api, onAddToMap, results]
