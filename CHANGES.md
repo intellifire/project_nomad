@@ -4,12 +4,44 @@ Auto-generated from git history. Do not edit manually.
 
 ---
 
-## v0.3.7
+## v0.3.8
+
+### 2026-03-09
+
+- [`d719ca1`](https://github.com/WISE-Developers/project_nomad/commit/d719ca1c957519a841322030b6c190d86810e06b) Merge pull request #196 from WISE-Developers/dev — *Franco Nogarin, 14:46*
+- [`4cf580e`](https://github.com/WISE-Developers/project_nomad/commit/4cf580eab4d6b8956e8e46a8e47ad1f4aed9f0f4) chore: dev build 4 [skip ci] — *github-actions[bot], 20:16*
+- [`7d5b708`](https://github.com/WISE-Developers/project_nomad/commit/7d5b7089d3b95b113576c2809478d435b3ec4981) Fix installer: ensure devDeps install and rebuild native modules (#198, #199) — *Franco Nogarin, 14:13*
+- [`6328b5a`](https://github.com/WISE-Developers/project_nomad/commit/6328b5ac058c330cf6b84444f04ee065c4ead36a) chore: dev build 3 [skip ci] — *github-actions[bot], 16:09*
+- [`fba0ed7`](https://github.com/WISE-Developers/project_nomad/commit/fba0ed777a43281099fc3bd0602f568bb1c1cb25) chore: remove commented demo key for CFS FireSTARR WMS Authentication — *Franco Nogarin, 10:09*
+
+### 2026-03-07
+
+- [`9f3819e`](https://github.com/WISE-Developers/project_nomad/commit/9f3819e2d3604c41d06ccca7699f2f53b10b799b) chore: dev build 2 [skip ci] — *github-actions[bot], 13:52*
+- [`48b8165`](https://github.com/WISE-Developers/project_nomad/commit/48b816560193721c8a8a353a777d8187e9a0918b) feat: add findings on results panel divergence between Nomad (SAN) and OpenNomad (ACN) — *Franco Nogarin, 06:51*
+- [`0eb479d`](https://github.com/WISE-Developers/project_nomad/commit/0eb479ddac68ad36ebb76b967d951a4c30e78c9e) chore: dev build 1 [skip ci] — *github-actions[bot], 00:31*
+
+### 2026-03-06
+
+- [`de9b159`](https://github.com/WISE-Developers/project_nomad/commit/de9b1591195344a53e10ae4b0f2997903b606663) Fix #195: Results panel SAN/ACN divergence — *Franco Nogarin, 17:28*
+
+### 2026-03-03
+
+- [`6d56c4a`](https://github.com/WISE-Developers/project_nomad/commit/6d56c4a1f73acd72d176d2775b750db530302372) chore: reset dev build counter after v0.3.7 [skip ci] — *github-actions[bot], 04:52*
+- [`1209d1e`](https://github.com/WISE-Developers/project_nomad/commit/1209d1ecd9df2e2e8d9a9786d09242bb6d0ede16) chore: sync v0.3.7 from main [skip ci] — *github-actions[bot], 04:52*
+- [`add0fe7`](https://github.com/WISE-Developers/project_nomad/commit/add0fe74d6e1f22ffa78b59a276cc280e623c943) chore: release v0.3.7 [skip ci] — *github-actions[bot], 04:52*
 
 ### 2026-03-02
 
 - [`63cebb5`](https://github.com/WISE-Developers/project_nomad/commit/63cebb527e69f2c863ed8413b50570050481e43e) CI: default to patch bump when no PR number (manual dispatch) — *Franco Nogarin, 21:51*
+
+### 2026-03-03
+
+- [`fbb0425`](https://github.com/WISE-Developers/project_nomad/commit/fbb0425dba6b8261f5338460b24d0ab9c61e439b) chore: dev build 6 [skip ci] — *github-actions[bot], 04:51*
+
+### 2026-03-02
+
 - [`6e76efa`](https://github.com/WISE-Developers/project_nomad/commit/6e76efade4b43819596cf03f5fa8f2ddbe5c8d9e) CI: add workflow_dispatch trigger to stable release — *Franco Nogarin, 21:50*
+- [`8e7efac`](https://github.com/WISE-Developers/project_nomad/commit/8e7efac6f1f5165385bf004e40129e768a3727e5) CI: add workflow_dispatch trigger to stable release — *Franco Nogarin, 21:50*
 - [`418027e`](https://github.com/WISE-Developers/project_nomad/commit/418027ed9b1ed4f0ffb22f6c8530100e41d5c24a) Merge pull request #188 from WISE-Developers/dev — *Franco Nogarin, 21:43*
 
 ### 2026-03-03
