@@ -4,10 +4,18 @@ Auto-generated from git history. Do not edit manually.
 
 ---
 
-## v0.3.8
+## v0.3.11
+
+### 2026-03-11
+
+- [`a0b06aa`](https://github.com/WISE-Developers/project_nomad/commit/a0b06aa3f755b66e32a847941a946a1eed8a86a3) Merge pull request #201 from WISE-Developers/dev — *Franco Nogarin, 09:15*
+- [`47c9007`](https://github.com/WISE-Developers/project_nomad/commit/47c9007bdb09fa039741589716ccd2d5c7219602) chore: dev build 1 [skip ci] — *github-actions[bot], 15:10*
+- [`3c906aa`](https://github.com/WISE-Developers/project_nomad/commit/3c906aab5962dbe8df0d8c400fa7993ba7f2efe0) Fix #200: ACN auth in model routes, UI polish for model review and dashboard — *Franco Nogarin, 09:09*
 
 ### 2026-03-09
 
+- [`3230a41`](https://github.com/WISE-Developers/project_nomad/commit/3230a417dd924b1dcb389bd2521f258a9169cd7a) chore: reset dev build counter after v0.3.8 [skip ci] — *github-actions[bot], 20:51*
+- [`4b905f1`](https://github.com/WISE-Developers/project_nomad/commit/4b905f1beabed01e9e4676eb5b03061d3ca78a3a) chore: release v0.3.8 [skip ci] — *github-actions[bot], 20:50*
 - [`d719ca1`](https://github.com/WISE-Developers/project_nomad/commit/d719ca1c957519a841322030b6c190d86810e06b) Merge pull request #196 from WISE-Developers/dev — *Franco Nogarin, 14:46*
 - [`4cf580e`](https://github.com/WISE-Developers/project_nomad/commit/4cf580eab4d6b8956e8e46a8e47ad1f4aed9f0f4) chore: dev build 4 [skip ci] — *github-actions[bot], 20:16*
 - [`7d5b708`](https://github.com/WISE-Developers/project_nomad/commit/7d5b7089d3b95b113576c2809478d435b3ec4981) Fix installer: ensure devDeps install and rebuild native modules (#198, #199) — *Franco Nogarin, 14:13*
