@@ -14,8 +14,6 @@ import { BreaksSelectionModal, type BreaksMode } from './BreaksSelectionModal';
 interface OutputListProps {
   /** List of outputs to display */
   outputs: OutputItem[];
-  /** Called when preview is requested */
-  onPreview: (output: OutputItem) => void;
   /** Called when download is requested */
   onDownload: (output: OutputItem) => void;
   /** Called when add to map is requested (with optional breaks mode) */
@@ -80,7 +78,6 @@ function getFormatColor(format: OutputFormat): string {
  */
 export function OutputList({
   outputs,
-  onPreview,
   onDownload,
   onAddToMap,
   onAddRasterToMap,
@@ -150,7 +147,6 @@ export function OutputList({
               key={output.id}
               output={output}
               isSelected={selectedOutput?.id === output.id}
-              onPreview={() => onPreview(output)}
               onDownload={() => onDownload(output)}
               onAddToMap={() => handleAddToMapClick(output)}
               onAddRasterToMap={onAddRasterToMap ? () => onAddRasterToMap(output) : undefined}
@@ -176,7 +172,6 @@ export function OutputList({
 interface OutputListItemProps {
   output: OutputItem;
   isSelected: boolean;
-  onPreview: () => void;
   onDownload: () => void;
   onAddToMap: () => Promise<void> | void;
   onAddRasterToMap?: () => Promise<void> | void;
@@ -185,16 +180,16 @@ interface OutputListItemProps {
 function OutputListItem({
   output,
   isSelected,
-  onPreview,
   onDownload,
-  onAddToMap,
+  onAddToMap: _onAddToMap, // hidden until contour support is fixed
   onAddRasterToMap,
 }: OutputListItemProps) {
   const [isLoadingRaster, setIsLoadingRaster] = useState(false);
-  const [isLoadingContours, setIsLoadingContours] = useState(false);
+  // const [isLoadingContours, setIsLoadingContours] = useState(false); // hidden until contour support is fixed
   const formatColor = getFormatColor(output.format);
-  const canPreview = ['geotiff', 'geojson'].includes(output.format);
+  // const canPreview = ['geotiff', 'geojson'].includes(output.format); // hidden until contour support is fixed
 
+  /* hidden until contour support is fixed
   const handleContoursClick = async () => {
     if (isLoadingContours) return;
     setIsLoadingContours(true);
@@ -204,6 +199,7 @@ function OutputListItem({
       setIsLoadingContours(false);
     }
   };
+  */
 
   const handleRasterClick = async () => {
     console.log('[OutputListItem] handleRasterClick called');
@@ -228,7 +224,6 @@ function OutputListItem({
     backgroundColor: isSelected ? '#e3f2fd' : 'white',
     borderRadius: '6px',
     border: isSelected ? '2px solid #1976d2' : '1px solid #e0e0e0',
-    cursor: 'pointer',
     transition: 'all 0.2s',
   };
 
@@ -283,15 +278,24 @@ function OutputListItem({
     transition: 'all 0.2s',
   };
 
+  const downloadButtonStyle: React.CSSProperties = {
+    ...buttonStyle,
+    backgroundColor: '#d32f2f',
+    borderColor: '#d32f2f',
+    color: 'white',
+  };
+
+  /* hidden until contour support is fixed
   const primaryButtonStyle: React.CSSProperties = {
     ...buttonStyle,
     backgroundColor: '#1976d2',
     borderColor: '#1976d2',
     color: 'white',
   };
+  */
 
   return (
-    <div style={itemStyle} onClick={canPreview ? onPreview : undefined}>
+    <div style={itemStyle}>
       <div style={infoStyle}>
         <div style={nameStyle} title={output.name}>
           {output.name}
@@ -304,24 +308,16 @@ function OutputListItem({
           )}
         </div>
       </div>
-      <div style={actionsStyle} onClick={(e) => e.stopPropagation()}>
-        {canPreview && (
-          <button
-            style={buttonStyle}
-            onClick={onPreview}
-            title="Preview on map"
-          >
-            View
-          </button>
-        )}
+      <div style={actionsStyle}>
         <button
-          style={buttonStyle}
+          style={downloadButtonStyle}
           onClick={onDownload}
           title="Download file"
         >
-          DL
+          {output.format === 'geotiff' ? 'Download Raster' : 'Download'}
         </button>
 
+        {/* Contours button hidden until contour support is fixed
         {canPreview && (
           <button
             style={{
@@ -340,13 +336,14 @@ function OutputListItem({
             {isLoadingContours ? 'Loading...' : '+ Map'}
           </button>
         )}
+        */}
 
         {output.format === 'geotiff' && onAddRasterToMap && (
           <button
             style={{
               ...buttonStyle,
               backgroundColor: '#7b1fa2',
-              
+
               borderColor: '#7b1fa2',
               color: 'white',
               opacity: isLoadingRaster ? 0.7 : 1,
@@ -360,7 +357,7 @@ function OutputListItem({
               className={isLoadingRaster ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-table-cells'}
               style={{ marginRight: '4px' }}
             />
-            {isLoadingRaster ? 'Loading...' : 'Raster'}
+            {isLoadingRaster ? 'Loading...' : 'Add Raster to Map'}
           </button>
         )}
       </div>

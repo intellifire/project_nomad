@@ -101,10 +101,9 @@ export function ResultsSummary({
   const ignition = inputs?.ignition;
   const statusInfo = getStatusInfo(summary.status);
   const isInProgress = ['queued', 'initializing', 'running'].includes(summary.status);
-  // FireSTARR always runs stochastic iterations - show count if available
   const simLabel = summary.simulationCount
-    ? `${summary.simulationCount} iterations`
-    : 'Stochastic';
+    ? `Probabilistic (${summary.simulationCount} iterations)`
+    : 'Probabilistic';
 
   const containerStyle: React.CSSProperties = {
     backgroundColor: 'white',
@@ -140,6 +139,20 @@ export function ResultsSummary({
     backgroundColor: '#f5f5f5',
     color: '#666',
     marginTop: '4px',
+  };
+
+  const infoTableHeaderStyle: React.CSSProperties = {
+    padding: '4px 12px 4px 0',
+    fontWeight: 500,
+    color: '#999',
+    fontSize: '11px',
+    textTransform: 'uppercase',
+    textAlign: 'left',
+  };
+
+  const infoTableCellStyle: React.CSSProperties = {
+    padding: '4px 12px 4px 0',
+    verticalAlign: 'middle',
   };
 
   const statusBadgeStyle: React.CSSProperties = {
@@ -220,22 +233,32 @@ export function ResultsSummary({
       <div style={headerStyle}>
         <div style={titleSectionStyle}>
           <h2 style={titleStyle}>{modelName}</h2>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px', flexWrap: 'wrap' }}>
-            <span style={engineTagStyle}>
-              {engineType.toUpperCase()}
-            </span>
-            <span style={{ ...engineTagStyle, backgroundColor: '#e8f5e9', color: '#2e7d32' }}>
-              {simLabel}
-            </span>
-            {userId && (
-              <span style={{ ...engineTagStyle, backgroundColor: '#e3f2fd', color: '#1565c0' }}>
-                {userId}
-              </span>
-            )}
-            <span style={{ ...engineTagStyle, fontFamily: 'monospace', fontSize: '11px' }}>
-              {modelId}
-            </span>
-          </div>
+          <table style={{ marginTop: '8px', borderCollapse: 'collapse', fontSize: '12px' }}>
+            <thead>
+              <tr>
+                <th style={infoTableHeaderStyle}>Modeller</th>
+                <th style={infoTableHeaderStyle}>Mode</th>
+                <th style={infoTableHeaderStyle}>User</th>
+                <th style={infoTableHeaderStyle}>Model Run ID</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style={infoTableCellStyle}>
+                  <span style={engineTagStyle}>{engineType.toUpperCase()}</span>
+                </td>
+                <td style={infoTableCellStyle}>
+                  <span style={{ ...engineTagStyle, backgroundColor: '#e8f5e9', color: '#2e7d32' }}>{simLabel}</span>
+                </td>
+                <td style={infoTableCellStyle}>
+                  <span style={{ ...engineTagStyle, backgroundColor: '#e3f2fd', color: '#1565c0' }}>{userId ?? '-'}</span>
+                </td>
+                <td style={infoTableCellStyle}>
+                  <span style={{ ...engineTagStyle, fontFamily: 'monospace', fontSize: '11px' }}>{modelId}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
         <div style={statusBadgeStyle}>
           {isInProgress && (
@@ -355,7 +378,7 @@ export function ResultsSummary({
                   padding: '6px 12px',
                   fontSize: '12px',
                   fontWeight: 500,
-                  backgroundColor: '#1565c0',
+                  backgroundColor: '#d32f2f',
                   color: 'white',
                   border: 'none',
                   borderRadius: '4px',
@@ -363,7 +386,7 @@ export function ResultsSummary({
                   textDecoration: 'none',
                 }}
               >
-                Download
+                Download Weather
               </a>
             </div>
           )}
@@ -403,7 +426,7 @@ export function ResultsSummary({
                     textDecoration: 'none',
                   }}
                 >
-                  Download
+                  Download Ignition
                 </a>
                 {onAddIgnitionToMap && (
                   <button
@@ -412,14 +435,15 @@ export function ResultsSummary({
                       padding: '6px 12px',
                       fontSize: '12px',
                       fontWeight: 500,
-                      backgroundColor: '#43a047',
+                      backgroundColor: '#7b1fa2',
                       color: 'white',
                       border: 'none',
                       borderRadius: '4px',
                       cursor: 'pointer',
                     }}
                   >
-                    + Map
+                    <i className="fa-solid fa-bezier-curve" style={{ marginRight: '4px' }} />
+                    Add Igntion to Map
                   </button>
                 )}
               </div>

@@ -158,6 +158,8 @@ export interface Model {
   createdAt: string;
   /** ISO 8601 timestamp when model was last updated */
   updatedAt: string;
+  /** Output mode (probabilistic, pseudo-deterministic, etc.) */
+  outputMode?: string | null;
   /** Optional user notes about this model */
   notes?: string;
 }

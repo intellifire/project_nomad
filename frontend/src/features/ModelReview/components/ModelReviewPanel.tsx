@@ -2,14 +2,13 @@
  * Model Review Panel
  *
  * Main container for viewing model results.
- * Combines ResultsSummary, OutputList, and handles preview modal.
+ * Combines ResultsSummary, OutputList, and handles map/export actions.
  */
 
 import React, { useState, useCallback } from 'react';
 import { Rnd } from 'react-rnd';
 import { ResultsSummary } from './ResultsSummary';
 import { OutputList, type BreaksMode } from './OutputList';
-import { OutputPreviewModal } from './OutputPreviewModal';
 import { useModelResults } from '../hooks/useModelResults';
 import { ExportPanel } from '../../Export';
 import { useOpenNomad } from '../../../openNomad/context';
@@ -48,20 +47,12 @@ export function ModelReviewPanel({
 }: ModelReviewPanelProps) {
   const api = useOpenNomad();
   const { results, isLoading, error, refetch } = useModelResults(modelId);
-  const [previewOutput, setPreviewOutput] = useState<OutputItem | null>(null);
   const [showExportPanel, setShowExportPanel] = useState(false);
   const [size, setSize] = useState({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT });
 
   // Calculate initial position (left side, below header)
   const [initialX] = useState(() => 180);
   const [initialY] = useState(() => 70);
-
-  /**
-   * Handle preview request
-   */
-  const handlePreview = useCallback((output: OutputItem) => {
-    setPreviewOutput(output);
-  }, []);
 
   /**
    * Handle download request
@@ -125,13 +116,6 @@ export function ModelReviewPanel({
     },
     [api, onAddToMap, results]
   );
-
-  /**
-   * Close preview modal
-   */
-  const handleClosePreview = useCallback(() => {
-    setPreviewOutput(null);
-  }, []);
 
   /**
    * Open export panel
@@ -250,7 +234,6 @@ export function ModelReviewPanel({
         />
         <OutputList
           outputs={results.outputs}
-          onPreview={handlePreview}
           onDownload={handleDownload}
           onAddToMap={handleAddToMap}
           onAddRasterToMap={onAddRasterToMap ? handleAddRasterToMap : undefined}
@@ -286,13 +269,6 @@ export function ModelReviewPanel({
 
   const renderModals = () => (
     <>
-      {previewOutput && (
-        <OutputPreviewModal
-          output={previewOutput}
-          onClose={handleClosePreview}
-          onAddToMap={handleAddToMap}
-        />
-      )}
       {showExportPanel && results && (
         <div style={exportModalOverlayStyle}>
           <ExportPanel

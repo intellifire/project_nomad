@@ -17,8 +17,7 @@
     "build:frontend": "npm run build --workspace=@nomad/frontend",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "install:all": "npm install",
-    "SYM:MemSave": "bash documentation/persist/saveMemory.sh"
+    "install:all": "npm install"
   },
   "author": "Franco Nogarin",
   "license": "MIT",
