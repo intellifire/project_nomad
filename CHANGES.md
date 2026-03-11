@@ -4,10 +4,15 @@ Auto-generated from git history. Do not edit manually.
 
 ---
 
-## v0.3.11
+## v0.3.12
 
 ### 2026-03-11
 
+- [`ecc2001`](https://github.com/WISE-Developers/project_nomad/commit/ecc20012a9b5af6db34d66cc0b4739de7e728e17) Merge pull request #203 from WISE-Developers/dev — *Franco Nogarin, 10:07*
+- [`fd760a7`](https://github.com/WISE-Developers/project_nomad/commit/fd760a7b3e1764bcf19b7331237aab60dc1b60c4) chore: dev build 1 [skip ci] — *github-actions[bot], 15:57*
+- [`f4f6d41`](https://github.com/WISE-Developers/project_nomad/commit/f4f6d411dc34941c81472b317908dd5f1b816e62) Fix #202: Persist model notes and store outputMode on entity at creation — *Franco Nogarin, 09:57*
+- [`e90db5e`](https://github.com/WISE-Developers/project_nomad/commit/e90db5e1f9e338697f32f4082521ce68a67136ef) chore: reset dev build counter after v0.3.11 [skip ci] — *github-actions[bot], 15:20*
+- [`f2c782c`](https://github.com/WISE-Developers/project_nomad/commit/f2c782c062ef8321d03cdf2162fcc34efbdb31f4) chore: release v0.3.11 [skip ci] — *github-actions[bot], 15:20*
 - [`a0b06aa`](https://github.com/WISE-Developers/project_nomad/commit/a0b06aa3f755b66e32a847941a946a1eed8a86a3) Merge pull request #201 from WISE-Developers/dev — *Franco Nogarin, 09:15*
 - [`47c9007`](https://github.com/WISE-Developers/project_nomad/commit/47c9007bdb09fa039741589716ccd2d5c7219602) chore: dev build 1 [skip ci] — *github-actions[bot], 15:10*
 - [`3c906aa`](https://github.com/WISE-Developers/project_nomad/commit/3c906aab5962dbe8df0d8c400fa7993ba7f2efe0) Fix #200: ACN auth in model routes, UI polish for model review and dashboard — *Franco Nogarin, 09:09*
