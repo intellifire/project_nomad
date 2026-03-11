@@ -1,9 +1,8 @@
 name: Stable Release
 
 on:
-  pull_request:
+  push:
     branches: [main]
-    types: [closed]
   workflow_dispatch:
 
 permissions:
@@ -16,8 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     if: >
       github.event_name == 'workflow_dispatch' ||
-      (github.event.pull_request.merged == true &&
-      github.event.pull_request.head.ref == 'dev')
+      (github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip ci]'))
 
     steps:
       - name: Checkout with full history
@@ -31,15 +29,24 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Find merged PR number
+        id: find-pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # For push events, find the PR that was just merged
+          PR_NUMBER=$(gh pr list --repo "${{ github.repository }}" --state merged --base main --json number,mergedAt --jq 'sort_by(.mergedAt) | last | .number')
+          echo "number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+          echo "Merged PR: #${PR_NUMBER}"
+
       - name: Determine bump level
         id: bump
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
           REPO: ${{ github.repository }}
         run: |
           chmod +x .github/scripts/determine-bump.sh
-          BUMP=$(.github/scripts/determine-bump.sh "${{ github.event.pull_request.number }}")
+          BUMP=$(.github/scripts/determine-bump.sh "${{ steps.find-pr.outputs.number }}")
           echo "level=${BUMP}" >> $GITHUB_OUTPUT
           echo "Bump level: $BUMP"
 
