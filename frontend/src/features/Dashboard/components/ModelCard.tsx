@@ -104,6 +104,19 @@ function getEngineLabel(engine: EngineType): string {
   }
 }
 
+function getModeLabel(outputMode?: string | null): string {
+  switch (outputMode) {
+    case 'probabilistic':
+      return 'Probabilistic';
+    case 'pseudo-deterministic':
+      return 'Deterministic';
+    case 'long-term-risk':
+      return 'Long-Term Risk';
+    default:
+      return outputMode ?? '-';
+  }
+}
+
 // =============================================================================
 // Component
 // =============================================================================
@@ -184,12 +197,7 @@ export function ModelCard({
         )}
         <div style={titleContainerStyle}>
           <h3 style={titleStyle}>{model.name}</h3>
-          <span style={modelIdStyle}>{model.id}</span>
         </div>
-      </div>
-
-      {/* Status and engine */}
-      <div style={metaRowStyle}>
         <span
           style={{
             ...statusBadgeStyle,
@@ -201,8 +209,40 @@ export function ModelCard({
           {isRunning && <span style={pulseStyle} />}
           {getStatusLabel(model.status)}
         </span>
-        <span style={engineBadgeStyle}>{getEngineLabel(model.engine)}</span>
       </div>
+
+      {/* Model info table */}
+      <table style={infoTableStyle}>
+        <thead>
+          <tr>
+            <th style={infoTableThStyle}>Modeller</th>
+            <th style={infoTableThStyle}>Mode</th>
+            <th style={infoTableThStyle}>User</th>
+            <th style={infoTableThStyle}>Model Run ID</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style={infoTableTdStyle}>
+              <span style={engineBadgeStyle}>{getEngineLabel(model.engine)}</span>
+            </td>
+            <td style={infoTableTdStyle}>
+              <span style={modeBadgeStyle}>{getModeLabel(model.outputMode)}</span>
+            </td>
+            <td style={infoTableTdStyle}>
+              <span style={userBadgeStyle}>{model.userId}</span>
+            </td>
+            <td style={infoTableTdStyle}>
+              <span style={modelIdStyle}>{model.id}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* Notes */}
+      {model.notes && (
+        <p style={notesStyle}>{model.notes}</p>
+      )}
 
       {/* Timestamps */}
       <div style={timestampRowStyle}>
@@ -215,11 +255,6 @@ export function ModelCard({
           </span>
         )}
       </div>
-
-      {/* Notes */}
-      {model.notes && (
-        <p style={notesStyle}>{model.notes}</p>
-      )}
 
       {/* Actions */}
       <div style={actionsRowStyle}>
@@ -318,11 +353,44 @@ const modelIdStyle: React.CSSProperties = {
   fontFamily: 'monospace',
 };
 
-const metaRowStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  flexWrap: 'wrap',
+const infoTableStyle: React.CSSProperties = {
+  borderCollapse: 'collapse',
+  fontSize: '12px',
+  width: '100%',
+};
+
+const infoTableThStyle: React.CSSProperties = {
+  padding: '4px 8px 4px 0',
+  fontWeight: 500,
+  color: '#999',
+  fontSize: '11px',
+  textTransform: 'uppercase',
+  textAlign: 'left',
+};
+
+const infoTableTdStyle: React.CSSProperties = {
+  padding: '4px 8px 4px 0',
+  verticalAlign: 'middle',
+};
+
+const modeBadgeStyle: React.CSSProperties = {
+  display: 'inline-block',
+  padding: '2px 8px',
+  fontSize: '12px',
+  fontWeight: 500,
+  backgroundColor: '#e8f5e9',
+  color: '#2e7d32',
+  borderRadius: '4px',
+};
+
+const userBadgeStyle: React.CSSProperties = {
+  display: 'inline-block',
+  padding: '2px 8px',
+  fontSize: '12px',
+  fontWeight: 500,
+  backgroundColor: '#e3f2fd',
+  color: '#1565c0',
+  borderRadius: '4px',
 };
 
 const statusBadgeStyle: React.CSSProperties = {

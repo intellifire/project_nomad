@@ -78,6 +78,7 @@ function mapModelResponse(response: ModelResponse): Model {
     userId: response.userId ?? 'anonymous',
     createdAt: response.createdAt,
     updatedAt: response.updatedAt ?? response.createdAt,
+    outputMode: response.outputMode ?? null,
     notes: undefined, // Backend doesn't store notes yet
   };
 }

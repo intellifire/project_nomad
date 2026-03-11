@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as fs from 'fs';
-import { asyncHandler, simpleAuthMiddleware } from '../../middleware/index.js';
+import { asyncHandler, resolveUserId } from '../../middleware/index.js';
 import { logger } from '../../../infrastructure/logging/index.js';
 import {
   FireModel,
@@ -26,8 +26,6 @@ const VALID_MODEL_MODES: ModelMode[] = ['probabilistic', 'deterministic', 'long-
 
 const router = Router();
 
-// Apply simple auth middleware to all routes
-router.use(simpleAuthMiddleware);
 
 /**
  * Combined request body for creating and running a model
@@ -161,7 +159,7 @@ router.post(
       name: body.name,
       engineType: body.engineType,
       status: ModelStatus.Queued,
-      userId: req.user,  // Capture user ownership
+      userId: resolveUserId(req),
     });
 
     logger.model(`Creating ignition geometry: type=${body.ignition.type} -> ${geometryType}`, modelId);
@@ -311,7 +309,7 @@ router.post(
       name,
       engineType,
       status: ModelStatus.Draft,
-      userId: req.user,  // Capture user ownership
+      userId: resolveUserId(req),
     });
 
     // Persist to database
@@ -1169,8 +1167,8 @@ router.get(
   '/models',
   asyncHandler(async (req, res) => {
     const modelRepo = getModelRepository();
-    // Filter by user when simple auth is enabled
-    const filter = req.user ? { userId: req.user } : {};
+    const userId = resolveUserId(req);
+    const filter = userId ? { userId } : {};
     const result = await modelRepo.find(filter);
 
     // Get FireSTARR engine for working directory lookup
@@ -1265,8 +1263,8 @@ router.delete(
       throw new NotFoundError('Model', id);
     }
 
-    // Check ownership when simple auth is enabled
-    if (req.user && model.userId && model.userId !== req.user) {
+    const userId = resolveUserId(req);
+    if (userId && model.userId && model.userId !== userId) {
       throw new ValidationError('Permission denied', [
         { field: 'userId', message: 'You can only delete your own models' },
       ]);

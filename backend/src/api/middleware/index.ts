@@ -9,6 +9,7 @@ export { errorHandler, type ApiErrorResponse } from './errorHandler.js';
 export { notFoundHandler } from './notFound.js';
 export { requestLogger } from './logging.js';
 export { simpleAuthMiddleware } from './simpleAuth.js';
+export { resolveUserId } from './resolveUserId.js';
 export {
   acnAuthMiddleware,
   requireRoles,
