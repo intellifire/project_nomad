@@ -13,15 +13,15 @@
 set -e
 
 # Installer version
-INSTALLER_VERSION="2.1.0"
+INSTALLER_VERSION="2.1.1"
 
 # FireSTARR image and binary source configuration
-# PINNED to v0.9.5.10:
+# Docker: unstable-latest (no tagged images available yet), Binaries: v0.9.5.10
 # See: https://github.com/WISE-Developers/project_nomad/issues/184
 FIRESTARR_REGISTRY="ghcr.io/cwfmf/firestarr-cpp"
 FIRESTARR_IMAGE_NAME="firestarr"
-FIRESTARR_IMAGE_TAG="v0.9.5.10"
-FIRESTARR_IMAGE_TAG_ARM64="v0.9.5.10"
+FIRESTARR_IMAGE_TAG="unstable-latest"
+FIRESTARR_IMAGE_TAG_ARM64="unstable-latest"
 FIRESTARR_BINARY_RELEASE_TAG="v0.9.5.10"
 FIRESTARR_BINARY_RELEASE_REPO="https://github.com/CWFMF/firestarr-cpp/releases/download"
 FIRESTARR_BINARY_ASSET_MACOS="firestarr-macos-arm64-clang-Release.tar.gz"
@@ -1866,18 +1866,15 @@ install_all_docker() {
     generate_env_file
 
     # 2. Configure FireSTARR image
-    if [ -z "$FIRESTARR_IMAGE" ]; then
-        # Load VERSION from .env if available
-        if [ -f "$ENV_FILE" ]; then
-            source "$ENV_FILE"
-        fi
-        VERSION="${VERSION:-0.9.5.4}"
-        if ! configure_firestarr_image; then
-            print_error "Cannot proceed - CPU does not meet FireSTARR requirements"
-            exit 1
-        fi
-        update_env_value "FIRESTARR_IMAGE" "$FIRESTARR_IMAGE"
+    # Always reconfigure — stale values from a previous .env must not bypass
+    # the image selection prompt or override the installer's pinned tags.
+    FIRESTARR_IMAGE=""
+    VERSION="${VERSION:-0.9.5.4}"
+    if ! configure_firestarr_image; then
+        print_error "Cannot proceed - CPU does not meet FireSTARR requirements"
+        exit 1
     fi
+    update_env_value "FIRESTARR_IMAGE" "$FIRESTARR_IMAGE"
 
     # 3. Install dataset based on mode selected in wizard
     case "$DATASET_INSTALL_MODE" in
