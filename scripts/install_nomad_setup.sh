@@ -16,13 +16,13 @@ set -e
 INSTALLER_VERSION="2.1.0"
 
 # FireSTARR image and binary source configuration
-# PINNED to v0.9.5.8: versions v0.9.6+ have raster corruption bugs.
+# PINNED to v0.9.5.10:
 # See: https://github.com/WISE-Developers/project_nomad/issues/184
 FIRESTARR_REGISTRY="ghcr.io/cwfmf/firestarr-cpp"
 FIRESTARR_IMAGE_NAME="firestarr"
-FIRESTARR_IMAGE_TAG="v0.9.5.8"
-FIRESTARR_IMAGE_TAG_ARM64="v0.9.5.8"
-FIRESTARR_BINARY_RELEASE_TAG="v0.9.5.8"
+FIRESTARR_IMAGE_TAG="v0.9.5.10"
+FIRESTARR_IMAGE_TAG_ARM64="v0.9.5.10"
+FIRESTARR_BINARY_RELEASE_TAG="v0.9.5.10"
 FIRESTARR_BINARY_RELEASE_REPO="https://github.com/CWFMF/firestarr-cpp/releases/download"
 FIRESTARR_BINARY_ASSET_MACOS="firestarr-macos-arm64-clang-Release.tar.gz"
 FIRESTARR_BINARY_ASSET_LINUX="firestarr-ubuntu-x64-gcc-Release.tar.gz"
