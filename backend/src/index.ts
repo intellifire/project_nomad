@@ -12,6 +12,7 @@ import {
   errorHandler,
   acnAuthMiddleware,
   simpleAuthMiddleware,
+  resolveAuthMode,
 } from './api/index.js';
 import { initDatabase, initializeRepositories, getJobRepository } from './infrastructure/database/index.js';
 import { logger } from './infrastructure/logging/index.js';
@@ -166,8 +167,22 @@ if (process.env.NOMAD_DEPLOYMENT_MODE === 'ACN') {
   logger.startup('ACN mode: Agency authentication enabled');
   app.use(acnAuthMiddleware);
 } else {
-  logger.startup('SAN mode: Simple authentication enabled');
-  app.use(simpleAuthMiddleware);
+  const authMode = resolveAuthMode();
+  switch (authMode) {
+    case 'simple':
+      logger.startup('SAN mode: Simple authentication enabled');
+      app.use(simpleAuthMiddleware);
+      break;
+    case 'oauth':
+      logger.startup('SAN mode: OAuth authentication enabled');
+      // OAuth middleware will be added in Phase 1
+      // For now, fall through to simple auth as placeholder
+      app.use(simpleAuthMiddleware);
+      break;
+    case 'none':
+      logger.startup('SAN mode: No authentication (open access)');
+      break;
+  }
 }
 
 // ============================================

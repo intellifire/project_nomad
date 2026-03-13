@@ -2,14 +2,31 @@
  * Splash Screen Component
  *
  * Branded welcome screen shown on app load.
- * When VITE_SIMPLE_AUTH=true, requires username entry.
- * Otherwise, just click to enter.
+ * Auth mode determines behavior:
+ *   'none'   — click anywhere to enter
+ *   'simple' — username input field
+ *   'oauth'  — OAuth provider buttons (Phase 2)
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { version } from '../../package.json';
 
-const SIMPLE_AUTH_ENABLED = import.meta.env.VITE_SIMPLE_AUTH === 'true';
+type AuthMode = 'none' | 'simple' | 'oauth';
+
+function resolveAuthMode(): AuthMode {
+  const mode = import.meta.env.VITE_AUTH_MODE;
+  if (mode === 'none' || mode === 'simple' || mode === 'oauth') {
+    return mode;
+  }
+  // Legacy fallback
+  if (import.meta.env.VITE_SIMPLE_AUTH !== undefined) {
+    console.warn('[Nomad] VITE_SIMPLE_AUTH is deprecated. Use VITE_AUTH_MODE=none|simple|oauth');
+    return import.meta.env.VITE_SIMPLE_AUTH === 'true' ? 'simple' : 'none';
+  }
+  return 'none';
+}
+
+const AUTH_MODE = resolveAuthMode();
 const STORAGE_KEY = 'nomad_username';
 
 interface SplashScreenProps {
@@ -28,7 +45,7 @@ export function SplashScreen({ onEnter }: SplashScreenProps) {
   }, []);
 
   const handleSubmit = useCallback(() => {
-    if (SIMPLE_AUTH_ENABLED && !username.trim()) {
+    if (AUTH_MODE === 'simple' && !username.trim()) {
       return; // Don't allow empty username when auth is required
     }
     // Save username to localStorage
@@ -44,7 +61,7 @@ export function SplashScreen({ onEnter }: SplashScreenProps) {
     }
   }, [handleSubmit]);
 
-  const canEnter = !SIMPLE_AUTH_ENABLED || username.trim().length > 0;
+  const canEnter = AUTH_MODE !== 'simple' || username.trim().length > 0;
 
   return (
     <div
@@ -107,7 +124,7 @@ export function SplashScreen({ onEnter }: SplashScreenProps) {
       </p>
 
       {/* Username input (when simple auth enabled) */}
-      {SIMPLE_AUTH_ENABLED && (
+      {AUTH_MODE === 'simple' && (
         <div style={{ marginBottom: '24px', width: '280px' }}>
           <label
             htmlFor="username"
@@ -163,7 +180,7 @@ export function SplashScreen({ onEnter }: SplashScreenProps) {
       </button>
 
       {/* Click anywhere hint when no auth */}
-      {!SIMPLE_AUTH_ENABLED && (
+      {AUTH_MODE === 'none' && (
         <div
           style={{
             color: '#64748b',
