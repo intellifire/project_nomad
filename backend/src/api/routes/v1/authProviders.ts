@@ -30,9 +30,7 @@ router.get('/auth/providers', (_req, res) => {
   for (const [id, config] of Object.entries(PROVIDER_MAP)) {
     const clientId = process.env[`${config.envPrefix}_CLIENT_ID`];
     const clientSecret = process.env[`${config.envPrefix}_CLIENT_SECRET`];
-    // TODO: Re-enable placeholder filter before production
-    // if (clientId && clientSecret && !clientId.startsWith('your-')) {
-    if (clientId && clientSecret) {
+    if (clientId && clientSecret && !clientId.startsWith('your-') && !clientId.startsWith('placeholder')) {
       providers.push({ id, name: config.name });
     }
   }
