@@ -10,6 +10,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { version } from '../../package.json';
+import { authClient } from '../services/authClient';
 
 type AuthMode = 'none' | 'simple' | 'oauth';
 
@@ -160,24 +161,95 @@ export function SplashScreen({ onEnter }: SplashScreenProps) {
         </div>
       )}
 
-      {/* Enter button */}
-      <button
-        onClick={handleSubmit}
-        disabled={!canEnter}
-        style={{
-          padding: '14px 48px',
-          fontSize: '18px',
-          fontWeight: 600,
-          color: '#ffffff',
-          backgroundColor: canEnter ? '#3b82f6' : '#475569',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: canEnter ? 'pointer' : 'not-allowed',
-          transition: 'background-color 0.2s',
-        }}
-      >
-        Enter
-      </button>
+      {/* OAuth provider buttons */}
+      {AUTH_MODE === 'oauth' && (
+        <div style={{ marginBottom: '16px', width: '280px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <p style={{ color: '#94a3b8', fontSize: '14px', margin: '0 0 4px 0', textAlign: 'center' }}>
+            Sign in to continue
+          </p>
+          <button
+            onClick={() => authClient.signIn.social({ provider: 'google', callbackURL: '/' })}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              fontSize: '16px',
+              fontWeight: 600,
+              color: '#ffffff',
+              backgroundColor: '#4285F4',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
+          >
+            Sign in with Google
+          </button>
+          <button
+            onClick={() => authClient.signIn.social({ provider: 'microsoft', callbackURL: '/' })}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              fontSize: '16px',
+              fontWeight: 600,
+              color: '#ffffff',
+              backgroundColor: '#2F2F2F',
+              border: '1px solid #555',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
+          >
+            Sign in with Microsoft
+          </button>
+          <button
+            onClick={() => authClient.signIn.social({ provider: 'github', callbackURL: '/' })}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              fontSize: '16px',
+              fontWeight: 600,
+              color: '#ffffff',
+              backgroundColor: '#24292e',
+              border: '1px solid #555',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
+          >
+            Sign in with GitHub
+          </button>
+        </div>
+      )}
+
+      {/* Enter button (shown for none and simple modes) */}
+      {AUTH_MODE !== 'oauth' && (
+        <button
+          onClick={handleSubmit}
+          disabled={!canEnter}
+          style={{
+            padding: '14px 48px',
+            fontSize: '18px',
+            fontWeight: 600,
+            color: '#ffffff',
+            backgroundColor: canEnter ? '#3b82f6' : '#475569',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: canEnter ? 'pointer' : 'not-allowed',
+            transition: 'background-color 0.2s',
+          }}
+        >
+          Enter
+        </button>
+      )}
 
       {/* Click anywhere hint when no auth */}
       {AUTH_MODE === 'none' && (
