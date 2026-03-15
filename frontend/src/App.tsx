@@ -85,8 +85,8 @@ function getBoundsFromGeoJSON(geoJson: GeoJSON.GeoJSON): [[number, number], [num
 }
 
 const headerButtonStyle: React.CSSProperties = {
-  padding: '12px 24px',
-  fontSize: '16px',
+  padding: 'clamp(8px, 2vw, 12px) clamp(12px, 3vw, 24px)',
+  fontSize: 'clamp(12px, 2.5vw, 16px)',
   fontWeight: 'bold',
   color: 'white',
   border: 'none',
@@ -94,6 +94,7 @@ const headerButtonStyle: React.CSSProperties = {
   cursor: 'pointer',
   boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
   textShadow: '1.5px 1.5px 3px rgba(0, 0, 0, 0.6)',
+  whiteSpace: 'nowrap' as const,
 };
 
 const headerContainerStyle: React.CSSProperties = {
@@ -102,7 +103,7 @@ const headerContainerStyle: React.CSSProperties = {
   left: '50%',
   transform: 'translateX(-50%)',
   display: 'flex',
-  gap: '8px',
+  gap: 'clamp(4px, 1vw, 8px)',
   zIndex: 1000,
 };
 

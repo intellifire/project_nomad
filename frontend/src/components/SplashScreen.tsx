@@ -130,7 +130,7 @@ export function SplashScreen({ onEnter }: SplashScreenProps) {
         src="/nomad-logo.png"
         alt="Project Nomad"
         style={{
-          width: '200px',
+          width: 'clamp(120px, 30vw, 200px)',
           height: 'auto',
           marginBottom: '32px',
           borderRadius: '24px',
@@ -141,7 +141,7 @@ export function SplashScreen({ onEnter }: SplashScreenProps) {
       <h1
         style={{
           color: '#ffffff',
-          fontSize: '48px',
+          fontSize: 'clamp(28px, 8vw, 48px)',
           fontWeight: 700,
           margin: '0 0 8px 0',
           textAlign: 'center',

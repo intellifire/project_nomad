@@ -65,12 +65,15 @@ export function NotificationPermissionBanner({
         padding: '12px 16px',
         display: 'flex',
         alignItems: 'center',
-        gap: '16px',
+        gap: '12px',
+        flexWrap: 'wrap' as const,
         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
         zIndex: 9998,
         color: '#f3f4f6',
         fontFamily: 'system-ui, sans-serif',
+        width: 'calc(100% - 32px)',
         maxWidth: '500px',
+        boxSizing: 'border-box' as const,
       }}
     >
       <div

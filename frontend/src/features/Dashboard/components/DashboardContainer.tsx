@@ -7,7 +7,7 @@
  * @module features/Dashboard/components
  */
 
-import { useState, useCallback, useMemo, type CSSProperties } from 'react';
+import { useState, useCallback, useMemo, useEffect, type CSSProperties } from 'react';
 import { Rnd } from 'react-rnd';
 import { DashboardProvider, useDashboardTabs, useDashboardView, type DashboardTab } from '../context/DashboardContext.js';
 import { useJobs } from '../hooks/useJobs.js';
@@ -124,6 +124,8 @@ const DEFAULT_WIDTH = 500;
 const DEFAULT_HEIGHT = 600;
 const MIN_WIDTH = 380;
 const MIN_HEIGHT = 400;
+const MOBILE_BREAKPOINT = 480;
+const TABLET_BREAKPOINT = 768;
 
 // =============================================================================
 // Tab Navigation Component
@@ -313,6 +315,17 @@ function FloatingDashboard({
   const labels = useNomadLabels();
   const { theme } = useNomadCustomizationOptional();
 
+  // Responsive
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  const [windowHeight, setWindowHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 768);
+  useEffect(() => {
+    const handleResize = () => { setWindowWidth(window.innerWidth); setWindowHeight(window.innerHeight); };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  const isMobile = windowWidth < MOBILE_BREAKPOINT;
+  const isTablet = windowWidth < TABLET_BREAKPOINT;
+
   // Calculate initial position (right side of screen)
   const [initialX] = useState(() => Math.max(20, window.innerWidth - DEFAULT_WIDTH - 40));
   const [initialY] = useState(() => 70);
@@ -378,17 +391,47 @@ function FloatingDashboard({
     fontSize: theme['--nomad-font-size-lg'],
   };
 
+  // Mobile: full-screen overlay
+  if (isMobile) {
+    return (
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        zIndex: 900, backgroundColor: 'white', display: 'flex', flexDirection: 'column',
+      }}>
+        <div style={panelDynamic} className={`dashboard-panel ${className}`}>
+          <SlotRenderer name="header">
+            <div style={{ ...headerDynamic, cursor: 'default' }}>
+              <h2 style={titleDynamic}>{labels.title}</h2>
+              <button
+                style={{ ...closeButtonStyle, color: theme['--nomad-text-secondary'] }}
+                onClick={onClose}
+                aria-label={labels.tooltips.closeDashboard}
+              >
+                &times;
+              </button>
+            </div>
+          </SlotRenderer>
+          <DashboardContent onViewResults={onViewResults} onAddToMap={onAddToMap} />
+        </div>
+      </div>
+    );
+  }
+
+  // Tablet/Desktop: constrained Rnd panel
+  const effectiveWidth = isTablet ? Math.min(420, windowWidth - 20) : DEFAULT_WIDTH;
+  const effectiveHeight = isTablet ? Math.min(550, windowHeight - 20) : DEFAULT_HEIGHT;
+
   return (
     <Rnd
       default={{
         x: initialX,
         y: initialY,
-        width: DEFAULT_WIDTH,
-        height: DEFAULT_HEIGHT,
+        width: effectiveWidth,
+        height: effectiveHeight,
       }}
-      minWidth={MIN_WIDTH}
+      minWidth={isTablet ? Math.min(MIN_WIDTH, windowWidth - 20) : MIN_WIDTH}
       minHeight={MIN_HEIGHT}
-      maxHeight={window.innerHeight - 32}
+      maxHeight={windowHeight - 32}
       bounds="parent"
       dragHandleClassName="dashboard-drag-handle"
       style={{ zIndex: 900 }}
@@ -410,23 +453,18 @@ function FloatingDashboard({
       }}
     >
       <div style={panelDynamic} className={`dashboard-panel ${className}`}>
-        {/* Header - Drag Handle */}
         <SlotRenderer name="header">
           <div style={headerDynamic} className="dashboard-drag-handle">
             <h2 style={titleDynamic}>{labels.title}</h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <ActionsContainer placement="header" />
-              <span style={{
-                ...dragHintStyle,
-                color: theme['--nomad-text-disabled'],
-              }}>
-                {labels.tooltips.dragToMove}
-              </span>
+              {!isTablet && (
+                <span style={{ ...dragHintStyle, color: theme['--nomad-text-disabled'] }}>
+                  {labels.tooltips.dragToMove}
+                </span>
+              )}
               <button
-                style={{
-                  ...closeButtonStyle,
-                  color: theme['--nomad-text-secondary'],
-                }}
+                style={{ ...closeButtonStyle, color: theme['--nomad-text-secondary'] }}
                 onClick={onClose}
                 aria-label={labels.tooltips.closeDashboard}
               >
@@ -435,12 +473,7 @@ function FloatingDashboard({
             </div>
           </div>
         </SlotRenderer>
-
-        {/* Content */}
-        <DashboardContent
-          onViewResults={onViewResults}
-          onAddToMap={onAddToMap}
-        />
+        <DashboardContent onViewResults={onViewResults} onAddToMap={onAddToMap} />
       </div>
     </Rnd>
   );

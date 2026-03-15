@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useLayers } from '../context/LayerContext';
 import { LayerItem } from './LayerItem';
 import { useCFSLayers } from '../hooks/useCFSLayers';
@@ -46,9 +46,18 @@ export function LayerPanel({
   expanded: _initialExpanded = true,
   className = '',
 }: LayerPanelProps) {
-  // Note: _initialExpanded reserved for future collapsible panel feature
   const { state, setOpacity, toggleVisibility, removeLayer, selectLayer, reorderLayer, addRasterLayer } = useLayers();
   const cfs = useCFSLayers();
+
+  // Responsive — collapse on mobile
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  const isMobile = windowWidth < 480;
+  const [collapsed, setCollapsed] = useState(isMobile);
 
   // Drag and drop state
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -130,15 +139,47 @@ export function LayerPanel({
     setDragOverId(null);
   };
 
+  // Collapsed toggle button for mobile
+  if (isMobile && collapsed) {
+    return (
+      <button
+        className={`layer-panel-toggle ${className}`}
+        onClick={() => setCollapsed(false)}
+        style={{
+          position: 'absolute',
+          zIndex: 1,
+          ...POSITION_STYLES[position],
+          backgroundColor: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+          padding: '10px 12px',
+          cursor: 'pointer',
+          fontSize: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          color: '#333',
+        }}
+        aria-label="Open layers panel"
+      >
+        <i className="fa-solid fa-layer-group" />
+        {state.layers.length > 0 && (
+          <span style={{ fontSize: '12px', color: '#666' }}>{state.layers.length}</span>
+        )}
+      </button>
+    );
+  }
+
   const containerStyle: React.CSSProperties = {
     position: 'absolute',
     zIndex: 1,
     backgroundColor: 'white',
     borderRadius: '4px',
     boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-    minWidth: '280px',
-    maxWidth: '350px',
-    maxHeight: cfs.available ? '550px' : '400px',
+    minWidth: isMobile ? '240px' : '280px',
+    maxWidth: isMobile ? 'calc(100vw - 20px)' : '350px',
+    maxHeight: isMobile ? 'calc(100vh - 120px)' : (cfs.available ? '550px' : '400px'),
     overflow: 'hidden',
     display: 'flex',
     flexDirection: 'column',
@@ -188,7 +229,26 @@ export function LayerPanel({
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: '8px',
   };
+
+  const renderHeader = () => (
+    <div style={headerStyle}>
+      <span><i className="fa-solid fa-layer-group" style={{ marginRight: '8px' }} />Layers</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{ fontSize: '12px', color: '#999' }}>{state.layers.length}</span>
+        {isMobile && (
+          <button
+            onClick={() => setCollapsed(true)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#666', padding: '0 4px' }}
+            aria-label="Close layers panel"
+          >
+            &times;
+          </button>
+        )}
+      </div>
+    </div>
+  );
 
   const listStyle: React.CSSProperties = {
     flex: 1,
@@ -270,10 +330,7 @@ export function LayerPanel({
   if (state.layers.length === 0 && !cfs.available) {
     return (
       <div className={`layer-panel ${className}`} style={containerStyle}>
-        <div style={headerStyle}>
-          <span><i className="fa-solid fa-layer-group" style={{ marginRight: '8px' }} />Layers</span>
-          <span style={{ fontSize: '12px', color: '#999' }}>0</span>
-        </div>
+        {renderHeader()}
         <div style={emptyStyle}>
           No layers added yet
         </div>
@@ -284,10 +341,7 @@ export function LayerPanel({
   if (state.layers.length === 0 && cfs.available) {
     return (
       <div className={`layer-panel ${className}`} style={containerStyle}>
-        <div style={headerStyle}>
-          <span><i className="fa-solid fa-layer-group" style={{ marginRight: '8px' }} />Layers</span>
-          <span style={{ fontSize: '12px', color: '#999' }}>0</span>
-        </div>
+        {renderHeader()}
         <div style={emptyStyle}>
           No layers added yet
         </div>
@@ -298,10 +352,7 @@ export function LayerPanel({
 
   return (
     <div className={`layer-panel ${className}`} style={containerStyle}>
-      <div style={headerStyle}>
-        <span><i className="fa-solid fa-layer-group" style={{ marginRight: '8px' }} />Layers</span>
-        <span style={{ fontSize: '12px', color: '#999' }}>{state.layers.length}</span>
-      </div>
+      {renderHeader()}
       <div style={listStyle}>
         {state.layers.map((layer) => (
           <LayerItem

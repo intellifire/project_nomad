@@ -5,7 +5,7 @@
  * Combines ResultsSummary, OutputList, and handles map/export actions.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Rnd } from 'react-rnd';
 import { ResultsSummary } from './ResultsSummary';
 import { OutputList, type BreaksMode } from './OutputList';
@@ -37,6 +37,8 @@ const DEFAULT_WIDTH = 730;
 const DEFAULT_HEIGHT = 1070;
 const MIN_WIDTH = 350;
 const MIN_HEIGHT = 400;
+const MOBILE_BREAKPOINT = 480;
+const TABLET_BREAKPOINT = 768;
 
 export function ModelReviewPanel({
   modelId,
@@ -50,9 +52,20 @@ export function ModelReviewPanel({
   const [showExportPanel, setShowExportPanel] = useState(false);
   const [size, setSize] = useState({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT });
 
-  // Calculate initial position (left side, below header)
-  const [initialX] = useState(() => 180);
-  const [initialY] = useState(() => 70);
+  // Responsive
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  const [windowHeight, setWindowHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 768);
+  useEffect(() => {
+    const handleResize = () => { setWindowWidth(window.innerWidth); setWindowHeight(window.innerHeight); };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  const isMobile = windowWidth < MOBILE_BREAKPOINT;
+  const isTablet = windowWidth < TABLET_BREAKPOINT;
+
+  // Calculate initial position — viewport-aware
+  const [initialX] = useState(() => Math.min(180, Math.max(10, windowWidth - DEFAULT_WIDTH - 20)));
+  const [initialY] = useState(() => Math.min(70, Math.max(10, windowHeight - DEFAULT_HEIGHT - 20)));
 
   /**
    * Handle download request
@@ -300,18 +313,45 @@ export function ModelReviewPanel({
     );
   }
 
+  // Mobile: full-screen overlay
+  if (isMobile) {
+    return (
+      <>
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          zIndex: 1000, backgroundColor: 'white', display: 'flex', flexDirection: 'column',
+        }}>
+          <div style={{ ...headerStyle, cursor: 'default' }}>
+            <h2 style={titleStyle}>Model Results</h2>
+            <button style={closeButtonStyle} onClick={onClose} aria-label="Close results panel">
+              &times;
+            </button>
+          </div>
+          <div style={{ flex: 1, overflow: 'auto' }}>
+            {renderContent()}
+          </div>
+        </div>
+        {renderModals()}
+      </>
+    );
+  }
+
+  // Tablet/Desktop: Rnd panel with viewport-aware sizing
+  const effectiveWidth = isTablet ? Math.min(500, windowWidth - 20) : DEFAULT_WIDTH;
+  const effectiveHeight = isTablet ? Math.min(700, windowHeight - 20) : DEFAULT_HEIGHT;
+
   return (
     <>
       <Rnd
         default={{
           x: initialX,
           y: initialY,
-          width: DEFAULT_WIDTH,
-          height: DEFAULT_HEIGHT,
+          width: effectiveWidth,
+          height: effectiveHeight,
         }}
-        minWidth={MIN_WIDTH}
+        minWidth={Math.min(MIN_WIDTH, windowWidth - 20)}
         minHeight={MIN_HEIGHT}
-        maxHeight={window.innerHeight - 32}
+        maxHeight={windowHeight - 32}
         bounds="parent"
         dragHandleClassName="model-results-drag-handle"
         style={{ zIndex: 1000 }}
