@@ -38,7 +38,7 @@ const DEFAULT_HEIGHT = 1070;
 const MIN_WIDTH = 350;
 const MIN_HEIGHT = 400;
 const MOBILE_BREAKPOINT = 480;
-const TABLET_BREAKPOINT = 768;
+const DESKTOP_BREAKPOINT = 1024;
 
 export function ModelReviewPanel({
   modelId,
@@ -61,7 +61,7 @@ export function ModelReviewPanel({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   const isMobile = windowWidth < MOBILE_BREAKPOINT;
-  const isTablet = windowWidth < TABLET_BREAKPOINT;
+  const isTablet = windowWidth >= MOBILE_BREAKPOINT && windowWidth < DESKTOP_BREAKPOINT;
 
   // Calculate initial position — viewport-aware
   const [initialX] = useState(() => Math.min(180, Math.max(10, windowWidth - DEFAULT_WIDTH - 20)));
@@ -336,21 +336,37 @@ export function ModelReviewPanel({
     );
   }
 
-  // Tablet/Desktop: Rnd panel with viewport-aware sizing
-  // Tablet: cap at 60% of viewport width so map stays usable
-  const effectiveWidth = isTablet ? Math.min(420, Math.floor(windowWidth * 0.6)) : DEFAULT_WIDTH;
-  const effectiveHeight = isTablet ? Math.min(600, windowHeight - 40) : DEFAULT_HEIGHT;
+  // Tablet: right-docked side panel (map stays visible on left)
+  if (isTablet) {
+    return (
+      <>
+        <div style={sidePanelStyle}>
+          <div style={{ ...headerStyle, cursor: 'default' }}>
+            <h2 style={titleStyle}>Model Results</h2>
+            <button style={closeButtonStyle} onClick={onClose} aria-label="Close results panel">
+              &times;
+            </button>
+          </div>
+          <div style={{ flex: 1, overflow: 'auto' }}>
+            {renderContent()}
+          </div>
+        </div>
+        {renderModals()}
+      </>
+    );
+  }
 
+  // Desktop: floating Rnd panel
   return (
     <>
       <Rnd
         default={{
           x: initialX,
           y: initialY,
-          width: effectiveWidth,
-          height: effectiveHeight,
+          width: DEFAULT_WIDTH,
+          height: DEFAULT_HEIGHT,
         }}
-        minWidth={Math.min(MIN_WIDTH, windowWidth - 20)}
+        minWidth={MIN_WIDTH}
         minHeight={MIN_HEIGHT}
         maxHeight={windowHeight - 32}
         bounds="parent"
@@ -520,6 +536,20 @@ const emptyStyle: React.CSSProperties = {
   padding: '40px 20px',
   textAlign: 'center',
   color: '#666',
+};
+
+const sidePanelStyle: React.CSSProperties = {
+  position: 'fixed',
+  top: 0,
+  right: 0,
+  bottom: 0,
+  width: 'min(450px, 55vw)',
+  zIndex: 1000,
+  backgroundColor: 'white',
+  boxShadow: '-4px 0 20px rgba(0, 0, 0, 0.15)',
+  display: 'flex',
+  flexDirection: 'column',
+  overflow: 'hidden',
 };
 
 const embeddedPanelStyle: React.CSSProperties = {

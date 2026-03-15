@@ -38,7 +38,7 @@ export interface ModelSetupWizardProps {
 
 // Breakpoints
 const MOBILE_BREAKPOINT = 480;
-const TABLET_BREAKPOINT = 768;
+const DESKTOP_BREAKPOINT = 1024;
 
 // Desktop dimensions
 const DEFAULT_WIDTH = 690;
@@ -68,7 +68,8 @@ function useResponsive() {
   return {
     windowSize,
     isMobile: windowSize.width < MOBILE_BREAKPOINT,
-    isTablet: windowSize.width < TABLET_BREAKPOINT,
+    isTablet: windowSize.width >= MOBILE_BREAKPOINT && windowSize.width < DESKTOP_BREAKPOINT,
+    isDesktop: windowSize.width >= DESKTOP_BREAKPOINT,
   };
 }
 
@@ -307,24 +308,74 @@ export function ModelSetupWizard({ onComplete, onCancel, draftId }: ModelSetupWi
     );
   }
 
-  // Tablet: constrained panel that leaves map visible
-  // Desktop: draggable/resizable panel
-  const effectiveMinWidth = isTablet ? 320 : MIN_WIDTH;
-  const effectiveMaxWidth = isTablet ? Math.min(520, windowSize.width - 20) : 800;
-  const effectiveMaxHeight = windowSize.height - (isTablet ? 20 : VIEWPORT_MARGIN);
+  // Tablet: right-docked side panel (map stays visible on left)
+  if (isTablet) {
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        right: 0,
+        bottom: 0,
+        width: 'min(450px, 55vw)',
+        zIndex: 1000,
+        backgroundColor: 'white',
+        boxShadow: '-4px 0 20px rgba(0, 0, 0, 0.15)',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}>
+        <WizardContainer config={config}>
+          <div style={{ ...styles.headerStyle, cursor: 'default' }}>
+            <h2 style={styles.titleStyle}>
+              <span><i className="fa-solid fa-fire" style={{ marginRight: '8px' }} />New Fire Model</span>
+              <button
+                type="button"
+                style={styles.closeButtonStyle}
+                onClick={onCancel}
+                aria-label="Close wizard"
+              >
+                ×
+              </button>
+            </h2>
+          </div>
 
+          <div style={styles.progressWrapperStyle}>
+            <WizardProgress direction="horizontal" showNumbers={true} allowJump={false} />
+          </div>
+
+          <div style={styles.contentWrapperStyle}>
+            <WizardStepContent showTitle={true} showDescription={true} showErrors={true}>
+              <StepRouter />
+            </WizardStepContent>
+          </div>
+
+          <div style={styles.footerStyle}>
+            <WizardNavigation
+              backLabel="Back"
+              nextLabel="Continue"
+              finishLabel="Start Model"
+              cancelLabel="Cancel"
+              showCancel={true}
+            />
+          </div>
+        </WizardContainer>
+      </div>
+    );
+  }
+
+  // Desktop: draggable/resizable panel
   return (
     <Rnd
       default={{
         x: initialDimensions.x,
         y: initialDimensions.y,
-        width: isTablet ? Math.min(480, windowSize.width - 20) : initialDimensions.width,
-        height: isTablet ? Math.min(650, windowSize.height - 20) : initialDimensions.height,
+        width: initialDimensions.width,
+        height: initialDimensions.height,
       }}
-      minWidth={effectiveMinWidth}
+      minWidth={MIN_WIDTH}
       minHeight={MIN_HEIGHT}
-      maxWidth={effectiveMaxWidth}
-      maxHeight={effectiveMaxHeight}
+      maxWidth={800}
+      maxHeight={windowSize.height - VIEWPORT_MARGIN}
       bounds="parent"
       dragHandleClassName="wizard-drag-handle"
       style={{ zIndex: 1000 }}
@@ -347,7 +398,6 @@ export function ModelSetupWizard({ onComplete, onCancel, draftId }: ModelSetupWi
     >
       <div style={{ ...styles.wizardInnerStyle, width: size.width, height: size.height }}>
         <WizardContainer config={config}>
-          {/* Header - Top Drag Handle */}
           <div style={styles.headerStyle} className="wizard-drag-handle">
             <h2 style={styles.titleStyle}>
               <span><i className="fa-solid fa-fire" style={{ marginRight: '8px' }} />New Fire Model</span>
@@ -355,23 +405,16 @@ export function ModelSetupWizard({ onComplete, onCancel, draftId }: ModelSetupWi
             </h2>
           </div>
 
-          {/* Progress indicator */}
           <div style={styles.progressWrapperStyle}>
-            <WizardProgress
-              direction="horizontal"
-              showNumbers={true}
-              allowJump={false}
-            />
+            <WizardProgress direction="horizontal" showNumbers={true} allowJump={false} />
           </div>
 
-          {/* Step content */}
           <div style={styles.contentWrapperStyle}>
             <WizardStepContent showTitle={true} showDescription={true} showErrors={true}>
               <StepRouter />
             </WizardStepContent>
           </div>
 
-          {/* Navigation */}
           <div style={styles.footerStyle}>
             <WizardNavigation
               backLabel="Back"
@@ -382,7 +425,6 @@ export function ModelSetupWizard({ onComplete, onCancel, draftId }: ModelSetupWi
             />
           </div>
 
-          {/* Bottom Drag Handle - hidden on tablet/mobile */}
           <div style={styles.bottomDragHandleStyle} className="wizard-drag-handle">
             <i className="fa-solid fa-grip-lines" />
             <span>drag to move</span>

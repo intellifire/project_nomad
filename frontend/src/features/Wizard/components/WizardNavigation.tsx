@@ -11,7 +11,7 @@ import type { WizardNavigationProps } from '../types';
 
 // Breakpoints
 const MOBILE_BREAKPOINT = 480;
-const TABLET_BREAKPOINT = 768;
+const DESKTOP_BREAKPOINT = 1024;
 
 /**
  * WizardNavigation renders navigation buttons for the wizard.
@@ -57,7 +57,7 @@ export function WizardNavigation({
   }, []);
 
   const isMobile = windowWidth < MOBILE_BREAKPOINT;
-  const isTablet = windowWidth < TABLET_BREAKPOINT;
+  const isTablet = windowWidth >= MOBILE_BREAKPOINT && windowWidth < DESKTOP_BREAKPOINT;
 
   const handleNext = useCallback(async () => {
     setIsLoading(true);

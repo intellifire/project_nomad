@@ -125,7 +125,7 @@ const DEFAULT_HEIGHT = 600;
 const MIN_WIDTH = 380;
 const MIN_HEIGHT = 400;
 const MOBILE_BREAKPOINT = 480;
-const TABLET_BREAKPOINT = 768;
+const DESKTOP_BREAKPOINT = 1024;
 
 // =============================================================================
 // Tab Navigation Component
@@ -324,7 +324,7 @@ function FloatingDashboard({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   const isMobile = windowWidth < MOBILE_BREAKPOINT;
-  const isTablet = windowWidth < TABLET_BREAKPOINT;
+  const isTablet = windowWidth >= MOBILE_BREAKPOINT && windowWidth < DESKTOP_BREAKPOINT;
 
   // Calculate initial position (right side of screen)
   const [initialX] = useState(() => Math.max(20, window.innerWidth - DEFAULT_WIDTH - 40));
@@ -417,19 +417,40 @@ function FloatingDashboard({
     );
   }
 
-  // Tablet/Desktop: constrained Rnd panel
-  const effectiveWidth = isTablet ? Math.min(420, windowWidth - 20) : DEFAULT_WIDTH;
-  const effectiveHeight = isTablet ? Math.min(550, windowHeight - 20) : DEFAULT_HEIGHT;
+  // Tablet: right-docked side panel (map stays visible on left)
+  if (isTablet) {
+    return (
+      <div style={dashboardSidePanelStyle} className={`dashboard-panel ${className}`}>
+        <SlotRenderer name="header">
+          <div style={{ ...headerDynamic, cursor: 'default' }}>
+            <h2 style={titleDynamic}>{labels.title}</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <ActionsContainer placement="header" />
+              <button
+                style={{ ...closeButtonStyle, color: theme['--nomad-text-secondary'] }}
+                onClick={onClose}
+                aria-label={labels.tooltips.closeDashboard}
+              >
+                &times;
+              </button>
+            </div>
+          </div>
+        </SlotRenderer>
+        <DashboardContent onViewResults={onViewResults} onAddToMap={onAddToMap} />
+      </div>
+    );
+  }
 
+  // Desktop: floating Rnd panel
   return (
     <Rnd
       default={{
         x: initialX,
         y: initialY,
-        width: effectiveWidth,
-        height: effectiveHeight,
+        width: DEFAULT_WIDTH,
+        height: DEFAULT_HEIGHT,
       }}
-      minWidth={isTablet ? Math.min(MIN_WIDTH, windowWidth - 20) : MIN_WIDTH}
+      minWidth={MIN_WIDTH}
       minHeight={MIN_HEIGHT}
       maxHeight={windowHeight - 32}
       bounds="parent"
@@ -454,15 +475,13 @@ function FloatingDashboard({
     >
       <div style={panelDynamic} className={`dashboard-panel ${className}`}>
         <SlotRenderer name="header">
-          <div style={headerDynamic}>
-            <h2 style={{ ...titleDynamic, cursor: 'move' }} className="dashboard-drag-handle">{labels.title}</h2>
+          <div style={headerDynamic} className="dashboard-drag-handle">
+            <h2 style={titleDynamic}>{labels.title}</h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <ActionsContainer placement="header" />
-              {!isTablet && (
-                <span style={{ ...dragHintStyle, color: theme['--nomad-text-disabled'] }} className="dashboard-drag-handle">
-                  {labels.tooltips.dragToMove}
-                </span>
-              )}
+              <span style={{ ...dragHintStyle, color: theme['--nomad-text-disabled'] }} className="dashboard-drag-handle">
+                {labels.tooltips.dragToMove}
+              </span>
               <button
                 style={{ ...closeButtonStyle, color: theme['--nomad-text-secondary'] }}
                 onClick={onClose}
@@ -743,6 +762,20 @@ export function DashboardContainer({
 // =============================================================================
 // Styles (base styles - theme overrides applied dynamically)
 // =============================================================================
+
+const dashboardSidePanelStyle: CSSProperties = {
+  position: 'fixed',
+  top: 0,
+  right: 0,
+  bottom: 0,
+  width: 'min(450px, 55vw)',
+  zIndex: 900,
+  backgroundColor: 'white',
+  boxShadow: '-4px 0 20px rgba(0, 0, 0, 0.15)',
+  display: 'flex',
+  flexDirection: 'column',
+  overflow: 'hidden',
+};
 
 const panelStyle: CSSProperties = {
   backgroundColor: 'white',
