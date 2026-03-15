@@ -269,10 +269,10 @@ export function ModelReviewPanel({
       );
     }
     return (
-      <div style={headerStyle} className="model-results-drag-handle">
-        <h2 style={titleStyle}>Model Results</h2>
+      <div style={headerStyle}>
+        <h2 style={{ ...titleStyle, cursor: 'move' }} className="model-results-drag-handle">Model Results</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={dragHintStyle}>drag to move</span>
+          <span style={dragHintStyle} className="model-results-drag-handle">drag to move</span>
           <button style={closeButtonStyle} onClick={onClose} aria-label="Close results panel">
             &times;
           </button>
@@ -337,8 +337,9 @@ export function ModelReviewPanel({
   }
 
   // Tablet/Desktop: Rnd panel with viewport-aware sizing
-  const effectiveWidth = isTablet ? Math.min(500, windowWidth - 20) : DEFAULT_WIDTH;
-  const effectiveHeight = isTablet ? Math.min(700, windowHeight - 20) : DEFAULT_HEIGHT;
+  // Tablet: cap at 60% of viewport width so map stays usable
+  const effectiveWidth = isTablet ? Math.min(420, Math.floor(windowWidth * 0.6)) : DEFAULT_WIDTH;
+  const effectiveHeight = isTablet ? Math.min(600, windowHeight - 40) : DEFAULT_HEIGHT;
 
   return (
     <>

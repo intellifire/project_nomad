@@ -454,12 +454,12 @@ function FloatingDashboard({
     >
       <div style={panelDynamic} className={`dashboard-panel ${className}`}>
         <SlotRenderer name="header">
-          <div style={headerDynamic} className="dashboard-drag-handle">
-            <h2 style={titleDynamic}>{labels.title}</h2>
+          <div style={headerDynamic}>
+            <h2 style={{ ...titleDynamic, cursor: 'move' }} className="dashboard-drag-handle">{labels.title}</h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <ActionsContainer placement="header" />
               {!isTablet && (
-                <span style={{ ...dragHintStyle, color: theme['--nomad-text-disabled'] }}>
+                <span style={{ ...dragHintStyle, color: theme['--nomad-text-disabled'] }} className="dashboard-drag-handle">
                   {labels.tooltips.dragToMove}
                 </span>
               )}
