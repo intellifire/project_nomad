@@ -2,15 +2,49 @@
  * Splash Screen Component
  *
  * Branded welcome screen shown on app load.
- * When VITE_SIMPLE_AUTH=true, requires username entry.
- * Otherwise, just click to enter.
+ * Auth mode determines behavior:
+ *   'none'   — click anywhere to enter
+ *   'simple' — username input field
+ *   'oauth'  — OAuth provider buttons (dynamically loaded from backend)
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { version } from '../../package.json';
+import { authClient } from '../services/authClient';
 
-const SIMPLE_AUTH_ENABLED = import.meta.env.VITE_SIMPLE_AUTH === 'true';
+type AuthMode = 'none' | 'simple' | 'oauth';
+
+function resolveAuthMode(): AuthMode {
+  const mode = import.meta.env.VITE_AUTH_MODE;
+  if (mode === 'none' || mode === 'simple' || mode === 'oauth') {
+    return mode;
+  }
+  // Legacy fallback
+  if (import.meta.env.VITE_SIMPLE_AUTH !== undefined) {
+    console.warn('[Nomad] VITE_SIMPLE_AUTH is deprecated. Use VITE_AUTH_MODE=none|simple|oauth');
+    return import.meta.env.VITE_SIMPLE_AUTH === 'true' ? 'simple' : 'none';
+  }
+  return 'none';
+}
+
+const AUTH_MODE = resolveAuthMode();
 const STORAGE_KEY = 'nomad_username';
+
+/** Brand colors and labels for each OAuth provider */
+const PROVIDER_STYLES: Record<string, { bg: string; border?: string; label: string }> = {
+  google:    { bg: '#4285F4', label: 'Google' },
+  microsoft: { bg: '#2F2F2F', border: '1px solid #555', label: 'Microsoft' },
+  github:    { bg: '#24292e', border: '1px solid #555', label: 'GitHub' },
+  apple:     { bg: '#000000', border: '1px solid #555', label: 'Apple' },
+  discord:   { bg: '#5865F2', label: 'Discord' },
+  facebook:  { bg: '#1877F2', label: 'Facebook' },
+  twitter:   { bg: '#1DA1F2', label: 'Twitter/X' },
+};
+
+interface ProviderInfo {
+  id: string;
+  name: string;
+}
 
 interface SplashScreenProps {
   onEnter: () => void;
@@ -18,6 +52,8 @@ interface SplashScreenProps {
 
 export function SplashScreen({ onEnter }: SplashScreenProps) {
   const [username, setUsername] = useState('');
+  const [providers, setProviders] = useState<ProviderInfo[]>([]);
+  const [loadingProviders, setLoadingProviders] = useState(AUTH_MODE === 'oauth');
 
   // Load saved username from localStorage
   useEffect(() => {
@@ -27,11 +63,38 @@ export function SplashScreen({ onEnter }: SplashScreenProps) {
     }
   }, []);
 
+  // Check for existing OAuth session and fetch available providers
+  useEffect(() => {
+    if (AUTH_MODE !== 'oauth') return;
+
+    // Check if user already has a valid session (e.g., returning from OAuth redirect)
+    authClient.getSession().then((session) => {
+      if (session?.data?.user) {
+        // Already authenticated — save username and enter
+        const name = session.data.user.name || session.data.user.email || 'OAuth User';
+        localStorage.setItem(STORAGE_KEY, name);
+        onEnter();
+        return;
+      }
+    }).catch(() => {
+      // No session — continue showing login buttons
+    });
+
+    fetch(`${window.location.origin}/api/v1/auth/providers`, { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => {
+        setProviders(data.providers ?? []);
+        setLoadingProviders(false);
+      })
+      .catch(() => {
+        setLoadingProviders(false);
+      });
+  }, [onEnter]);
+
   const handleSubmit = useCallback(() => {
-    if (SIMPLE_AUTH_ENABLED && !username.trim()) {
-      return; // Don't allow empty username when auth is required
+    if (AUTH_MODE === 'simple' && !username.trim()) {
+      return;
     }
-    // Save username to localStorage
     if (username.trim()) {
       localStorage.setItem(STORAGE_KEY, username.trim());
     }
@@ -44,7 +107,7 @@ export function SplashScreen({ onEnter }: SplashScreenProps) {
     }
   }, [handleSubmit]);
 
-  const canEnter = !SIMPLE_AUTH_ENABLED || username.trim().length > 0;
+  const canEnter = AUTH_MODE !== 'simple' || username.trim().length > 0;
 
   return (
     <div
@@ -107,7 +170,7 @@ export function SplashScreen({ onEnter }: SplashScreenProps) {
       </p>
 
       {/* Username input (when simple auth enabled) */}
-      {SIMPLE_AUTH_ENABLED && (
+      {AUTH_MODE === 'simple' && (
         <div style={{ marginBottom: '24px', width: '280px' }}>
           <label
             htmlFor="username"
@@ -143,27 +206,72 @@ export function SplashScreen({ onEnter }: SplashScreenProps) {
         </div>
       )}
 
-      {/* Enter button */}
-      <button
-        onClick={handleSubmit}
-        disabled={!canEnter}
-        style={{
-          padding: '14px 48px',
-          fontSize: '18px',
-          fontWeight: 600,
-          color: '#ffffff',
-          backgroundColor: canEnter ? '#3b82f6' : '#475569',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: canEnter ? 'pointer' : 'not-allowed',
-          transition: 'background-color 0.2s',
-        }}
-      >
-        Enter
-      </button>
+      {/* OAuth provider buttons (dynamically loaded) */}
+      {AUTH_MODE === 'oauth' && (
+        <div style={{ marginBottom: '16px', width: '280px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <p style={{ color: '#94a3b8', fontSize: '14px', margin: '0 0 4px 0', textAlign: 'center' }}>
+            Sign in to continue
+          </p>
+          {loadingProviders && (
+            <p style={{ color: '#64748b', fontSize: '14px', textAlign: 'center' }}>Loading providers...</p>
+          )}
+          {!loadingProviders && providers.length === 0 && (
+            <p style={{ color: '#ef4444', fontSize: '14px', textAlign: 'center' }}>
+              No OAuth providers configured. Check your .env file.
+            </p>
+          )}
+          {providers.map(provider => {
+            const style = PROVIDER_STYLES[provider.id] ?? { bg: '#475569', label: provider.name };
+            return (
+              <button
+                key={provider.id}
+                onClick={() => authClient.signIn.social({ provider: provider.id as 'google', callbackURL: '/' })}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  fontSize: '16px',
+                  fontWeight: 600,
+                  color: '#ffffff',
+                  backgroundColor: style.bg,
+                  border: style.border ?? 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                }}
+              >
+                Sign in with {style.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Enter button (shown for none and simple modes) */}
+      {AUTH_MODE !== 'oauth' && (
+        <button
+          onClick={handleSubmit}
+          disabled={!canEnter}
+          style={{
+            padding: '14px 48px',
+            fontSize: '18px',
+            fontWeight: 600,
+            color: '#ffffff',
+            backgroundColor: canEnter ? '#3b82f6' : '#475569',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: canEnter ? 'pointer' : 'not-allowed',
+            transition: 'background-color 0.2s',
+          }}
+        >
+          Enter
+        </button>
+      )}
 
       {/* Click anywhere hint when no auth */}
-      {!SIMPLE_AUTH_ENABLED && (
+      {AUTH_MODE === 'none' && (
         <div
           style={{
             color: '#64748b',

@@ -1,7 +1,7 @@
 /**
  * Simple Auth Middleware
  *
- * Extracts username from X-Nomad-User header when VITE_SIMPLE_AUTH=true.
+ * Extracts username from X-Nomad-User header when auth mode is 'simple'.
  * This is a demo/SAN-mode authentication mechanism - not for production ACN deployments.
  */
 
@@ -19,15 +19,13 @@ declare global {
 }
 
 /**
- * Middleware that extracts user from X-Nomad-User header when simple auth is enabled.
- * When VITE_SIMPLE_AUTH is not 'true', passes through without modification.
+ * Middleware that extracts user from X-Nomad-User header when auth mode is 'simple'.
+ * Always extracts the header — the mode gating is handled by the middleware selection in index.ts.
  */
 export function simpleAuthMiddleware(req: Request, _res: Response, next: NextFunction): void {
-  if (process.env.VITE_SIMPLE_AUTH === 'true') {
-    const userHeader = req.headers['x-nomad-user'];
-    if (typeof userHeader === 'string' && userHeader.trim().length > 0) {
-      req.user = userHeader.trim();
-    }
+  const userHeader = req.headers['x-nomad-user'];
+  if (typeof userHeader === 'string' && userHeader.trim().length > 0) {
+    req.user = userHeader.trim();
   }
   next();
 }

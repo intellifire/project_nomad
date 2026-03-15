@@ -6,6 +6,15 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { authClient } from '../../services/authClient';
+
+type AuthMode = 'none' | 'simple' | 'oauth';
+function getAuthMode(): AuthMode {
+  const mode = import.meta.env.VITE_AUTH_MODE;
+  if (mode === 'none' || mode === 'simple' || mode === 'oauth') return mode;
+  if (import.meta.env.VITE_SIMPLE_AUTH === 'true') return 'simple';
+  return 'none';
+}
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -190,6 +199,40 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
             <div style={statusStyle(status.ok)}>{status.message}</div>
           )}
         </div>
+
+        {/* Logout (OAuth mode only) */}
+        {getAuthMode() === 'oauth' && (
+          <div style={{ ...sectionStyle, borderTop: '1px solid #374151', paddingTop: '16px' }}>
+            <label style={labelStyle}>Session</label>
+            <button
+              style={{
+                ...buttonBaseStyle,
+                backgroundColor: '#dc2626',
+                color: 'white',
+                width: '100%',
+              }}
+              onClick={async () => {
+                await authClient.signOut({ fetchOptions: { credentials: 'include' } });
+                localStorage.removeItem('nomad_username');
+                // Also revoke the OAuth token server-side
+                try {
+                  await fetch(`${window.location.origin}/api/auth/revoke`, {
+                    method: 'POST',
+                    credentials: 'include',
+                  });
+                } catch {
+                  // Best effort — revocation endpoint may not exist
+                }
+                window.location.href = '/';
+              }}
+            >
+              Sign Out
+            </button>
+            <div style={hintStyle}>
+              Ends your OAuth session and returns to the login screen.
+            </div>
+          </div>
+        )}
 
         <div style={footerStyle}>
           <button style={cancelBtnStyle} onClick={onClose}>
