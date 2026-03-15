@@ -12,7 +12,7 @@ services:
       args:
         - VITE_MAPBOX_TOKEN=${VITE_MAPBOX_TOKEN}
         - VITE_API_BASE_URL=${VITE_API_BASE_URL:-}
-        - VITE_SIMPLE_AUTH=${VITE_SIMPLE_AUTH:-true}
+        - VITE_AUTH_MODE=${VITE_AUTH_MODE:-simple}
     ports:
       - "${NOMAD_FRONTEND_HOST_PORT}:3001"
     volumes:
@@ -30,8 +30,9 @@ services:
       # Override to use container path (not host relative path from .env)
       - FIRESTARR_DATASET_PATH=/appl/data
       - NOMAD_DATA_PATH=/appl/data
-      # Simple auth for SAN mode
-      - VITE_SIMPLE_AUTH=${VITE_SIMPLE_AUTH:-true}
+      # Authentication mode for SAN (none|simple|oauth)
+      - NOMAD_AUTH_MODE=${NOMAD_AUTH_MODE:-simple}
+      - VITE_AUTH_MODE=${VITE_AUTH_MODE:-simple}
     env_file:
       - .env
     restart: unless-stopped
