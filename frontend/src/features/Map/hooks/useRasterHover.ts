@@ -77,12 +77,21 @@ const MAX_RAMP_DISTANCE = 70;
  * @returns Probability percentage (10–90) or null when the colour is not on
  *          the ramp.
  */
+/**
+ * Band labels matching the discrete 10-class FireSTARR ramp.
+ * Index corresponds to RAMP entries.
+ */
+const BAND_LABELS = [
+  '91-100%', '81-90%', '71-80%', '61-70%', '51-60%',
+  '41-50%', '31-40%', '21-30%', '11-20%', '1-10%',
+];
+
 export function colorToPercentage(
   r: number,
   g: number,
   b: number,
   a?: number,
-): number | null {
+): string | null {
   // Fully transparent — no data
   if (a === 0) return null;
 
@@ -91,32 +100,21 @@ export function colorToPercentage(
   // Reject very bright pixels (white areas, clouds)
   if (r > 240 && g > 240 && b > 240) return null;
 
+  // Find the nearest band — no interpolation, discrete classes only
+  let minDist = Infinity;
+  let minIdx = -1;
+  for (let i = 0; i < RAMP.length; i++) {
+    const [, ar, ag, ab] = RAMP[i];
+    const dist = rgbDistance(r, g, b, ar, ag, ab);
+    if (dist < minDist) {
+      minDist = dist;
+      minIdx = i;
+    }
+  }
 
-  // Find the two closest anchor points
-  const distances = RAMP.map(([pct, ar, ag, ab]) => ({
-    pct,
-    dist: rgbDistance(r, g, b, ar, ag, ab),
-  }));
+  if (minDist > MAX_RAMP_DISTANCE || minIdx < 0) return null;
 
-  distances.sort((x, y) => x.dist - y.dist);
-  const nearest = distances[0];
-  const second = distances[1];
-
-  // Reject colours that are too far from the ramp (background / no-data)
-  if (nearest.dist > MAX_RAMP_DISTANCE) return null;
-
-  // Exact match (or near-exact)
-  if (nearest.dist === 0) return nearest.pct;
-
-  // Linear interpolation weighted by inverse distance
-  const totalDist = nearest.dist + second.dist;
-  if (totalDist === 0) return nearest.pct;
-
-  const weight = nearest.dist / totalDist;      // 0 = exactly on nearest
-  const interpolated =
-    nearest.pct * (1 - weight) + second.pct * weight;
-
-  return Math.round(interpolated);
+  return BAND_LABELS[minIdx];
 }
 
 // =============================================================================
@@ -187,12 +185,12 @@ export function useRasterHover({
       gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
 
       const [r, g, b, a] = pixel;
-      const pct = colorToPercentage(r, g, b, a);
+      const band = colorToPercentage(r, g, b, a);
 
-      if (pct !== null) {
+      if (band !== null) {
         popup
           .setLngLat(e.lngLat)
-          .setHTML(`<div style="color:#333;font-size:13px;padding:2px 4px"><strong>Burn Probability:</strong> ${pct}%</div>`)
+          .setHTML(`<div style="color:#333;font-size:13px;padding:2px 4px"><strong>Burn Probability:</strong> ${band}</div>`)
           .addTo(map!);
       } else {
         popup.remove();
