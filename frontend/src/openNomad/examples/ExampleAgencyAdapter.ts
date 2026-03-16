@@ -475,7 +475,7 @@ export function createAgencyAdapter(options: AgencyAdapterOptions): IOpenNomadAP
         {
           id: 'firestarr',
           name: 'FireSTARR',
-          description: 'Stochastic fire spread modeling',
+          description: 'Probabilistic fire spread modeling',
           available: true,
           capabilities: {
             probabilistic: true,

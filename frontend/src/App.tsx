@@ -6,12 +6,10 @@ import {
   MapContainer,
   DrawingToolbar,
   LayerPanel,
-  BasemapSwitcher,
-  MeasurementTool,
-  TerrainControl,
   MapInfoControl,
   MapContextMenu,
   RasterLegend,
+  MapCapture,
   useDraw,
   useMap,
   useLayers,
@@ -32,6 +30,7 @@ import type { ModelResultsResponse } from './features/ModelReview/types';
 import { OpenNomadProvider, createDefaultAdapter, useOpenNomad } from './openNomad';
 import { DashboardContainer } from './features/Dashboard';
 import { SettingsModal } from './features/Settings/SettingsModal';
+import { AboutModal } from './components/AboutModal';
 
 /**
  * Calculate bounding box from GeoJSON
@@ -85,8 +84,8 @@ function getBoundsFromGeoJSON(geoJson: GeoJSON.GeoJSON): [[number, number], [num
 }
 
 const headerButtonStyle: React.CSSProperties = {
-  padding: '12px 24px',
-  fontSize: '16px',
+  padding: 'clamp(8px, 2vw, 12px) clamp(12px, 3vw, 24px)',
+  fontSize: 'clamp(12px, 2.5vw, 16px)',
   fontWeight: 'bold',
   color: 'white',
   border: 'none',
@@ -94,6 +93,7 @@ const headerButtonStyle: React.CSSProperties = {
   cursor: 'pointer',
   boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
   textShadow: '1.5px 1.5px 3px rgba(0, 0, 0, 0.6)',
+  whiteSpace: 'nowrap' as const,
 };
 
 const headerContainerStyle: React.CSSProperties = {
@@ -102,7 +102,7 @@ const headerContainerStyle: React.CSSProperties = {
   left: '50%',
   transform: 'translateX(-50%)',
   display: 'flex',
-  gap: '8px',
+  gap: 'clamp(4px, 1vw, 8px)',
   zIndex: 1000,
 };
 
@@ -117,6 +117,7 @@ function AppContent() {
   const [reviewModelId, setReviewModelId] = useState<string | null>(null);
   const [showDashboard, setShowDashboard] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
   const { deleteAll } = useDraw();
   const { map, isLoaded } = useMap();
   const { addGeoJSONLayer, addRasterLayer } = useLayers();
@@ -339,6 +340,20 @@ function AppContent() {
         visible: true,
         zIndex: layerCounter.current,
       });
+    } else if (output.type === 'perimeter' && output.metadata?.color) {
+      // Deterministic perimeter: use assigned color from backend
+      const color = output.metadata.color as string;
+      addGeoJSONLayer({
+        id: layerId,
+        name: layerName,
+        data: featureCollection,
+        fillColor: color,
+        strokeColor: color,
+        opacity: 1.0,
+        fillOpacity: 0.3,
+        visible: true,
+        zIndex: layerCounter.current,
+      });
     } else {
       // Model output: use colors from feature properties (quantile gradient)
       // Include resultId and metadata for layer persistence/reload
@@ -347,8 +362,8 @@ function AppContent() {
         name: layerName,
         data: featureCollection,
         useFeatureColors: true,  // Use 'color' property from each feature
-        fillColor: '#FFD700',    // Fallback if no color property
-        strokeColor: '#FFD700',
+        fillColor: '#e65100',    // Fallback: orange (not yellow)
+        strokeColor: '#e65100',
         opacity: 1.0,
         fillOpacity: 0.5,
         visible: true,
@@ -474,6 +489,19 @@ function AppContent() {
       {/* Header buttons */}
       {!showWizard && (
         <div style={headerContainerStyle}>
+          <img
+            src="/nomad-logo.png"
+            alt="About Project Nomad"
+            title="About Project Nomad"
+            onClick={() => setShowAbout(true)}
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+            }}
+          />
           <button
             style={{ ...headerButtonStyle, backgroundColor: '#ff6b35' }}
             onClick={handleNewModel}
@@ -486,6 +514,7 @@ function AppContent() {
           >
             <i className="fa-solid fa-clipboard-list" style={{ marginRight: '8px' }} />Dashboard
           </button>
+          <MapCapture />
           <button
             style={{ ...headerButtonStyle, backgroundColor: '#4b5563', padding: '12px 16px' }}
             onClick={() => setShowSettings(true)}
@@ -497,6 +526,9 @@ function AppContent() {
       )}
 
       {/* Settings Modal */}
+      {showAbout && (
+        <AboutModal onClose={() => setShowAbout(false)} />
+      )}
       {showSettings && (
         <SettingsModal onClose={() => setShowSettings(false)} />
       )}
@@ -584,10 +616,7 @@ function AppContent() {
       {!showWizard && (
         <>
           <DrawingToolbar position="top-left" />
-          <MeasurementTool position="bottom-left" />
           <LayerPanel position="top-right" />
-          <BasemapSwitcher position="bottom-right" />
-          <TerrainControl position="top-right" />
           <MapInfoControl />
           <MapContextMenu />
           <RasterLegend />

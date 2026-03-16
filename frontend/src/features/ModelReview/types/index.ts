@@ -89,7 +89,7 @@ export interface ModelInputs {
  * Output configuration used for model run
  */
 export interface OutputConfig {
-  outputMode: 'probabilistic' | 'pseudo-deterministic';
+  outputMode: 'probabilistic' | 'deterministic';
   confidenceInterval: number;
   smoothPerimeter: boolean;
 }

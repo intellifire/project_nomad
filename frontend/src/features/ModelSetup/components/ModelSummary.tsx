@@ -218,7 +218,7 @@ export function ModelSummary({ data }: ModelSummaryProps) {
           <span style={valueStyle}>
             {data.model?.outputMode === 'probabilistic'
               ? 'Probability Maps'
-              : data.model?.outputMode === 'pseudo-deterministic'
+              : data.model?.outputMode === 'deterministic'
                 ? 'Fire Perimeters'
                 : 'Not set'}
           </span>

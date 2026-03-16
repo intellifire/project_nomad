@@ -7,7 +7,7 @@
  * @module features/Dashboard/components
  */
 
-import { useState, useCallback, useMemo, type CSSProperties } from 'react';
+import { useState, useCallback, useMemo, useEffect, type CSSProperties } from 'react';
 import { Rnd } from 'react-rnd';
 import { DashboardProvider, useDashboardTabs, useDashboardView, type DashboardTab } from '../context/DashboardContext.js';
 import { useJobs } from '../hooks/useJobs.js';
@@ -124,6 +124,8 @@ const DEFAULT_WIDTH = 500;
 const DEFAULT_HEIGHT = 600;
 const MIN_WIDTH = 380;
 const MIN_HEIGHT = 400;
+const MOBILE_BREAKPOINT = 480;
+const DESKTOP_BREAKPOINT = 1100;
 
 // =============================================================================
 // Tab Navigation Component
@@ -161,6 +163,9 @@ function TabNavigation({ activeTab, onTabChange, jobCount = 0 }: TabNavigationPr
     color: theme['--nomad-primary'],
     borderBottom: `2px solid ${theme['--nomad-primary']}`,
   };
+
+  // Hide tab bar when only one tab is visible
+  if (visibleTabs.length <= 1) return null;
 
   return (
     <SlotRenderer name="toolbar">
@@ -313,6 +318,17 @@ function FloatingDashboard({
   const labels = useNomadLabels();
   const { theme } = useNomadCustomizationOptional();
 
+  // Responsive
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  const [windowHeight, setWindowHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 768);
+  useEffect(() => {
+    const handleResize = () => { setWindowWidth(window.innerWidth); setWindowHeight(window.innerHeight); };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  const isMobile = windowWidth < MOBILE_BREAKPOINT;
+  const isTablet = windowWidth >= MOBILE_BREAKPOINT && windowWidth < DESKTOP_BREAKPOINT;
+
   // Calculate initial position (right side of screen)
   const [initialX] = useState(() => Math.max(20, window.innerWidth - DEFAULT_WIDTH - 40));
   const [initialY] = useState(() => 70);
@@ -378,6 +394,57 @@ function FloatingDashboard({
     fontSize: theme['--nomad-font-size-lg'],
   };
 
+  // Mobile: full-screen overlay
+  if (isMobile) {
+    return (
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        zIndex: 900, backgroundColor: 'white', display: 'flex', flexDirection: 'column',
+      }}>
+        <div style={panelDynamic} className={`dashboard-panel ${className}`}>
+          <SlotRenderer name="header">
+            <div style={{ ...headerDynamic, cursor: 'default' }}>
+              <h2 style={titleDynamic}>{labels.title}</h2>
+              <button
+                style={{ ...closeButtonStyle, color: theme['--nomad-text-secondary'] }}
+                onClick={onClose}
+                aria-label={labels.tooltips.closeDashboard}
+              >
+                &times;
+              </button>
+            </div>
+          </SlotRenderer>
+          <DashboardContent onViewResults={onViewResults} onAddToMap={onAddToMap} />
+        </div>
+      </div>
+    );
+  }
+
+  // Tablet: right-docked side panel (map stays visible on left)
+  if (isTablet) {
+    return (
+      <div style={dashboardSidePanelStyle} className={`dashboard-panel ${className}`}>
+        <SlotRenderer name="header">
+          <div style={{ ...headerDynamic, cursor: 'default' }}>
+            <h2 style={titleDynamic}>{labels.title}</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <ActionsContainer placement="header" />
+              <button
+                style={{ ...closeButtonStyle, color: theme['--nomad-text-secondary'] }}
+                onClick={onClose}
+                aria-label={labels.tooltips.closeDashboard}
+              >
+                &times;
+              </button>
+            </div>
+          </div>
+        </SlotRenderer>
+        <DashboardContent onViewResults={onViewResults} onAddToMap={onAddToMap} />
+      </div>
+    );
+  }
+
+  // Desktop: floating Rnd panel
   return (
     <Rnd
       default={{
@@ -388,7 +455,7 @@ function FloatingDashboard({
       }}
       minWidth={MIN_WIDTH}
       minHeight={MIN_HEIGHT}
-      maxHeight={window.innerHeight - 32}
+      maxHeight={windowHeight - 32}
       bounds="parent"
       dragHandleClassName="dashboard-drag-handle"
       style={{ zIndex: 900 }}
@@ -410,23 +477,16 @@ function FloatingDashboard({
       }}
     >
       <div style={panelDynamic} className={`dashboard-panel ${className}`}>
-        {/* Header - Drag Handle */}
         <SlotRenderer name="header">
           <div style={headerDynamic} className="dashboard-drag-handle">
             <h2 style={titleDynamic}>{labels.title}</h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <ActionsContainer placement="header" />
-              <span style={{
-                ...dragHintStyle,
-                color: theme['--nomad-text-disabled'],
-              }}>
+              <span style={{ ...dragHintStyle, color: theme['--nomad-text-disabled'] }} className="dashboard-drag-handle">
                 {labels.tooltips.dragToMove}
               </span>
               <button
-                style={{
-                  ...closeButtonStyle,
-                  color: theme['--nomad-text-secondary'],
-                }}
+                style={{ ...closeButtonStyle, color: theme['--nomad-text-secondary'] }}
                 onClick={onClose}
                 aria-label={labels.tooltips.closeDashboard}
               >
@@ -435,12 +495,7 @@ function FloatingDashboard({
             </div>
           </div>
         </SlotRenderer>
-
-        {/* Content */}
-        <DashboardContent
-          onViewResults={onViewResults}
-          onAddToMap={onAddToMap}
-        />
+        <DashboardContent onViewResults={onViewResults} onAddToMap={onAddToMap} />
       </div>
     </Rnd>
   );
@@ -710,6 +765,20 @@ export function DashboardContainer({
 // =============================================================================
 // Styles (base styles - theme overrides applied dynamically)
 // =============================================================================
+
+const dashboardSidePanelStyle: CSSProperties = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  bottom: 0,
+  width: 'min(450px, 55vw)',
+  zIndex: 900,
+  backgroundColor: 'white',
+  boxShadow: '4px 0 20px rgba(0, 0, 0, 0.15)',
+  display: 'flex',
+  flexDirection: 'column',
+  overflow: 'hidden',
+};
 
 const panelStyle: CSSProperties = {
   backgroundColor: 'white',

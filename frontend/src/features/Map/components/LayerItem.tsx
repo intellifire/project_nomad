@@ -22,6 +22,8 @@ interface LayerItemProps {
   onRemove: () => void;
   /** Select layer callback */
   onSelect: () => void;
+  /** Toggle hover value display (raster only) */
+  onToggleHover?: () => void;
   /** Drag start callback */
   onDragStart?: (e: React.DragEvent) => void;
   /** Drag over callback */
@@ -49,6 +51,7 @@ export function LayerItem({
   onOpacityChange,
   onRemove,
   onSelect,
+  onToggleHover,
   onDragStart,
   onDragOver,
   onDrop,
@@ -208,9 +211,25 @@ export function LayerItem({
           onTouchStart={handleSliderMouseDown}
           data-testid="layer-opacity-slider"
           className="layer-opacity-slider"
+          disabled={!!layer.hoverEnabled}
         />
         <span>{Math.round(layer.opacity * 100)}%</span>
       </div>
+      {/* Hover value toggle (raster layers only) */}
+      {layer.type === 'raster' && onToggleHover && (
+        <label
+          style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#555', marginTop: '4px', cursor: 'pointer' }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <input
+            type="checkbox"
+            checked={!!layer.hoverEnabled}
+            onChange={onToggleHover}
+            style={{ cursor: 'pointer' }}
+          />
+          Hover value
+        </label>
+      )}
       {/* Slider custom styling */}
       <style>{`
         .layer-opacity-slider {

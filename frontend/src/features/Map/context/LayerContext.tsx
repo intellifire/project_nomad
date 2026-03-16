@@ -466,7 +466,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
 
               popupRef.current
                 .setLngLat(e.lngLat)
-                .setHTML(`<strong>Burn Probability:</strong> ${label}`)
+                .setHTML(`<div style="color:#333;font-size:13px;padding:2px 4px"><strong>Burn Probability:</strong> ${label}</div>`)
                 .addTo(map);
             }
           }
@@ -579,9 +579,36 @@ export function LayerProvider({ children }: { children: ReactNode }) {
       layers.splice(newIndex, 0, layer);
 
       const updated = layers.map((l, i) => ({ ...l, zIndex: i }));
+
+      // Sync order on the MapBox map
+      if (map) {
+        // Move layers in order — last in array renders on top
+        for (let i = 1; i < updated.length; i++) {
+          const layerConfig = updated[i];
+          // Each layer may have sub-layers (fill, line, circle for GeoJSON, or just id for raster)
+          const suffixes = layerConfig.type === 'raster' ? [''] : ['-fill', '-line', '-circle'];
+          const moveId = `${layerConfig.id}${suffixes[0]}`;
+          try {
+            if (map.getLayer(moveId)) {
+              // moveLayer without beforeId moves to top; we move each in sequence
+              map.moveLayer(moveId);
+              // Also move other sub-layers
+              for (let s = 1; s < suffixes.length; s++) {
+                const subId = `${layerConfig.id}${suffixes[s]}`;
+                if (map.getLayer(subId)) {
+                  map.moveLayer(subId);
+                }
+              }
+            }
+          } catch {
+            // Layer may not exist on map yet
+          }
+        }
+      }
+
       return { ...prev, layers: updated };
     });
-  }, []);
+  }, [map]);
 
   const addGroup = useCallback((group: LayerGroup) => {
     setState((prev) => ({
@@ -617,9 +644,9 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     state.layers.forEach((layer) => removeLayer(layer.id));
   }, [state.layers, removeLayer]);
 
-  // Raster hover tooltip — WebGL pixel sampling for burn probability
+  // Raster hover tooltip — only active when a layer has hoverEnabled (100% opacity)
   const hasVisibleRasterLayer = state.layers.some(
-    (layer) => layer.type === 'raster' && layer.visible,
+    (layer) => layer.type === 'raster' && layer.visible && layer.hoverEnabled,
   );
   useRasterHover({ map, hasVisibleRasterLayer });
 

@@ -194,9 +194,9 @@ describe('ModelSelectionStep - Model Mode Cards', () => {
       </Wrapper>
     );
 
-    // Use getAllByText since "stochastic scenarios" appears in both the card description
+    // Use getAllByText since "probabilistic scenarios" appears in both the card description
     // and the info box when probabilistic is selected
-    const stochasticMatches = screen.getAllByText(/stochastic scenarios/i, { exact: false });
+    const stochasticMatches = screen.getAllByText(/probabilistic scenarios/i, { exact: false });
     expect(stochasticMatches.length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/single scenario/i, { exact: false })).toBeDefined();
     expect(screen.getByText(/extended season/i, { exact: false })).toBeDefined();

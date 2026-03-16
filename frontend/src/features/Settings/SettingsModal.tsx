@@ -40,8 +40,9 @@ const modalStyle: React.CSSProperties = {
   color: 'white',
   borderRadius: '8px',
   padding: '24px',
-  minWidth: '400px',
+  width: 'calc(100% - 32px)',
   maxWidth: '560px',
+  boxSizing: 'border-box' as const,
   boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
 };
 

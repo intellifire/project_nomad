@@ -3,24 +3,23 @@
  *
  * Tests the ModelMode type and validation constants defined in
  * IFireModelingEngine.ts and consumed by the models route.
- *
- * @module api/__tests__/modelMode
  */
 
 import { describe, it, expect } from 'vitest';
-import type { ModelMode } from '../../application/interfaces/IFireModelingEngine.js';
+import type { ModelMode, OutputMode } from '../../application/interfaces/IFireModelingEngine.js';
 
 // =============================================================================
 // Constants mirrored from models.ts route (same values, tested in isolation)
 // =============================================================================
 
 const VALID_MODEL_MODES: ModelMode[] = ['probabilistic', 'deterministic', 'long-term-risk'];
+const AVAILABLE_MODES: ModelMode[] = ['probabilistic', 'deterministic'];
 
 /**
  * Simulate the route validation logic:
  * - unknown modelMode → invalid
- * - deterministic / long-term-risk → valid but not yet available
- * - probabilistic → valid and available
+ * - long-term-risk → valid but not yet available
+ * - probabilistic, deterministic → valid and available
  */
 function validateModelMode(modelMode: string | undefined): {
   valid: boolean;
@@ -37,7 +36,7 @@ function validateModelMode(modelMode: string | undefined): {
     };
   }
 
-  if (resolved !== 'probabilistic') {
+  if (!AVAILABLE_MODES.includes(resolved)) {
     return {
       valid: true,
       available: false,
@@ -49,10 +48,21 @@ function validateModelMode(modelMode: string | undefined): {
 }
 
 /**
- * Simulate outputMode derivation logic used in the route.
+ * Simulate outputMode derivation logic.
+ * No more pseudo-deterministic — deterministic maps to 'deterministic'.
  */
-function deriveOutputMode(modelMode: ModelMode): 'probabilistic' | 'pseudo-deterministic' {
-  return modelMode === 'deterministic' ? 'pseudo-deterministic' : 'probabilistic';
+function deriveOutputMode(modelMode: ModelMode): OutputMode {
+  return modelMode === 'deterministic' ? 'deterministic' : 'probabilistic';
+}
+
+/**
+ * Simulate CLI flag logic for FireSTARR.
+ */
+function buildDeterministicFlags(modelMode: ModelMode): string[] {
+  if (modelMode === 'deterministic') {
+    return ['--deterministic'];
+  }
+  return [];
 }
 
 // =============================================================================
@@ -61,18 +71,19 @@ function deriveOutputMode(modelMode: ModelMode): 'probabilistic' | 'pseudo-deter
 
 describe('ModelMode validation', () => {
   describe('valid model modes', () => {
-    it('accepts probabilistic as a valid mode', () => {
+    it('accepts probabilistic as valid and available', () => {
       const result = validateModelMode('probabilistic');
       expect(result.valid).toBe(true);
+      expect(result.available).toBe(true);
     });
 
-    it('accepts deterministic as a valid (but unavailable) mode', () => {
+    it('accepts deterministic as valid and available', () => {
       const result = validateModelMode('deterministic');
       expect(result.valid).toBe(true);
-      expect(result.available).toBe(false);
+      expect(result.available).toBe(true);
     });
 
-    it('accepts long-term-risk as a valid (but unavailable) mode', () => {
+    it('accepts long-term-risk as valid but unavailable', () => {
       const result = validateModelMode('long-term-risk');
       expect(result.valid).toBe(true);
       expect(result.available).toBe(false);
@@ -112,10 +123,10 @@ describe('ModelMode validation', () => {
       expect(result.error).toBeUndefined();
     });
 
-    it('marks deterministic as unavailable with coming-soon message', () => {
+    it('marks deterministic as available', () => {
       const result = validateModelMode('deterministic');
-      expect(result.available).toBe(false);
-      expect(result.error).toContain('coming soon');
+      expect(result.available).toBe(true);
+      expect(result.error).toBeUndefined();
     });
 
     it('marks long-term-risk as unavailable with coming-soon message', () => {
@@ -131,12 +142,29 @@ describe('outputMode derivation from modelMode', () => {
     expect(deriveOutputMode('probabilistic')).toBe('probabilistic');
   });
 
-  it('derives pseudo-deterministic outputMode from deterministic modelMode', () => {
-    expect(deriveOutputMode('deterministic')).toBe('pseudo-deterministic');
+  it('derives deterministic outputMode from deterministic modelMode', () => {
+    expect(deriveOutputMode('deterministic')).toBe('deterministic');
   });
 
   it('derives probabilistic outputMode from long-term-risk modelMode', () => {
     expect(deriveOutputMode('long-term-risk')).toBe('probabilistic');
+  });
+});
+
+describe('FireSTARR CLI flags for deterministic mode', () => {
+  it('adds --deterministic flag for deterministic mode', () => {
+    const flags = buildDeterministicFlags('deterministic');
+    expect(flags).toContain('--deterministic');
+  });
+
+  it('does not add --deterministic flag for probabilistic mode', () => {
+    const flags = buildDeterministicFlags('probabilistic');
+    expect(flags).not.toContain('--deterministic');
+  });
+
+  it('does not add --deterministic flag for long-term-risk mode', () => {
+    const flags = buildDeterministicFlags('long-term-risk');
+    expect(flags).not.toContain('--deterministic');
   });
 });
 
@@ -155,5 +183,14 @@ describe('VALID_MODEL_MODES constant', () => {
 
   it('includes long-term-risk', () => {
     expect(VALID_MODEL_MODES).toContain('long-term-risk');
+  });
+});
+
+describe('No pseudo-deterministic terminology', () => {
+  it('deriveOutputMode never returns pseudo-deterministic', () => {
+    const modes: ModelMode[] = ['probabilistic', 'deterministic', 'long-term-risk'];
+    for (const mode of modes) {
+      expect(deriveOutputMode(mode)).not.toBe('pseudo-deterministic');
+    }
   });
 });

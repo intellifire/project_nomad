@@ -5,7 +5,7 @@
  * Combines ResultsSummary, OutputList, and handles map/export actions.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Rnd } from 'react-rnd';
 import { ResultsSummary } from './ResultsSummary';
 import { OutputList, type BreaksMode } from './OutputList';
@@ -37,6 +37,8 @@ const DEFAULT_WIDTH = 730;
 const DEFAULT_HEIGHT = 1070;
 const MIN_WIDTH = 350;
 const MIN_HEIGHT = 400;
+const MOBILE_BREAKPOINT = 480;
+const DESKTOP_BREAKPOINT = 1100;
 
 export function ModelReviewPanel({
   modelId,
@@ -50,9 +52,35 @@ export function ModelReviewPanel({
   const [showExportPanel, setShowExportPanel] = useState(false);
   const [size, setSize] = useState({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT });
 
-  // Calculate initial position (left side, below header)
-  const [initialX] = useState(() => 180);
-  const [initialY] = useState(() => 70);
+  // Responsive
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  const [windowHeight, setWindowHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 768);
+  useEffect(() => {
+    const handleResize = () => { setWindowWidth(window.innerWidth); setWindowHeight(window.innerHeight); };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  const isMobile = windowWidth < MOBILE_BREAKPOINT;
+  const isTablet = windowWidth >= MOBILE_BREAKPOINT && windowWidth < DESKTOP_BREAKPOINT;
+
+  // Store model metadata for MapCapture to read
+  // Persists until a different model replaces it (not cleared on unmount)
+  useEffect(() => {
+    if (results) {
+      localStorage.setItem('nomad_capture_model', JSON.stringify({
+        modelId: results.modelId,
+        modelName: results.modelName,
+        engineType: results.engineType,
+        userId: results.userId,
+        outputMode: results.outputConfig?.outputMode,
+        notes: results.notes,
+      }));
+    }
+  }, [results]);
+
+  // Calculate initial position — viewport-aware
+  const [initialX] = useState(() => Math.min(180, Math.max(10, windowWidth - DEFAULT_WIDTH - 20)));
+  const [initialY] = useState(() => Math.min(70, Math.max(10, windowHeight - DEFAULT_HEIGHT - 20)));
 
   /**
    * Handle download request
@@ -256,10 +284,10 @@ export function ModelReviewPanel({
       );
     }
     return (
-      <div style={headerStyle} className="model-results-drag-handle">
-        <h2 style={titleStyle}>Model Results</h2>
+      <div style={headerStyle}>
+        <h2 style={{ ...titleStyle, cursor: 'move' }} className="model-results-drag-handle">Model Results</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={dragHintStyle}>drag to move</span>
+          <span style={dragHintStyle} className="model-results-drag-handle">drag to move</span>
           <button style={closeButtonStyle} onClick={onClose} aria-label="Close results panel">
             &times;
           </button>
@@ -300,6 +328,50 @@ export function ModelReviewPanel({
     );
   }
 
+  // Mobile: full-screen overlay
+  if (isMobile) {
+    return (
+      <>
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          zIndex: 1000, backgroundColor: 'white', display: 'flex', flexDirection: 'column',
+        }}>
+          <div style={{ ...headerStyle, cursor: 'default' }}>
+            <h2 style={titleStyle}>Model Results</h2>
+            <button style={closeButtonStyle} onClick={onClose} aria-label="Close results panel">
+              &times;
+            </button>
+          </div>
+          <div style={{ flex: 1, overflow: 'auto' }}>
+            {renderContent()}
+          </div>
+        </div>
+        {renderModals()}
+      </>
+    );
+  }
+
+  // Tablet: right-docked side panel (map stays visible on left)
+  if (isTablet) {
+    return (
+      <>
+        <div style={sidePanelStyle}>
+          <div style={{ ...headerStyle, cursor: 'default' }}>
+            <h2 style={titleStyle}>Model Results</h2>
+            <button style={closeButtonStyle} onClick={onClose} aria-label="Close results panel">
+              &times;
+            </button>
+          </div>
+          <div style={{ flex: 1, overflow: 'auto' }}>
+            {renderContent()}
+          </div>
+        </div>
+        {renderModals()}
+      </>
+    );
+  }
+
+  // Desktop: floating Rnd panel
   return (
     <>
       <Rnd
@@ -311,7 +383,7 @@ export function ModelReviewPanel({
         }}
         minWidth={MIN_WIDTH}
         minHeight={MIN_HEIGHT}
-        maxHeight={window.innerHeight - 32}
+        maxHeight={windowHeight - 32}
         bounds="parent"
         dragHandleClassName="model-results-drag-handle"
         style={{ zIndex: 1000 }}
@@ -479,6 +551,20 @@ const emptyStyle: React.CSSProperties = {
   padding: '40px 20px',
   textAlign: 'center',
   color: '#666',
+};
+
+const sidePanelStyle: React.CSSProperties = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  bottom: 0,
+  width: 'min(450px, 55vw)',
+  zIndex: 1000,
+  backgroundColor: 'white',
+  boxShadow: '4px 0 20px rgba(0, 0, 0, 0.15)',
+  display: 'flex',
+  flexDirection: 'column',
+  overflow: 'hidden',
 };
 
 const embeddedPanelStyle: React.CSSProperties = {

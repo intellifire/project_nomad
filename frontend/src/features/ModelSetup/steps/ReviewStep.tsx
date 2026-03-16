@@ -223,7 +223,7 @@ export function ReviewStep() {
       {data.model?.runType === 'probabilistic' && (
         <div style={warningStyle}>
           <strong><i className="fa-solid fa-clock" style={{ marginRight: '6px' }} />Multi-Scenario Run:</strong> This simulation uses multiple weather streams
-          combined with stochastic spread modeling. Execution time may be longer than a
+          combined with probabilistic spread modeling. Execution time may be longer than a
           single-scenario run. You'll receive a notification when it completes.
         </div>
       )}

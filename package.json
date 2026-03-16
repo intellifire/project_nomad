@@ -20,7 +20,7 @@
     "install:all": "npm install"
   },
   "author": "Franco Nogarin",
-  "license": "MIT",
+  "license": "AGPL-3.0",
   "engines": {
     "node": ">=20.0.0"
   },

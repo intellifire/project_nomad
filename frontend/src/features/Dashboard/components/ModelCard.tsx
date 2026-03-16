@@ -108,7 +108,7 @@ function getModeLabel(outputMode?: string | null): string {
   switch (outputMode) {
     case 'probabilistic':
       return 'Probabilistic';
-    case 'pseudo-deterministic':
+    case 'deterministic':
       return 'Deterministic';
     case 'long-term-risk':
       return 'Long-Term Risk';

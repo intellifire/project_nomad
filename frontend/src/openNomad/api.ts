@@ -158,7 +158,7 @@ export interface Model {
   createdAt: string;
   /** ISO 8601 timestamp when model was last updated */
   updatedAt: string;
-  /** Output mode (probabilistic, pseudo-deterministic, etc.) */
+  /** Output mode (probabilistic, deterministic, etc.) */
   outputMode?: string | null;
   /** Optional user notes about this model */
   notes?: string;
@@ -236,8 +236,8 @@ export interface FWIStartingCodes {
  * Output configuration for model execution.
  */
 export interface OutputParams {
-  /** Output mode: probabilistic (default) or pseudo-deterministic */
-  mode: 'probabilistic' | 'pseudo-deterministic';
+  /** Output mode: probabilistic (default) or deterministic */
+  mode: 'probabilistic' | 'deterministic';
 }
 
 /**

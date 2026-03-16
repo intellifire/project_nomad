@@ -11,7 +11,7 @@ import type { WizardProgressProps, StepStatus } from '../types';
 
 // Breakpoints for responsive behavior
 const MOBILE_BREAKPOINT = 480;
-const TABLET_BREAKPOINT = 768;
+const DESKTOP_BREAKPOINT = 1100;
 
 /**
  * WizardProgress shows the progress through wizard steps.
@@ -46,7 +46,7 @@ export function WizardProgress({
   }, []);
 
   const isMobile = windowWidth < MOBILE_BREAKPOINT;
-  const isTablet = windowWidth < TABLET_BREAKPOINT;
+  const isTablet = windowWidth >= MOBILE_BREAKPOINT && windowWidth < DESKTOP_BREAKPOINT;
 
   const handleStepClick = useCallback(async (index: number) => {
     if (!allowJump) return;
@@ -62,8 +62,8 @@ export function WizardProgress({
 
   const isHorizontal = direction === 'horizontal';
 
-  // Mobile compact view - show current step with expand toggle
-  if (isMobile && !isCollapsed) {
+  // Mobile/Tablet compact view - show current step with expand toggle
+  if ((isMobile || isTablet) && !isCollapsed) {
     const currentStep = state.steps[currentStepIndex];
     return (
       <div
@@ -119,8 +119,8 @@ export function WizardProgress({
     );
   }
 
-  // Mobile expanded view - vertical list
-  if (isMobile && isCollapsed) {
+  // Mobile/Tablet expanded view - vertical list
+  if ((isMobile || isTablet) && isCollapsed) {
     return (
       <div
         className={`wizard-progress wizard-progress--mobile-expanded ${className}`}

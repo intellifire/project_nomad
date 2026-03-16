@@ -1,7 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useLayers } from '../context/LayerContext';
+import { useMap } from '../context/MapContext';
 import { LayerItem } from './LayerItem';
 import { useCFSLayers } from '../hooks/useCFSLayers';
+import { useTerrain } from '../hooks/useTerrain';
+import { BasemapStyle, BASEMAP_STYLES } from '../types';
 
 /**
  * Props for LayerPanel component
@@ -46,9 +49,36 @@ export function LayerPanel({
   expanded: _initialExpanded = true,
   className = '',
 }: LayerPanelProps) {
-  // Note: _initialExpanded reserved for future collapsible panel feature
-  const { state, setOpacity, toggleVisibility, removeLayer, selectLayer, reorderLayer, addRasterLayer } = useLayers();
+  const { state, setOpacity, toggleVisibility, removeLayer, selectLayer, reorderLayer, addRasterLayer, updateLayer } = useLayers();
   const cfs = useCFSLayers();
+
+  // Responsive — collapse on mobile
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  const isMobile = windowWidth < 480;
+  const [collapsed, setCollapsed] = useState(isMobile);
+
+  // Basemap state
+  const { map } = useMap();
+  const BASEMAP_STORAGE_KEY = 'nomad-basemap-style';
+  const [activeBasemap, setActiveBasemap] = useState<BasemapStyle>(() => {
+    const stored = localStorage.getItem(BASEMAP_STORAGE_KEY);
+    return (stored as BasemapStyle) || 'outdoors';
+  });
+
+  const handleBasemapChange = useCallback((style: BasemapStyle) => {
+    if (!map || style === activeBasemap) return;
+    map.setStyle(BASEMAP_STYLES[style].url);
+    setActiveBasemap(style);
+    localStorage.setItem(BASEMAP_STORAGE_KEY, style);
+  }, [map, activeBasemap]);
+
+  // Terrain state
+  const terrain = useTerrain();
 
   // Drag and drop state
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -130,15 +160,47 @@ export function LayerPanel({
     setDragOverId(null);
   };
 
+  // Collapsed toggle button for mobile
+  if (isMobile && collapsed) {
+    return (
+      <button
+        className={`layer-panel-toggle ${className}`}
+        onClick={() => setCollapsed(false)}
+        style={{
+          position: 'absolute',
+          zIndex: 1,
+          ...POSITION_STYLES[position],
+          backgroundColor: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+          padding: '10px 12px',
+          cursor: 'pointer',
+          fontSize: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          color: '#333',
+        }}
+        aria-label="Open layers panel"
+      >
+        <i className="fa-solid fa-layer-group" />
+        {state.layers.length > 0 && (
+          <span style={{ fontSize: '12px', color: '#666' }}>{state.layers.length}</span>
+        )}
+      </button>
+    );
+  }
+
   const containerStyle: React.CSSProperties = {
     position: 'absolute',
     zIndex: 1,
     backgroundColor: 'white',
     borderRadius: '4px',
     boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-    minWidth: '280px',
-    maxWidth: '350px',
-    maxHeight: cfs.available ? '550px' : '400px',
+    minWidth: isMobile ? '240px' : '280px',
+    maxWidth: isMobile ? 'calc(100vw - 20px)' : '350px',
+    maxHeight: isMobile ? 'calc(100vh - 120px)' : (cfs.available ? '550px' : '400px'),
     overflow: 'hidden',
     display: 'flex',
     flexDirection: 'column',
@@ -188,7 +250,26 @@ export function LayerPanel({
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: '8px',
   };
+
+  const renderHeader = () => (
+    <div style={headerStyle}>
+      <span><i className="fa-solid fa-layer-group" style={{ marginRight: '8px' }} />Layers</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{ fontSize: '12px', color: '#999' }}>{state.layers.length}</span>
+        {isMobile && (
+          <button
+            onClick={() => setCollapsed(true)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#666', padding: '0 4px' }}
+            aria-label="Close layers panel"
+          >
+            &times;
+          </button>
+        )}
+      </div>
+    </div>
+  );
 
   const listStyle: React.CSSProperties = {
     flex: 1,
@@ -267,16 +348,113 @@ export function LayerPanel({
     </div>
   ) : null;
 
+  /** Map Settings section — basemap + terrain */
+  const sectionHeaderBase: React.CSSProperties = {
+    padding: '6px 8px',
+    fontWeight: 600,
+    fontSize: '12px',
+    color: '#555',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.05em',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+  };
+
+  const basemapOptionStyle = (isActive: boolean): React.CSSProperties => ({
+    padding: '6px 8px',
+    fontSize: '13px',
+    color: '#333',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    backgroundColor: isActive ? '#e3f2fd' : 'transparent',
+    borderRadius: '4px',
+  });
+
+  const MapSettingsSection = (
+    <div style={{ borderTop: '1px solid #eee', padding: '8px' }}>
+      {/* Basemap */}
+      <div style={sectionHeaderBase}>
+        <i className="fa-solid fa-map" style={{ color: '#1976d2' }} />
+        Basemap
+      </div>
+      {(Object.entries(BASEMAP_STYLES) as [BasemapStyle, { name: string; url: string }][]).map(([key, config]) => (
+        <div
+          key={key}
+          style={basemapOptionStyle(key === activeBasemap)}
+          onClick={() => handleBasemapChange(key)}
+        >
+          <i className={`fa-solid fa-${key === 'streets' ? 'road' : key === 'satellite' ? 'satellite' : 'mountain'}`}
+            style={{ width: '16px', textAlign: 'center', color: '#666' }} />
+          <span>{config.name}</span>
+          {key === activeBasemap && <i className="fa-solid fa-check" style={{ marginLeft: 'auto', color: '#1976d2', fontSize: '12px' }} />}
+        </div>
+      ))}
+
+      {/* 3D Terrain */}
+      {terrain.isSupported && (
+        <>
+          <div style={{ ...sectionHeaderBase, marginTop: '8px' }}>
+            <i className="fa-solid fa-mountain" style={{ color: '#4caf50' }} />
+            3D Terrain
+            <div
+              style={{
+                marginLeft: 'auto',
+                width: '36px',
+                height: '18px',
+                backgroundColor: terrain.config.enabled ? '#4caf50' : '#ccc',
+                borderRadius: '9px',
+                cursor: 'pointer',
+                position: 'relative',
+                transition: 'background-color 0.2s',
+              }}
+              onClick={terrain.toggle}
+            >
+              <div style={{
+                position: 'absolute',
+                top: '2px',
+                left: terrain.config.enabled ? '20px' : '2px',
+                width: '14px',
+                height: '14px',
+                backgroundColor: 'white',
+                borderRadius: '50%',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                transition: 'left 0.2s',
+              }} />
+            </div>
+          </div>
+          {terrain.config.enabled && (
+            <div style={{ padding: '4px 8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#666' }}>
+                <span>Exaggeration</span>
+                <span>{terrain.config.exaggeration.toFixed(1)}x</span>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="3"
+                step="0.1"
+                value={terrain.config.exaggeration}
+                onChange={(e) => terrain.setExaggeration(Number(e.target.value))}
+                style={{ width: '100%', height: '4px', cursor: 'pointer' }}
+              />
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+
   if (state.layers.length === 0 && !cfs.available) {
     return (
       <div className={`layer-panel ${className}`} style={containerStyle}>
-        <div style={headerStyle}>
-          <span><i className="fa-solid fa-layer-group" style={{ marginRight: '8px' }} />Layers</span>
-          <span style={{ fontSize: '12px', color: '#999' }}>0</span>
-        </div>
+        {renderHeader()}
         <div style={emptyStyle}>
           No layers added yet
         </div>
+        {MapSettingsSection}
       </div>
     );
   }
@@ -284,24 +462,19 @@ export function LayerPanel({
   if (state.layers.length === 0 && cfs.available) {
     return (
       <div className={`layer-panel ${className}`} style={containerStyle}>
-        <div style={headerStyle}>
-          <span><i className="fa-solid fa-layer-group" style={{ marginRight: '8px' }} />Layers</span>
-          <span style={{ fontSize: '12px', color: '#999' }}>0</span>
-        </div>
+        {renderHeader()}
         <div style={emptyStyle}>
           No layers added yet
         </div>
         {CFSSection}
+        {MapSettingsSection}
       </div>
     );
   }
 
   return (
     <div className={`layer-panel ${className}`} style={containerStyle}>
-      <div style={headerStyle}>
-        <span><i className="fa-solid fa-layer-group" style={{ marginRight: '8px' }} />Layers</span>
-        <span style={{ fontSize: '12px', color: '#999' }}>{state.layers.length}</span>
-      </div>
+      {renderHeader()}
       <div style={listStyle}>
         {state.layers.map((layer) => (
           <LayerItem
@@ -314,6 +487,13 @@ export function LayerPanel({
             onOpacityChange={(opacity) => setOpacity(layer.id, opacity)}
             onRemove={() => removeLayer(layer.id)}
             onSelect={() => selectLayer(layer.id)}
+            onToggleHover={layer.type === 'raster' ? () => {
+              const newHover = !layer.hoverEnabled;
+              updateLayer(layer.id, {
+                hoverEnabled: newHover,
+                opacity: newHover ? 1.0 : 0.8,
+              });
+            } : undefined}
             onDragStart={(e) => handleDragStart(e, layer.id)}
             onDragOver={(e) => handleDragOver(e, layer.id)}
             onDrop={(e) => handleDrop(e, layer.id)}
@@ -322,6 +502,7 @@ export function LayerPanel({
         ))}
       </div>
       {CFSSection}
+      {MapSettingsSection}
     </div>
   );
 }

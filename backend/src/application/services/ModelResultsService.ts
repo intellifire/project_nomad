@@ -77,7 +77,7 @@ export interface ModelInputs {
  * Output configuration used for model run
  */
 export interface OutputConfig {
-  outputMode: 'probabilistic' | 'pseudo-deterministic';
+  outputMode: 'probabilistic' | 'deterministic';
   confidenceInterval: number;
   smoothPerimeter: boolean;
 }
@@ -350,45 +350,46 @@ export class ModelResultsService {
             const configContent = fs.readFileSync(configPath, 'utf-8');
             loadedOutputConfig = JSON.parse(configContent) as OutputConfig;
 
-            if (loadedOutputConfig.outputMode === 'pseudo-deterministic') {
-              console.log(`[ModelResultsService] Auto-generating perimeters for ${modelId} at ${loadedOutputConfig.confidenceInterval}% confidence`);
+            if (loadedOutputConfig.outputMode === 'deterministic') {
+              console.log(`[ModelResultsService] Deterministic mode — extracting perimeters from arrival-time grids for ${modelId}`);
 
               // Check if perimeter outputs already exist
               const hasPerimeters = outputs.some(o => o.type === 'perimeter');
 
               if (!hasPerimeters) {
-                // Import and call perimeter generator
-                const { generatePerimeters } = await import('../../infrastructure/firestarr/index.js');
-                const perimeterResult = await generatePerimeters(simDir, {
-                  confidenceInterval: loadedOutputConfig.confidenceInterval,
-                  smoothPerimeter: loadedOutputConfig.smoothPerimeter,
-                });
+                // Extract perimeters from arrival-time rasters
+                const { extractDeterministicPerimeters } = await import('../../infrastructure/firestarr/index.js');
+                const perimeterResult = await extractDeterministicPerimeters(simDir);
+
+                // Perimeter colors — progression from orange→red→crimson (no yellow)
+                // Colorblind-friendly perimeter colors — high contrast, distinct hues
+                const PERIMETER_COLORS = ['#e65100', '#1565c0', '#2e7d32', '#6a1b9a', '#c62828', '#00838f'];
 
                 if (perimeterResult.success && perimeterResult.value.perimeters.length > 0) {
-                  // Add perimeter outputs
-                  for (const perimeter of perimeterResult.value.perimeters) {
-                    // Use date if available, otherwise fall back to day number
-                    const dateLabel = perimeter.date || `Day ${perimeter.day}`;
+                  perimeterResult.value.perimeters.forEach((perimeter, index) => {
+                    const dateLabel = perimeter.date || `Day ${perimeter.julianDay}`;
+                    const color = PERIMETER_COLORS[index % PERIMETER_COLORS.length];
                     outputs.push({
-                      id: `perimeter-day${perimeter.day}-${modelId}`,
+                      id: `perimeter-day${perimeter.julianDay}-${modelId}`,
                       type: 'perimeter' as OutputType,
                       format: 'geojson' as OutputFormat,
-                      name: `Fire Perimeter - ${dateLabel} (${perimeter.confidenceInterval}%)`,
-                      timeOffsetHours: perimeter.day * 24,
+                      name: `Fire Boundary - ${dateLabel}`,
+                      timeOffsetHours: perimeter.julianDay * 24,
                       filePath: null,
-                      previewUrl: `/api/v1/models/${modelId}/perimeters?day=${perimeter.day}`,
-                      downloadUrl: `/api/v1/models/${modelId}/perimeters?day=${perimeter.day}&download=true`,
+                      previewUrl: `/api/v1/models/${modelId}/perimeters?day=${perimeter.julianDay}`,
+                      downloadUrl: `/api/v1/models/${modelId}/perimeters?day=${perimeter.julianDay}&download=true`,
                       metadata: {
-                        day: perimeter.day,
+                        day: perimeter.julianDay,
                         date: perimeter.date,
-                        confidenceInterval: perimeter.confidenceInterval,
+                        deterministic: true,
+                        color,
                         geojson: perimeter.geojson,
                       },
                     });
-                  }
-                  console.log(`[ModelResultsService] Added ${perimeterResult.value.perimeters.length} perimeter outputs`);
+                  });
+                  console.log(`[ModelResultsService] Added ${perimeterResult.value.perimeters.length} deterministic perimeter outputs`);
                 } else if (!perimeterResult.success) {
-                  console.warn(`[ModelResultsService] Failed to generate perimeters: ${perimeterResult.error.message}`);
+                  console.warn(`[ModelResultsService] Failed to extract deterministic perimeters: ${perimeterResult.error.message}`);
                 }
               }
             }
@@ -398,6 +399,11 @@ export class ModelResultsService {
         }
       }
 
+      // In deterministic mode, only show perimeter outputs (not probability rasters)
+      const filteredOutputs = loadedOutputConfig?.outputMode === 'deterministic'
+        ? outputs.filter(o => o.type === 'perimeter')
+        : outputs;
+
       return Result.ok({
         modelId,
         modelName,
@@ -406,7 +412,7 @@ export class ModelResultsService {
         notes: notes ?? null,
         executionSummary,
         inputs,
-        outputs,
+        outputs: filteredOutputs,
         outputConfig: loadedOutputConfig,
       });
     } catch (error) {

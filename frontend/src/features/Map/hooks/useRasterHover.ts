@@ -20,12 +20,21 @@ import mapboxgl from 'mapbox-gl';
  * Each entry is [percentage, r, g, b].
  * The array is sorted from highest to lowest probability.
  */
+/**
+ * FireSTARR 10-class discrete colour ramp — matches ContourGenerator.ts
+ * and RasterLegend.tsx. Each entry is [midpoint%, R, G, B].
+ */
 const RAMP: ReadonlyArray<readonly [number, number, number, number]> = [
-  [90, 255, 0, 0],     // red
-  [75, 255, 165, 0],   // orange
-  [50, 255, 255, 0],   // yellow
-  [25, 173, 255, 47],  // yellow-green
-  [10, 0, 255, 0],     // green
+  [95, 230, 21, 31],    // 91-100% crimson
+  [85, 235, 51, 38],    // 81-90%  dark red
+  [75, 238, 79, 44],    // 71-80%  red
+  [65, 240, 108, 51],   // 61-70%  red-orange
+  [55, 242, 137, 56],   // 51-60%  dark orange
+  [45, 245, 162, 61],   // 41-50%  orange
+  [35, 250, 192, 68],   // 31-40%  light orange
+  [25, 252, 223, 75],   // 21-30%  yellow
+  [15, 250, 246, 142],  // 11-20%  light yellow
+  [5,  76, 175, 80],    // 1-10%   green
 ] as const;
 
 /** Euclidean distance between two RGB colours. */
@@ -48,7 +57,9 @@ function rgbDistance(
  * Setting the threshold to 130 keeps midpoint interpolation working while
  * firmly rejecting background colours (black ~255, white ~224, blue ~360).
  */
-const MAX_RAMP_DISTANCE = 130;
+// At 100% opacity (required for hover), raster colors are unblended
+// so we can use a moderate threshold
+const MAX_RAMP_DISTANCE = 70;
 
 /**
  * Map an RGB pixel from a FireSTARR raster tile to its burn-probability
@@ -66,40 +77,44 @@ const MAX_RAMP_DISTANCE = 130;
  * @returns Probability percentage (10–90) or null when the colour is not on
  *          the ramp.
  */
+/**
+ * Band labels matching the discrete 10-class FireSTARR ramp.
+ * Index corresponds to RAMP entries.
+ */
+const BAND_LABELS = [
+  '91-100%', '81-90%', '71-80%', '61-70%', '51-60%',
+  '41-50%', '31-40%', '21-30%', '11-20%', '1-10%',
+];
+
 export function colorToPercentage(
   r: number,
   g: number,
   b: number,
   a?: number,
-): number | null {
+): string | null {
   // Fully transparent — no data
   if (a === 0) return null;
 
-  // Find the two closest anchor points
-  const distances = RAMP.map(([pct, ar, ag, ab]) => ({
-    pct,
-    dist: rgbDistance(r, g, b, ar, ag, ab),
-  }));
+  // Reject very dark pixels (basemap shadows, labels)
+  if (r < 20 && g < 20 && b < 20) return null;
+  // Reject very bright pixels (white areas, clouds)
+  if (r > 240 && g > 240 && b > 240) return null;
 
-  distances.sort((x, y) => x.dist - y.dist);
-  const nearest = distances[0];
-  const second = distances[1];
+  // Find the nearest band — no interpolation, discrete classes only
+  let minDist = Infinity;
+  let minIdx = -1;
+  for (let i = 0; i < RAMP.length; i++) {
+    const [, ar, ag, ab] = RAMP[i];
+    const dist = rgbDistance(r, g, b, ar, ag, ab);
+    if (dist < minDist) {
+      minDist = dist;
+      minIdx = i;
+    }
+  }
 
-  // Reject colours that are too far from the ramp (background / no-data)
-  if (nearest.dist > MAX_RAMP_DISTANCE) return null;
+  if (minDist > MAX_RAMP_DISTANCE || minIdx < 0) return null;
 
-  // Exact match (or near-exact)
-  if (nearest.dist === 0) return nearest.pct;
-
-  // Linear interpolation weighted by inverse distance
-  const totalDist = nearest.dist + second.dist;
-  if (totalDist === 0) return nearest.pct;
-
-  const weight = nearest.dist / totalDist;      // 0 = exactly on nearest
-  const interpolated =
-    nearest.pct * (1 - weight) + second.pct * weight;
-
-  return Math.round(interpolated);
+  return BAND_LABELS[minIdx];
 }
 
 // =============================================================================
@@ -112,7 +127,7 @@ export function colorToPercentage(
 interface UseRasterHoverProps {
   /** Mapbox map instance */
   map: mapboxgl.Map | null;
-  /** Whether any raster layer is currently visible */
+  /** Whether any raster layer has hover enabled (visible + 100% opacity) */
   hasVisibleRasterLayer: boolean;
 }
 
@@ -170,12 +185,12 @@ export function useRasterHover({
       gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
 
       const [r, g, b, a] = pixel;
-      const pct = colorToPercentage(r, g, b, a);
+      const band = colorToPercentage(r, g, b, a);
 
-      if (pct !== null) {
+      if (band !== null) {
         popup
           .setLngLat(e.lngLat)
-          .setHTML(`<strong>Burn Probability:</strong> ${pct}%`)
+          .setHTML(`<div style="color:#333;font-size:13px;padding:2px 4px"><strong>Burn Probability:</strong> ${band}</div>`)
           .addTo(map!);
       } else {
         popup.remove();

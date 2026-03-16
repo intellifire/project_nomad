@@ -104,7 +104,7 @@ const engines: EngineOption[] = [
     name: 'FireSTARR',
     icon: 'fire',
     description:
-      'Stochastic fire spread model optimized for Canadian boreal forests. Provides probability-based fire perimeters and intensity predictions.',
+      'Probabilistic fire spread model optimized for Canadian boreal forests. Provides probability-based fire perimeters and intensity predictions.',
     available: true,
   },
   {
@@ -122,7 +122,7 @@ const modelModes: ModelModeOption[] = [
     name: 'Probabilistic',
     icon: 'chart-simple',
     description:
-      'Run multiple stochastic scenarios to generate daily probability rasters showing fire spread likelihood at each location.',
+      'Run multiple probabilistic scenarios to generate daily probability rasters showing fire spread likelihood at each location.',
     available: true,
   },
   {
@@ -130,8 +130,8 @@ const modelModes: ModelModeOption[] = [
     name: 'Deterministic',
     icon: 'draw-polygon',
     description:
-      'Run a single scenario to produce daily fire perimeter polygons at a defined confidence threshold.',
-    available: false,
+      'Run a single simulation to produce a deterministic fire boundary prediction. Faster than probabilistic mode.',
+    available: true,
   },
   {
     id: 'long-term-risk',
@@ -179,7 +179,7 @@ export function ModelSelectionStep() {
       if (!modeOption?.available) return;
 
       // Derive outputMode from modelMode
-      const outputMode = modelMode === 'deterministic' ? 'pseudo-deterministic' : 'probabilistic';
+      const outputMode = modelMode === 'deterministic' ? 'deterministic' : 'probabilistic';
 
       setField('model', {
         ...model,
@@ -307,7 +307,7 @@ export function ModelSelectionStep() {
             color: '#333',
           }}
         >
-          <strong>Note:</strong> Probabilistic mode runs multiple stochastic scenarios to generate
+          <strong>Note:</strong> Probabilistic mode runs multiple probabilistic scenarios to generate
           probability maps showing the likelihood of fire spread at each location over time. These
           raster outputs are ideal for risk analysis and can be visualized with color gradients
           representing burn probability.

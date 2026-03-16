@@ -34,7 +34,7 @@ export type ModelMode = 'probabilistic' | 'deterministic' | 'long-term-risk';
 /**
  * Output mode types - how FireSTARR results should be post-processed
  */
-export type OutputMode = 'probabilistic' | 'pseudo-deterministic';
+export type OutputMode = 'probabilistic' | 'deterministic';
 
 /**
  * Weather data source
@@ -250,7 +250,7 @@ export const DEFAULT_MODEL_SETUP_DATA: ModelSetupData = {
   temporal: {
     startDate: '',
     startTime: '12:00',
-    durationHours: 24,
+    durationHours: 72,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     isForecast: false,
   },

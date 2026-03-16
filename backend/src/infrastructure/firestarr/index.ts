@@ -60,6 +60,13 @@ export {
   type PerimeterGenerationResult,
 } from './PerimeterGenerator.js';
 
+// Deterministic Arrival-Time Extraction
+export {
+  extractDeterministicPerimeters,
+  type DeterministicPerimeter,
+  type DeterministicExtractionResult,
+} from './ArrivalTimeExtractor.js';
+
 // Types
 export {
   type WeatherHourlyData,
