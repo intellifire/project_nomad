@@ -77,6 +77,11 @@ function categorizeFile(filename: string, lastJulianDay: number | null): ExportF
     return { filename, category: 'aggregated', label: 'Simulation Area', format: 'geotiff', path: filename };
   }
 
+  // Log file
+  if (filename === 'firestarr.log') {
+    return { filename, category: 'inputs', label: 'FireSTARR Log', format: 'log', path: filename };
+  }
+
   // Final outputs — scenario 1, last day only
   if (lastJulianDay !== null) {
     const finalMatch = filename.match(/^000_000001_(\d+)_(arrival|intensity|raz|ros|source)\.tif$/);
