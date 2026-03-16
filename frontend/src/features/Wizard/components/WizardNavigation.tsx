@@ -11,7 +11,7 @@ import type { WizardNavigationProps } from '../types';
 
 // Breakpoints
 const MOBILE_BREAKPOINT = 480;
-const DESKTOP_BREAKPOINT = 1024;
+const DESKTOP_BREAKPOINT = 1100;
 
 /**
  * WizardNavigation renders navigation buttons for the wizard.

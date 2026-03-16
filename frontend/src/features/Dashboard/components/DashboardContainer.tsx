@@ -125,7 +125,7 @@ const DEFAULT_HEIGHT = 600;
 const MIN_WIDTH = 380;
 const MIN_HEIGHT = 400;
 const MOBILE_BREAKPOINT = 480;
-const DESKTOP_BREAKPOINT = 1024;
+const DESKTOP_BREAKPOINT = 1100;
 
 // =============================================================================
 // Tab Navigation Component

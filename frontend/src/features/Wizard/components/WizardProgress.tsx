@@ -11,7 +11,7 @@ import type { WizardProgressProps, StepStatus } from '../types';
 
 // Breakpoints for responsive behavior
 const MOBILE_BREAKPOINT = 480;
-const DESKTOP_BREAKPOINT = 1024;
+const DESKTOP_BREAKPOINT = 1100;
 
 /**
  * WizardProgress shows the progress through wizard steps.

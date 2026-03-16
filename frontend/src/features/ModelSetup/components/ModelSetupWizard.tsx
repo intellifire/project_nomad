@@ -38,7 +38,7 @@ export interface ModelSetupWizardProps {
 
 // Breakpoints
 const MOBILE_BREAKPOINT = 480;
-const DESKTOP_BREAKPOINT = 1024;
+const DESKTOP_BREAKPOINT = 1100;
 
 // Desktop dimensions
 const DEFAULT_WIDTH = 690;

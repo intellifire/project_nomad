@@ -38,7 +38,7 @@ const DEFAULT_HEIGHT = 1070;
 const MIN_WIDTH = 350;
 const MIN_HEIGHT = 400;
 const MOBILE_BREAKPOINT = 480;
-const DESKTOP_BREAKPOINT = 1024;
+const DESKTOP_BREAKPOINT = 1100;
 
 export function ModelReviewPanel({
   modelId,
