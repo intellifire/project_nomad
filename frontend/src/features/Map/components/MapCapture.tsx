@@ -181,6 +181,7 @@ export function MapCapture() {
         ctx.font = `${fontSize}px system-ui, sans-serif`;
       }
       for (const item of legendItems) {
+        // Color swatch (aligned to first line of text)
         ctx.fillStyle = item.color;
         ctx.globalAlpha = 0.5;
         ctx.fillRect(lx + padding, yPos - swatchSize + 3 * dpr, swatchSize, swatchSize);
@@ -189,14 +190,26 @@ export function MapCapture() {
         ctx.lineWidth = 2 * dpr;
         ctx.strokeRect(lx + padding, yPos - swatchSize + 3 * dpr, swatchSize, swatchSize);
 
+        // Word-wrap label
         ctx.fillStyle = '#333';
+        const textX = lx + padding + swatchSize + 6 * dpr;
         const maxLabelWidth = lw - padding * 2 - swatchSize - 8 * dpr;
-        let label = item.label;
-        while (ctx.measureText(label).width > maxLabelWidth && label.length > 10) {
-          label = label.slice(0, -4) + '...';
+        const words = item.label.split(/(\s+|-)/);
+        let line = '';
+        for (const word of words) {
+          const test = line + word;
+          if (ctx.measureText(test).width > maxLabelWidth && line.length > 0) {
+            ctx.fillText(line, textX, yPos);
+            yPos += 14 * dpr;
+            line = word.trim();
+          } else {
+            line = test;
+          }
         }
-        ctx.fillText(label, lx + padding + swatchSize + 6 * dpr, yPos);
-        yPos += 18 * dpr;
+        if (line) {
+          ctx.fillText(line, textX, yPos);
+          yPos += 18 * dpr;
+        }
 
         if (yPos > ly + lh - 20 * dpr) break;
       }

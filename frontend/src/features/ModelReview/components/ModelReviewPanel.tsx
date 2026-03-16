@@ -64,6 +64,7 @@ export function ModelReviewPanel({
   const isTablet = windowWidth >= MOBILE_BREAKPOINT && windowWidth < DESKTOP_BREAKPOINT;
 
   // Store model metadata for MapCapture to read
+  // Persists until a different model replaces it (not cleared on unmount)
   useEffect(() => {
     if (results) {
       localStorage.setItem('nomad_capture_model', JSON.stringify({
@@ -75,7 +76,6 @@ export function ModelReviewPanel({
         notes: results.notes,
       }));
     }
-    return () => { localStorage.removeItem('nomad_capture_model'); };
   }, [results]);
 
   // Calculate initial position — viewport-aware
