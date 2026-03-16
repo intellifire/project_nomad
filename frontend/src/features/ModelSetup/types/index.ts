@@ -34,7 +34,7 @@ export type ModelMode = 'probabilistic' | 'deterministic' | 'long-term-risk';
 /**
  * Output mode types - how FireSTARR results should be post-processed
  */
-export type OutputMode = 'probabilistic' | 'pseudo-deterministic';
+export type OutputMode = 'probabilistic' | 'deterministic';
 
 /**
  * Weather data source

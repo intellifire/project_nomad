@@ -127,7 +127,7 @@ Key error codes:
 
 ## Walkthrough: Modeling a Real Fire
 
-This example models the 2023 Hay River / Katlodeeche fire (NWT fire SS005-23) — a 3-day pseudo-deterministic run using real ignition perimeter and weather data.
+This example models the 2023 Hay River / Katlodeeche fire (NWT fire SS005-23) — a 3-day deterministic run using real ignition perimeter and weather data.
 
 **Available test data:** `test_fires/nwt/2023_hay_river_katlodeeche_jun19/`
 - `ignition.geojson` — 874-vertex polygon perimeter from the FGMJ

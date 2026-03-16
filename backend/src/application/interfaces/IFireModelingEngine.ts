@@ -31,7 +31,7 @@ export type ModelMode = 'probabilistic' | 'deterministic' | 'long-term-risk';
 /**
  * Output mode for model results
  */
-export type OutputMode = 'probabilistic' | 'pseudo-deterministic';
+export type OutputMode = 'probabilistic' | 'deterministic';
 
 /**
  * Configuration options for model execution
@@ -53,7 +53,7 @@ export interface ExecutionOptions {
   readonly weatherConfig?: WeatherConfig;
   /** Pre-resolved weather data (if weather has been fetched already) */
   readonly weatherData?: WeatherDataPoint[];
-  /** Output mode: probabilistic (rasters) or pseudo-deterministic (vector perimeters) */
+  /** Output mode: probabilistic (rasters) or deterministic (vector perimeters) */
   readonly outputMode?: OutputMode;
   /**
    * Confidence interval for perimeter generation (1-90, as percentage).

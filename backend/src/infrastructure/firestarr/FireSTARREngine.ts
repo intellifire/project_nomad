@@ -43,7 +43,7 @@ const FIRESTARR_BINARY = '/appl/firestarr/firestarr';
  * Output configuration for post-processing
  */
 interface OutputConfig {
-  outputMode: 'probabilistic' | 'pseudo-deterministic';
+  outputMode: 'probabilistic' | 'deterministic';
   confidenceInterval: number;
   smoothPerimeter: boolean;
 }
@@ -163,7 +163,7 @@ export class FireSTARREngine implements IFireModelingEngine {
     };
 
     // Build command
-    const command = this.buildCommand(state.params, state.inputResult);
+    const command = this.buildCommand(state.params, state.inputResult, state.outputConfig);
     logger.engine(`Command: ${command.join(' ')}`, 'FireSTARR', modelId);
 
     // Create output callback for progress tracking
@@ -645,7 +645,7 @@ export class FireSTARREngine implements IFireModelingEngine {
    * Builds the FireSTARR CLI command.
    * Uses container paths for Docker mode, host paths for binary mode.
    */
-  private buildCommand(params: FireSTARRParams, inputResult: InputGenerationResult): string[] {
+  private buildCommand(params: FireSTARRParams, inputResult: InputGenerationResult, outputConfig?: OutputConfig): string[] {
     // Determine paths based on execution mode
     let workingDir: string;
     let weatherFile: string;
@@ -717,6 +717,11 @@ export class FireSTARREngine implements IFireModelingEngine {
 
     // Output additional rasters (arrival time, etc.) (#150)
     args.push('-i');
+
+    // Deterministic mode: single simulation, no Monte Carlo (#151)
+    if (outputConfig?.outputMode === 'deterministic') {
+      args.push('--deterministic');
+    }
 
     // Add verbosity
     args.push('-v');

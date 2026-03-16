@@ -43,7 +43,7 @@ interface RunModelRequestBody {
   };
   weather: WeatherConfig;
   scenarios?: number;
-  outputMode?: 'probabilistic' | 'pseudo-deterministic';
+  outputMode?: 'probabilistic' | 'deterministic';
   modelMode?: ModelMode;
   notes?: string;
 }
@@ -133,10 +133,10 @@ router.post(
     }
 
     // Derive outputMode from modelMode before availability gate
-    const derivedOutputMode: 'probabilistic' | 'pseudo-deterministic' =
-      modelMode === 'deterministic' ? 'pseudo-deterministic' : 'probabilistic';
+    const derivedOutputMode: 'probabilistic' | 'deterministic' =
+      modelMode === 'deterministic' ? 'deterministic' : 'probabilistic';
 
-    if (modelMode !== 'probabilistic') {
+    if (modelMode !== 'probabilistic' && modelMode !== 'deterministic') {
       throw new ValidationError('Model mode not available', [
         { field: 'modelMode', message: `'${modelMode}' mode is coming soon and cannot be selected` },
       ]);
@@ -409,7 +409,7 @@ interface ExecuteRequestBody {
   };
   weather: WeatherConfig;
   scenarios?: number;
-  outputMode?: 'probabilistic' | 'pseudo-deterministic';
+  outputMode?: 'probabilistic' | 'deterministic';
 }
 
 /**
@@ -574,7 +574,7 @@ router.post(
       timeRange,
       weatherConfig: body.weather,
       simulationCount: body.scenarios ?? 100,
-      outputMode: body.outputMode === 'pseudo-deterministic' ? 'pseudo-deterministic' : 'probabilistic',
+      outputMode: body.outputMode === 'deterministic' ? 'deterministic' : 'probabilistic',
       confidenceInterval: 1,
       smoothPerimeter: false,
     };

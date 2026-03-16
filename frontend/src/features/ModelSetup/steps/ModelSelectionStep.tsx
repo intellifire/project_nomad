@@ -130,8 +130,8 @@ const modelModes: ModelModeOption[] = [
     name: 'Deterministic',
     icon: 'draw-polygon',
     description:
-      'Run a single scenario to produce daily fire perimeter polygons at a defined confidence threshold.',
-    available: false,
+      'Run a single simulation to produce a deterministic fire boundary prediction. Faster than probabilistic mode.',
+    available: true,
   },
   {
     id: 'long-term-risk',
@@ -179,7 +179,7 @@ export function ModelSelectionStep() {
       if (!modeOption?.available) return;
 
       // Derive outputMode from modelMode
-      const outputMode = modelMode === 'deterministic' ? 'pseudo-deterministic' : 'probabilistic';
+      const outputMode = modelMode === 'deterministic' ? 'deterministic' : 'probabilistic';
 
       setField('model', {
         ...model,

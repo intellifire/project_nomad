@@ -122,7 +122,7 @@ export interface ExecuteModelRequest {
   };
   scenarios?: number;
   /** Output mode - how to post-process results */
-  outputMode?: 'probabilistic' | 'pseudo-deterministic';
+  outputMode?: 'probabilistic' | 'deterministic';
 }
 
 export interface ExecuteModelResponse {
@@ -223,7 +223,7 @@ export interface RunModelRequest {
   };
   scenarios?: number;
   /** Output mode - how to post-process results */
-  outputMode?: 'probabilistic' | 'pseudo-deterministic';
+  outputMode?: 'probabilistic' | 'deterministic';
   /** Model mode - type of fire modeling analysis to perform */
   modelMode?: 'probabilistic' | 'deterministic' | 'long-term-risk';
   /** Optional user-provided notes for this model run */

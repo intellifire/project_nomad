@@ -77,7 +77,7 @@ export interface ModelInputs {
  * Output configuration used for model run
  */
 export interface OutputConfig {
-  outputMode: 'probabilistic' | 'pseudo-deterministic';
+  outputMode: 'probabilistic' | 'deterministic';
   confidenceInterval: number;
   smoothPerimeter: boolean;
 }
@@ -350,7 +350,7 @@ export class ModelResultsService {
             const configContent = fs.readFileSync(configPath, 'utf-8');
             loadedOutputConfig = JSON.parse(configContent) as OutputConfig;
 
-            if (loadedOutputConfig.outputMode === 'pseudo-deterministic') {
+            if (loadedOutputConfig.outputMode === 'deterministic') {
               console.log(`[ModelResultsService] Auto-generating perimeters for ${modelId} at ${loadedOutputConfig.confidenceInterval}% confidence`);
 
               // Check if perimeter outputs already exist

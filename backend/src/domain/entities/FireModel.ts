@@ -52,7 +52,7 @@ export interface FireModelProps {
   readonly userId?: string;
   /** Optional user-provided notes for this model run */
   readonly notes?: string;
-  /** Output mode selected at model creation time (probabilistic, pseudo-deterministic) */
+  /** Output mode selected at model creation time (probabilistic, deterministic) */
   readonly outputMode?: string;
 }
 
@@ -87,7 +87,7 @@ export class FireModel {
   /** Optional user-provided notes for this model run */
   readonly notes?: string;
 
-  /** Output mode selected at model creation time (probabilistic, pseudo-deterministic) */
+  /** Output mode selected at model creation time (probabilistic, deterministic) */
   readonly outputMode?: string;
 
   constructor(props: FireModelProps) {

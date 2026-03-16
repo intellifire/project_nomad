@@ -330,7 +330,7 @@ export function ResultsSummary({
               <div style={statItemStyle}>
                 <div style={statLabelStyle}>Output Mode</div>
                 <div style={statValueStyle}>
-                  {outputConfig.outputMode === 'pseudo-deterministic' ? 'Fire Perimeters' : 'Probability Maps'}
+                  {outputConfig.outputMode === 'deterministic' ? 'Fire Perimeters' : 'Probability Maps'}
                 </div>
               </div>
             </div>
