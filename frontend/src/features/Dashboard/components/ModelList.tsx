@@ -45,7 +45,7 @@ export interface ModelListProps {
  */
 export function ModelList({
   onViewResults,
-  onAddToMap,
+  onAddToMap: _onAddToMap,
   onCreateNew,
   className = '',
 }: ModelListProps) {
@@ -298,7 +298,6 @@ export function ModelList({
               isSelected={selectedModelIds.includes(model.id)}
               onSelect={toggleModelSelection}
               onViewResults={onViewResults}
-              onAddToMap={onAddToMap}
               onDelete={handleDelete}
             />
           ))}
