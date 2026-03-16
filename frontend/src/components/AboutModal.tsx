@@ -69,7 +69,7 @@ export function AboutModal({ onClose }: AboutModalProps) {
           Fire Modeling System
         </p>
         <p style={{ margin: '0 0 20px 0', fontSize: '13px', color: '#64748b' }}>
-          v{version} &middot; MIT License
+          v{version} &middot; AGPL-3.0 License
         </p>
 
         {/* Description */}
