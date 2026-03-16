@@ -242,12 +242,16 @@ export function ExportPanel({
           throw new Error(err.message || `HTTP ${res.status}`);
         }
 
-        // Trigger download from blob
+        // Extract filename from Content-Disposition header
+        const disposition = res.headers.get('Content-Disposition') || '';
+        const filenameMatch = disposition.match(/filename="?([^"]+)"?/);
+        const downloadName = filenameMatch?.[1] || `${(modelName || modelId).replace(/[^a-zA-Z0-9-_]/g, '_')}_export.zip`;
+
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${(modelName || modelId).replace(/[^a-zA-Z0-9-_]/g, '_')}_export.zip`;
+        a.download = downloadName;
         a.click();
         URL.revokeObjectURL(url);
         setExportState('complete');
@@ -364,7 +368,7 @@ export function ExportPanel({
             onClick={handleExport}
             disabled={!canExport || isGenerating}
           >
-            {isGenerating ? 'Generating...' : `Export ${selectedFiles.size} Files`}
+            {isGenerating ? <><i className="fa-solid fa-spinner fa-spin" style={{ marginRight: '8px' }} />Generating...</> : `Export ${selectedFiles.size} Files`}
           </button>
         </>
       )}
