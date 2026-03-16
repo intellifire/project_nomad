@@ -169,7 +169,12 @@ export function ExportPanel({
   const [loading, setLoading] = useState(true);
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [delivery, setDelivery] = useState<DeliveryMethod>('download');
-  const { state, shareUrl, error, generate, download, reset } = useExportGeneration();
+  const [exportState, setExportState] = useState<'idle' | 'generating' | 'complete' | 'error'>('idle');
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+
+  // Keep legacy hook for share link flow
+  const legacyExport = useExportGeneration();
 
   // Fetch manifest on mount
   useEffect(() => {
@@ -215,18 +220,64 @@ export function ExportPanel({
   }, [manifest]);
 
   const handleExport = useCallback(async () => {
-    // Pass selected filenames as items
-    const items = Array.from(selectedFiles).map(filename => ({ resultId: filename }));
-    const exportId = await generate({ modelId, modelName, items }, delivery);
-    if (delivery === 'download' && exportId) {
-      download(exportId);
-    }
-  }, [selectedFiles, modelId, modelName, delivery, generate, download]);
+    setExportState('generating');
+    setExportError(null);
 
-  const canExport = selectedFiles.size > 0 && state === 'idle';
-  const isGenerating = state === 'generating';
-  const isComplete = state === 'complete';
-  const hasError = state === 'error';
+    try {
+      if (delivery === 'download') {
+        // Direct file download via new endpoint
+        const res = await fetch(`${window.location.origin}/api/v1/exports/files`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            modelId,
+            modelName,
+            filenames: Array.from(selectedFiles),
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ message: 'Export failed' }));
+          throw new Error(err.message || `HTTP ${res.status}`);
+        }
+
+        // Trigger download from blob
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${(modelName || modelId).replace(/[^a-zA-Z0-9-_]/g, '_')}_export.zip`;
+        a.click();
+        URL.revokeObjectURL(url);
+        setExportState('complete');
+      } else {
+        // Share link: use legacy export flow (creates bundle then share link)
+        const items = Array.from(selectedFiles).map(filename => ({ resultId: filename }));
+        const exportId = await legacyExport.generate({ modelId, modelName, items }, delivery);
+        if (exportId) {
+          setShareUrl(legacyExport.shareUrl);
+          setExportState('complete');
+        } else {
+          throw new Error(legacyExport.error || 'Failed to create share link');
+        }
+      }
+    } catch (err) {
+      setExportState('error');
+      setExportError(err instanceof Error ? err.message : 'Export failed');
+    }
+  }, [selectedFiles, modelId, modelName, delivery, legacyExport]);
+
+  const reset = useCallback(() => {
+    setExportState('idle');
+    setExportError(null);
+    setShareUrl(null);
+  }, []);
+
+  const canExport = selectedFiles.size > 0 && exportState === 'idle';
+  const isGenerating = exportState === 'generating';
+  const isComplete = exportState === 'complete';
+  const hasError = exportState === 'error';
 
   const renderCategory = (key: 'inputs' | 'aggregated' | 'final', files: ExportFile[]) => {
     if (files.length === 0) return null;
@@ -281,7 +332,7 @@ export function ExportPanel({
         <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>Loading available files...</div>
       )}
 
-      {!loading && (state === 'idle' || state === 'generating') && manifest && (
+      {!loading && (exportState === 'idle' || exportState === 'generating') && manifest && (
         <>
           <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px', flexShrink: 0 }}>
             {selectedFiles.size} of {manifest.totalFiles} files selected
@@ -343,7 +394,7 @@ export function ExportPanel({
 
       {hasError && (
         <>
-          <div style={{ padding: '12px', backgroundColor: '#ffebee', borderRadius: '4px', color: '#c62828', fontSize: '14px' }}>{error || 'Export failed'}</div>
+          <div style={{ padding: '12px', backgroundColor: '#ffebee', borderRadius: '4px', color: '#c62828', fontSize: '14px' }}>{exportError || 'Export failed'}</div>
           <button style={{ ...primaryButtonStyle, marginTop: '12px' }} onClick={reset}>Try Again</button>
         </>
       )}

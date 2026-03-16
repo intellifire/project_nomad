@@ -270,4 +270,81 @@ router.get(
   })
 );
 
+/**
+ * POST /exports/files
+ *
+ * Export raw files from a model's simulation directory as a ZIP.
+ * Accepts filenames (from the export manifest) instead of result IDs.
+ */
+router.post(
+  '/exports/files',
+  asyncHandler(async (req, res) => {
+    const { modelId, modelName, filenames } = req.body;
+
+    if (!modelId || !filenames || !Array.isArray(filenames) || filenames.length === 0) {
+      throw new ValidationError('modelId and filenames array are required');
+    }
+
+    // Resolve sim directory from model results
+    const { getResultRepository, getModelRepository } = await import('../../../infrastructure/database/index.js');
+    const { createFireModelId } = await import('../../../domain/entities/FireModel.js');
+    const { resolveResultFilePath } = await import('../../../infrastructure/firestarr/FireSTARRInputGenerator.js');
+
+    const modelRepo = getModelRepository();
+    const model = await modelRepo.findById(createFireModelId(modelId));
+    if (!model) throw new NotFoundError('Model', modelId);
+
+    const resultRepo = getResultRepository();
+    const results = await resultRepo.findByModelId(createFireModelId(modelId));
+
+    let simDir: string | null = null;
+    for (const result of results) {
+      const filePath = (result.metadata.filePath as string) ?? null;
+      if (filePath) {
+        const { dirname } = await import('path');
+        simDir = dirname(resolveResultFilePath(filePath));
+        break;
+      }
+    }
+
+    if (!simDir) throw new NotFoundError('Simulation directory', modelId);
+
+    const { existsSync } = await import('fs');
+    const { join } = await import('path');
+    const archiver = (await import('archiver')).default;
+
+    // Validate all requested files exist
+    const validFiles: string[] = [];
+    for (const filename of filenames) {
+      // Security: prevent path traversal
+      if (filename.includes('..') || filename.includes('/')) continue;
+      const fullPath = join(simDir, filename);
+      if (existsSync(fullPath)) {
+        validFiles.push(filename);
+      }
+    }
+
+    if (validFiles.length === 0) {
+      throw new ValidationError('No valid files found in simulation directory');
+    }
+
+    // Generate ZIP
+    const safeName = (modelName || modelId).replace(/[^a-zA-Z0-9-_]/g, '_');
+    const zipFilename = `${safeName}_export.zip`;
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${zipFilename}"`);
+
+    const archive = archiver('zip', { zlib: { level: 6 } });
+    archive.pipe(res);
+
+    for (const filename of validFiles) {
+      const fullPath = join(simDir, filename);
+      archive.file(fullPath, { name: filename });
+    }
+
+    await archive.finalize();
+  })
+);
+
 export default router;
