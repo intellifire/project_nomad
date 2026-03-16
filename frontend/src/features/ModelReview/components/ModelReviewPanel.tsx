@@ -63,6 +63,21 @@ export function ModelReviewPanel({
   const isMobile = windowWidth < MOBILE_BREAKPOINT;
   const isTablet = windowWidth >= MOBILE_BREAKPOINT && windowWidth < DESKTOP_BREAKPOINT;
 
+  // Store model metadata for MapCapture to read
+  useEffect(() => {
+    if (results) {
+      localStorage.setItem('nomad_capture_model', JSON.stringify({
+        modelId: results.modelId,
+        modelName: results.modelName,
+        engineType: results.engineType,
+        userId: results.userId,
+        outputMode: results.outputConfig?.outputMode,
+        notes: results.notes,
+      }));
+    }
+    return () => { localStorage.removeItem('nomad_capture_model'); };
+  }, [results]);
+
   // Calculate initial position — viewport-aware
   const [initialX] = useState(() => Math.min(180, Math.max(10, windowWidth - DEFAULT_WIDTH - 20)));
   const [initialY] = useState(() => Math.min(70, Math.max(10, windowHeight - DEFAULT_HEIGHT - 20)));

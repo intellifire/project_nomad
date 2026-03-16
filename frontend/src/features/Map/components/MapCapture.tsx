@@ -14,11 +14,39 @@ import jsPDF from 'jspdf';
 /**
  * Try to get current model info from the page for metadata.
  */
+/** Burn probability color ramp for raster legend in capture */
+const PROB_LEGEND = [
+  { label: '91-100%', color: 'rgb(230, 21, 31)' },
+  { label: '81-90%',  color: 'rgb(235, 51, 38)' },
+  { label: '71-80%',  color: 'rgb(238, 79, 44)' },
+  { label: '61-70%',  color: 'rgb(240, 108, 51)' },
+  { label: '51-60%',  color: 'rgb(242, 137, 56)' },
+  { label: '41-50%',  color: 'rgb(245, 162, 61)' },
+  { label: '31-40%',  color: 'rgb(250, 192, 68)' },
+  { label: '21-30%',  color: 'rgb(252, 223, 75)' },
+  { label: '11-20%',  color: 'rgb(250, 246, 142)' },
+  { label: '1-10%',   color: 'rgb(76, 175, 80)' },
+];
+
 function getModelMetadata(): Record<string, string> {
   const meta: Record<string, string> = {};
-  // Read from localStorage or DOM if available
   const username = localStorage.getItem('nomad_username');
   if (username) meta['User'] = username;
+
+  // Read model info stored by ModelReviewPanel
+  try {
+    const stored = localStorage.getItem('nomad_capture_model');
+    if (stored) {
+      const model = JSON.parse(stored);
+      if (model.modelName) meta['Model'] = model.modelName;
+      if (model.engineType) meta['Engine'] = model.engineType.toUpperCase();
+      if (model.outputMode) meta['Mode'] = model.outputMode === 'deterministic' ? 'Deterministic' : 'Probabilistic';
+      if (model.modelId) meta['Run ID'] = model.modelId;
+      if (model.userId) meta['User'] = model.userId;
+      if (model.notes) meta['Notes'] = model.notes;
+    }
+  } catch { /* no model context */ }
+
   return meta;
 }
 
@@ -69,37 +97,24 @@ export function MapCapture() {
 
     // Step 4: Build legend data from visible layers
     const legendItems: { color: string; label: string }[] = [];
+    let hasRaster = false;
     for (const layer of layerState.layers) {
       if (!layer.visible) continue;
       if (layer.type === 'geojson') {
         const cfg = layer as { fillColor?: string; name: string };
-        legendItems.push({
-          color: cfg.fillColor || '#666',
-          label: layer.name,
-        });
+        legendItems.push({ color: cfg.fillColor || '#666', label: layer.name });
       }
-    }
-
-    // Check for raster legend on the page
-    const rasterLegendEl = document.querySelector('[style*="pointerEvents: none"]') as HTMLElement;
-    let rasterLegendCanvas: HTMLCanvasElement | null = null;
-    if (rasterLegendEl && rasterLegendEl.offsetHeight > 0) {
-      try {
-        rasterLegendCanvas = await html2canvas(rasterLegendEl, {
-          backgroundColor: 'rgba(255,255,255,0.95)',
-          logging: false,
-          useCORS: true,
-          scale: window.devicePixelRatio || 1,
-        });
-      } catch { /* skip */ }
+      if (layer.type === 'raster') hasRaster = true;
     }
 
     // Step 5: Build final canvas with legend panel + metadata strip
     const dpr = window.devicePixelRatio || 1;
     const border = 5;
-    const legendWidth = 220 * dpr;
-    const metaStripHeight = 80 * dpr;
-    const hasLegend = legendItems.length > 0 || rasterLegendCanvas;
+    const legendWidth = 280 * dpr;
+    const meta = getModelMetadata();
+    const metaLines = Object.entries(meta);
+    const metaStripHeight = Math.max(80, 20 + metaLines.length * 18) * dpr;
+    const hasLegend = legendItems.length > 0 || hasRaster;
 
     const finalWidth = compositeCanvas.width + border * 2 + (hasLegend ? legendWidth : 0);
     const finalHeight = compositeCanvas.height + border * 2 + metaStripHeight;
@@ -127,57 +142,74 @@ export function MapCapture() {
       ctx.fillRect(lx, ly, lw, lh);
 
       let yPos = ly + 20 * dpr;
-      const fontSize = 13 * dpr;
+      const fontSize = 12 * dpr;
       const titleFontSize = 14 * dpr;
+      const swatchSize = 14 * dpr;
+      const padding = 10 * dpr;
 
       // Title
       ctx.font = `bold ${titleFontSize}px system-ui, sans-serif`;
       ctx.fillStyle = '#333';
-      ctx.fillText('Legend', lx + 10 * dpr, yPos);
-      yPos += 24 * dpr;
+      ctx.fillText('Legend', lx + padding, yPos);
+      yPos += 22 * dpr;
 
-      // Raster legend image
-      if (rasterLegendCanvas) {
-        const rasterH = Math.min(rasterLegendCanvas.height * (lw - 20 * dpr) / rasterLegendCanvas.width, lh * 0.4);
-        const rasterW = rasterLegendCanvas.width * rasterH / rasterLegendCanvas.height;
-        ctx.drawImage(rasterLegendCanvas, lx + 10 * dpr, yPos, rasterW, rasterH);
-        yPos += rasterH + 16 * dpr;
+      // Burn Probability ramp (when raster layers visible)
+      if (hasRaster) {
+        ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
+        ctx.fillStyle = '#555';
+        ctx.fillText('Burn Probability', lx + padding, yPos);
+        yPos += 16 * dpr;
+
+        ctx.font = `${11 * dpr}px system-ui, sans-serif`;
+        for (const entry of PROB_LEGEND) {
+          ctx.fillStyle = entry.color;
+          ctx.fillRect(lx + padding, yPos - swatchSize + 3 * dpr, swatchSize, swatchSize);
+          ctx.fillStyle = '#333';
+          ctx.fillText(entry.label, lx + padding + swatchSize + 6 * dpr, yPos);
+          yPos += 16 * dpr;
+        }
+        yPos += 8 * dpr;
       }
 
-      // Vector legend items
-      ctx.font = `${fontSize}px system-ui, sans-serif`;
+      // Vector legend items (perimeters, ignition)
+      if (legendItems.length > 0) {
+        ctx.font = `bold ${fontSize}px system-ui, sans-serif`;
+        ctx.fillStyle = '#555';
+        ctx.fillText('Layers', lx + padding, yPos);
+        yPos += 16 * dpr;
+
+        ctx.font = `${fontSize}px system-ui, sans-serif`;
+      }
       for (const item of legendItems) {
-        // Color swatch
         ctx.fillStyle = item.color;
         ctx.globalAlpha = 0.5;
-        ctx.fillRect(lx + 10 * dpr, yPos - 10 * dpr, 16 * dpr, 16 * dpr);
+        ctx.fillRect(lx + padding, yPos - swatchSize + 3 * dpr, swatchSize, swatchSize);
         ctx.globalAlpha = 1.0;
         ctx.strokeStyle = item.color;
         ctx.lineWidth = 2 * dpr;
-        ctx.strokeRect(lx + 10 * dpr, yPos - 10 * dpr, 16 * dpr, 16 * dpr);
+        ctx.strokeRect(lx + padding, yPos - swatchSize + 3 * dpr, swatchSize, swatchSize);
 
-        // Label (truncate if too long)
         ctx.fillStyle = '#333';
-        const maxLabelWidth = lw - 40 * dpr;
+        const maxLabelWidth = lw - padding * 2 - swatchSize - 8 * dpr;
         let label = item.label;
         while (ctx.measureText(label).width > maxLabelWidth && label.length > 10) {
           label = label.slice(0, -4) + '...';
         }
-        ctx.fillText(label, lx + 32 * dpr, yPos);
-        yPos += 22 * dpr;
+        ctx.fillText(label, lx + padding + swatchSize + 6 * dpr, yPos);
+        yPos += 18 * dpr;
 
         if (yPos > ly + lh - 20 * dpr) break;
       }
     }
 
     // Step 6: Metadata strip at bottom
-    const meta = getModelMetadata();
     const zoom = map.getZoom();
     const scale = 40075016.686 / (Math.pow(2, zoom) * 256);
     const timestamp = new Date().toLocaleString();
 
     const stripY = compositeCanvas.height + border * 2;
-    const stripFontSize = Math.max(11, Math.min(14, finalWidth / 100)) * dpr;
+    const stripFontSize = Math.max(11, Math.min(13, finalWidth / 120)) * dpr;
+    const lineHeight = stripFontSize * 1.5;
 
     ctx.fillStyle = '#1f2937';
     ctx.fillRect(0, stripY, finalWidth, metaStripHeight);
@@ -185,16 +217,35 @@ export function MapCapture() {
     ctx.font = `${stripFontSize}px system-ui, sans-serif`;
     ctx.fillStyle = '#e5e7eb';
 
+    // Line 1: Scale + timestamp
     const line1 = `Scale 1:${Math.round(scale).toLocaleString()}  •  Project Nomad  •  ${timestamp}`;
-    const line2Parts: string[] = [];
-    if (meta['User']) line2Parts.push(`User: ${meta['User']}`);
-    line2Parts.push('Engine: FireSTARR');
-    const line2 = line2Parts.join('  •  ');
+    let lineY = stripY + lineHeight;
+    ctx.fillText(line1, border + 8 * dpr, lineY);
 
-    ctx.fillText(line1, border + 8 * dpr, stripY + stripFontSize * 1.8);
-    if (line2) {
-      ctx.fillStyle = '#9ca3af';
-      ctx.fillText(line2, border + 8 * dpr, stripY + stripFontSize * 3.4);
+    // Line 2+: Model metadata
+    ctx.fillStyle = '#9ca3af';
+    ctx.font = `${stripFontSize * 0.9}px system-ui, sans-serif`;
+    const metaStr = metaLines
+      .filter(([k]) => k !== 'Notes')
+      .map(([k, v]) => `${k}: ${v}`)
+      .join('  •  ');
+    if (metaStr) {
+      lineY += lineHeight;
+      ctx.fillText(metaStr, border + 8 * dpr, lineY);
+    }
+
+    // Notes on separate line if present
+    const notes = meta['Notes'];
+    if (notes) {
+      lineY += lineHeight;
+      ctx.font = `italic ${stripFontSize * 0.85}px system-ui, sans-serif`;
+      ctx.fillStyle = '#6b7280';
+      const maxNotesWidth = finalWidth - 20 * dpr;
+      let noteText = notes;
+      while (ctx.measureText(noteText).width > maxNotesWidth && noteText.length > 20) {
+        noteText = noteText.slice(0, -4) + '...';
+      }
+      ctx.fillText(noteText, border + 8 * dpr, lineY);
     }
 
     // Step 7: Generate outputs
