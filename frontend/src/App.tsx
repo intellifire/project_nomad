@@ -30,6 +30,7 @@ import type { ModelResultsResponse } from './features/ModelReview/types';
 import { OpenNomadProvider, createDefaultAdapter, useOpenNomad } from './openNomad';
 import { DashboardContainer } from './features/Dashboard';
 import { SettingsModal } from './features/Settings/SettingsModal';
+import { AboutModal } from './components/AboutModal';
 
 /**
  * Calculate bounding box from GeoJSON
@@ -116,6 +117,7 @@ function AppContent() {
   const [reviewModelId, setReviewModelId] = useState<string | null>(null);
   const [showDashboard, setShowDashboard] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
   const { deleteAll } = useDraw();
   const { map, isLoaded } = useMap();
   const { addGeoJSONLayer, addRasterLayer } = useLayers();
@@ -488,6 +490,13 @@ function AppContent() {
       {!showWizard && (
         <div style={headerContainerStyle}>
           <button
+            style={{ ...headerButtonStyle, backgroundColor: '#1f2937', padding: '12px 16px' }}
+            onClick={() => setShowAbout(true)}
+            title="About Project Nomad"
+          >
+            <img src="/nomad-logo.png" alt="About" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />
+          </button>
+          <button
             style={{ ...headerButtonStyle, backgroundColor: '#ff6b35' }}
             onClick={handleNewModel}
           >
@@ -511,6 +520,9 @@ function AppContent() {
       )}
 
       {/* Settings Modal */}
+      {showAbout && (
+        <AboutModal onClose={() => setShowAbout(false)} />
+      )}
       {showSettings && (
         <SettingsModal onClose={() => setShowSettings(false)} />
       )}
