@@ -314,8 +314,25 @@ function OutputListItem({
           onClick={onDownload}
           title="Download file"
         >
-          {output.format === 'geotiff' ? 'Download Raster' : 'Download'}
+          {output.type === 'perimeter' ? 'Download Perimeter' : output.format === 'geotiff' ? 'Download Raster' : 'Download'}
         </button>
+
+        {/* Add perimeter to map (deterministic mode GeoJSON outputs) */}
+        {output.type === 'perimeter' && output.format === 'geojson' && (
+          <button
+            style={{
+              ...buttonStyle,
+              backgroundColor: '#e65100',
+              borderColor: '#e65100',
+              color: 'white',
+            }}
+            onClick={() => _onAddToMap()}
+            title="Add fire boundary to map"
+          >
+            <i className="fa-solid fa-draw-polygon" style={{ marginRight: '4px' }} />
+            Add Perimeter to Map
+          </button>
+        )}
 
         {/* Contours button hidden until contour support is fixed
         {canPreview && (
