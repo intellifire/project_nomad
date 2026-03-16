@@ -362,7 +362,8 @@ export class ModelResultsService {
                 const perimeterResult = await extractDeterministicPerimeters(simDir);
 
                 // Perimeter colors — progression from orange→red→crimson (no yellow)
-                const PERIMETER_COLORS = ['#e65100', '#d32f2f', '#880e4f', '#4a148c', '#1a237e', '#004d40'];
+                // Colorblind-friendly perimeter colors — high contrast, distinct hues
+                const PERIMETER_COLORS = ['#e65100', '#1565c0', '#2e7d32', '#6a1b9a', '#c62828', '#00838f'];
 
                 if (perimeterResult.success && perimeterResult.value.perimeters.length > 0) {
                   perimeterResult.value.perimeters.forEach((perimeter, index) => {
