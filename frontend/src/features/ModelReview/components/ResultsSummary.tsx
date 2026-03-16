@@ -104,9 +104,11 @@ export function ResultsSummary({
   const ignition = inputs?.ignition;
   const statusInfo = getStatusInfo(summary.status);
   const isInProgress = ['queued', 'initializing', 'running'].includes(summary.status);
-  const simLabel = summary.simulationCount
-    ? `Probabilistic (${summary.simulationCount} iterations)`
-    : 'Probabilistic';
+  const simLabel = outputConfig?.outputMode === 'deterministic'
+    ? 'Deterministic'
+    : summary.simulationCount
+      ? `Probabilistic (${summary.simulationCount} iterations)`
+      : 'Probabilistic';
 
   const containerStyle: React.CSSProperties = {
     backgroundColor: 'white',
@@ -330,7 +332,7 @@ export function ResultsSummary({
               <div style={statItemStyle}>
                 <div style={statLabelStyle}>Output Mode</div>
                 <div style={statValueStyle}>
-                  {outputConfig.outputMode === 'deterministic' ? 'Fire Perimeters' : 'Probability Maps'}
+                  {outputConfig.outputMode === 'deterministic' ? 'Deterministic' : 'Probability Maps'}
                 </div>
               </div>
             </div>

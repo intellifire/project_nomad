@@ -94,6 +94,23 @@ export async function extractDeterministicPerimeters(
     return Result.fail(new NotFoundError('Working directory', workingDir));
   }
 
+  // Derive year from weather.csv if not provided
+  if (!startYear) {
+    try {
+      const weatherPath = join(workingDir, 'weather.csv');
+      if (existsSync(weatherPath)) {
+        const firstLines = readFileSync(weatherPath, 'utf-8').split('\n').slice(0, 2);
+        if (firstLines[1]) {
+          const dateMatch = firstLines[1].match(/(\d{4})-\d{2}-\d{2}/);
+          if (dateMatch) {
+            startYear = parseInt(dateMatch[1], 10);
+            console.log(`[ArrivalTimeExtractor] Derived year ${startYear} from weather.csv`);
+          }
+        }
+      }
+    } catch { /* use fallback */ }
+  }
+
   if (!isGDALAvailable()) {
     return Result.fail(
       new ValidationError('GDAL tools not available', [

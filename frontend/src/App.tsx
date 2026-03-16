@@ -337,6 +337,20 @@ function AppContent() {
         visible: true,
         zIndex: layerCounter.current,
       });
+    } else if (output.type === 'perimeter' && output.metadata?.color) {
+      // Deterministic perimeter: use assigned color from backend
+      const color = output.metadata.color as string;
+      addGeoJSONLayer({
+        id: layerId,
+        name: layerName,
+        data: featureCollection,
+        fillColor: color,
+        strokeColor: color,
+        opacity: 1.0,
+        fillOpacity: 0.3,
+        visible: true,
+        zIndex: layerCounter.current,
+      });
     } else {
       // Model output: use colors from feature properties (quantile gradient)
       // Include resultId and metadata for layer persistence/reload
@@ -345,8 +359,8 @@ function AppContent() {
         name: layerName,
         data: featureCollection,
         useFeatureColors: true,  // Use 'color' property from each feature
-        fillColor: '#FFD700',    // Fallback if no color property
-        strokeColor: '#FFD700',
+        fillColor: '#e65100',    // Fallback: orange (not yellow)
+        strokeColor: '#e65100',
         opacity: 1.0,
         fillOpacity: 0.5,
         visible: true,

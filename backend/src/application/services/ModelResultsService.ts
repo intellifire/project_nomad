@@ -361,9 +361,13 @@ export class ModelResultsService {
                 const { extractDeterministicPerimeters } = await import('../../infrastructure/firestarr/index.js');
                 const perimeterResult = await extractDeterministicPerimeters(simDir);
 
+                // Perimeter colors — progression from orange→red→crimson (no yellow)
+                const PERIMETER_COLORS = ['#e65100', '#d32f2f', '#880e4f', '#4a148c', '#1a237e', '#004d40'];
+
                 if (perimeterResult.success && perimeterResult.value.perimeters.length > 0) {
-                  for (const perimeter of perimeterResult.value.perimeters) {
+                  perimeterResult.value.perimeters.forEach((perimeter, index) => {
                     const dateLabel = perimeter.date || `Day ${perimeter.julianDay}`;
+                    const color = PERIMETER_COLORS[index % PERIMETER_COLORS.length];
                     outputs.push({
                       id: `perimeter-day${perimeter.julianDay}-${modelId}`,
                       type: 'perimeter' as OutputType,
@@ -377,10 +381,11 @@ export class ModelResultsService {
                         day: perimeter.julianDay,
                         date: perimeter.date,
                         deterministic: true,
+                        color,
                         geojson: perimeter.geojson,
                       },
                     });
-                  }
+                  });
                   console.log(`[ModelResultsService] Added ${perimeterResult.value.perimeters.length} deterministic perimeter outputs`);
                 } else if (!perimeterResult.success) {
                   console.warn(`[ModelResultsService] Failed to extract deterministic perimeters: ${perimeterResult.error.message}`);
@@ -393,6 +398,11 @@ export class ModelResultsService {
         }
       }
 
+      // In deterministic mode, only show perimeter outputs (not probability rasters)
+      const filteredOutputs = loadedOutputConfig?.outputMode === 'deterministic'
+        ? outputs.filter(o => o.type === 'perimeter')
+        : outputs;
+
       return Result.ok({
         modelId,
         modelName,
@@ -401,7 +411,7 @@ export class ModelResultsService {
         notes: notes ?? null,
         executionSummary,
         inputs,
-        outputs,
+        outputs: filteredOutputs,
         outputConfig: loadedOutputConfig,
       });
     } catch (error) {
