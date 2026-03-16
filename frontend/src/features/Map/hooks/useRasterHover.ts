@@ -57,7 +57,9 @@ function rgbDistance(
  * Setting the threshold to 130 keeps midpoint interpolation working while
  * firmly rejecting background colours (black ~255, white ~224, blue ~360).
  */
-const MAX_RAMP_DISTANCE = 45;
+// At 100% opacity (required for hover), raster colors are unblended
+// so we can use a moderate threshold
+const MAX_RAMP_DISTANCE = 70;
 
 /**
  * Map an RGB pixel from a FireSTARR raster tile to its burn-probability
@@ -127,7 +129,7 @@ export function colorToPercentage(
 interface UseRasterHoverProps {
   /** Mapbox map instance */
   map: mapboxgl.Map | null;
-  /** Whether any raster layer is currently visible */
+  /** Whether any raster layer has hover enabled (visible + 100% opacity) */
   hasVisibleRasterLayer: boolean;
 }
 
@@ -174,36 +176,8 @@ export function useRasterHover({
 
     const popup = popupRef.current;
 
-    // Get raster layer IDs from the map style to check cursor overlap
-    function isOverRasterLayer(_point: mapboxgl.Point): boolean {
-      // Check if any of our raster sources have tiles at this location
-      const style = map!.getStyle();
-      if (!style?.layers) return false;
-      for (const layer of style.layers) {
-        if (layer.type === 'raster' && layer.source && typeof layer.source === 'string') {
-          // Check if this is one of our layers (not basemap)
-          const source = map!.getSource(layer.source);
-          if (source && source.type === 'raster' && 'tiles' in (source as any).serialize()) {
-            // Our raster tile layers have /api/v1/ in their tile URLs
-            const serialized = (source as any).serialize();
-            const tiles = serialized.tiles || [];
-            if (tiles.some((t: string) => t.includes('/api/v1/'))) {
-              return true;
-            }
-          }
-        }
-      }
-      return false;
-    }
-
     function handleMouseMove(e: mapboxgl.MapMouseEvent) {
       if (!gl) return;
-
-      // Only show tooltip when cursor is over our raster layers
-      if (!isOverRasterLayer(e.point)) {
-        popup.remove();
-        return;
-      }
 
       const pixel = new Uint8Array(4);
       const x = e.point.x;

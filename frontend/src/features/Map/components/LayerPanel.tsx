@@ -49,7 +49,7 @@ export function LayerPanel({
   expanded: _initialExpanded = true,
   className = '',
 }: LayerPanelProps) {
-  const { state, setOpacity, toggleVisibility, removeLayer, selectLayer, reorderLayer, addRasterLayer } = useLayers();
+  const { state, setOpacity, toggleVisibility, removeLayer, selectLayer, reorderLayer, addRasterLayer, updateLayer } = useLayers();
   const cfs = useCFSLayers();
 
   // Responsive — collapse on mobile
@@ -487,6 +487,13 @@ export function LayerPanel({
             onOpacityChange={(opacity) => setOpacity(layer.id, opacity)}
             onRemove={() => removeLayer(layer.id)}
             onSelect={() => selectLayer(layer.id)}
+            onToggleHover={layer.type === 'raster' ? () => {
+              const newHover = !layer.hoverEnabled;
+              updateLayer(layer.id, {
+                hoverEnabled: newHover,
+                opacity: newHover ? 1.0 : 0.8,
+              });
+            } : undefined}
             onDragStart={(e) => handleDragStart(e, layer.id)}
             onDragOver={(e) => handleDragOver(e, layer.id)}
             onDrop={(e) => handleDrop(e, layer.id)}

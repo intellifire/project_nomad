@@ -37,6 +37,8 @@ export interface BaseLayerConfig {
   groupId?: string;
   /** Breaks mode for probability layers (static/dynamic) */
   breaksMode?: BreaksMode;
+  /** Enable hover value display (raster only, requires 100% opacity) */
+  hoverEnabled?: boolean;
   /** Result ID for persistence/reload (references backend model result) */
   resultId?: string;
   /** Output type for persistence (e.g., 'probability', 'intensity') */

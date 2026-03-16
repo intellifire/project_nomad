@@ -644,9 +644,9 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     state.layers.forEach((layer) => removeLayer(layer.id));
   }, [state.layers, removeLayer]);
 
-  // Raster hover tooltip — WebGL pixel sampling for burn probability
+  // Raster hover tooltip — only active when a layer has hoverEnabled (100% opacity)
   const hasVisibleRasterLayer = state.layers.some(
-    (layer) => layer.type === 'raster' && layer.visible,
+    (layer) => layer.type === 'raster' && layer.visible && layer.hoverEnabled,
   );
   useRasterHover({ map, hasVisibleRasterLayer });
 
