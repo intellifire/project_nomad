@@ -22,12 +22,22 @@ interface LegendEntry {
   color: string;
 }
 
+/**
+ * FireSTARR probability colour ramp — matches the discrete 10-class
+ * symbology from the tile server (ContourGenerator.ts color table).
+ * Source: FireSTARR QML probability_processing_7pct.qml
+ */
 const LEGEND_ENTRIES: LegendEntry[] = [
-  { label: '90%', color: 'rgb(255, 0, 0)' },
-  { label: '75%', color: 'rgb(255, 165, 0)' },
-  { label: '50%', color: 'rgb(255, 255, 0)' },
-  { label: '25%', color: 'rgb(173, 255, 47)' },
-  { label: '10%', color: 'rgb(0, 255, 0)' },
+  { label: '91-100%', color: 'rgb(230, 21, 31)' },
+  { label: '81-90%',  color: 'rgb(235, 51, 38)' },
+  { label: '71-80%',  color: 'rgb(238, 79, 44)' },
+  { label: '61-70%',  color: 'rgb(240, 108, 51)' },
+  { label: '51-60%',  color: 'rgb(242, 137, 56)' },
+  { label: '41-50%',  color: 'rgb(245, 162, 61)' },
+  { label: '31-40%',  color: 'rgb(250, 192, 68)' },
+  { label: '21-30%',  color: 'rgb(252, 223, 75)' },
+  { label: '11-20%',  color: 'rgb(250, 246, 142)' },
+  { label: '1-10%',   color: 'rgb(0, 177, 242)' },
 ];
 
 // =============================================================================
