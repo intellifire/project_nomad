@@ -466,7 +466,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
 
               popupRef.current
                 .setLngLat(e.lngLat)
-                .setHTML(`<strong>Burn Probability:</strong> ${label}`)
+                .setHTML(`<div style="color:#333;font-size:13px;padding:2px 4px"><strong>Burn Probability:</strong> ${label}</div>`)
                 .addTo(map);
             }
           }

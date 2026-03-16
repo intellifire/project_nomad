@@ -20,12 +20,21 @@ import mapboxgl from 'mapbox-gl';
  * Each entry is [percentage, r, g, b].
  * The array is sorted from highest to lowest probability.
  */
+/**
+ * FireSTARR 10-class discrete colour ramp — matches ContourGenerator.ts
+ * and RasterLegend.tsx. Each entry is [midpoint%, R, G, B].
+ */
 const RAMP: ReadonlyArray<readonly [number, number, number, number]> = [
-  [90, 255, 0, 0],     // red
-  [75, 255, 165, 0],   // orange
-  [50, 255, 255, 0],   // yellow
-  [25, 173, 255, 47],  // yellow-green
-  [10, 0, 255, 0],     // green
+  [95, 230, 21, 31],    // 91-100% crimson
+  [85, 235, 51, 38],    // 81-90%  dark red
+  [75, 238, 79, 44],    // 71-80%  red
+  [65, 240, 108, 51],   // 61-70%  red-orange
+  [55, 242, 137, 56],   // 51-60%  dark orange
+  [45, 245, 162, 61],   // 41-50%  orange
+  [35, 250, 192, 68],   // 31-40%  light orange
+  [25, 252, 223, 75],   // 21-30%  yellow
+  [15, 250, 246, 142],  // 11-20%  light yellow
+  [5,  76, 175, 80],    // 1-10%   green
 ] as const;
 
 /** Euclidean distance between two RGB colours. */
@@ -175,7 +184,7 @@ export function useRasterHover({
       if (pct !== null) {
         popup
           .setLngLat(e.lngLat)
-          .setHTML(`<strong>Burn Probability:</strong> ${pct}%`)
+          .setHTML(`<div style="color:#333;font-size:13px;padding:2px 4px"><strong>Burn Probability:</strong> ${pct}%</div>`)
           .addTo(map!);
       } else {
         popup.remove();
