@@ -103,7 +103,7 @@ export function AboutModal({ onClose }: AboutModalProps) {
         {/* Contributors */}
         <div style={{ borderTop: '1px solid #374151', paddingTop: '16px', marginBottom: '20px' }}>
           <h3 style={{ margin: '0 0 12px 0', fontSize: '13px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Contributors
+            Source Code Contributors
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
             {CONTRIBUTORS.map((c) => (
