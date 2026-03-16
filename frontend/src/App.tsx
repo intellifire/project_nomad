@@ -6,9 +6,6 @@ import {
   MapContainer,
   DrawingToolbar,
   LayerPanel,
-  BasemapSwitcher,
-  MeasurementTool,
-  TerrainControl,
   MapInfoControl,
   MapContextMenu,
   RasterLegend,
@@ -585,10 +582,7 @@ function AppContent() {
       {!showWizard && (
         <>
           <DrawingToolbar position="top-left" />
-          <MeasurementTool position="bottom-left" />
           <LayerPanel position="top-right" />
-          <BasemapSwitcher position="bottom-right" />
-          <TerrainControl position="top-right" />
           <MapInfoControl />
           <MapContextMenu />
           <RasterLegend />

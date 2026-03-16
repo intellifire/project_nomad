@@ -1,7 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useLayers } from '../context/LayerContext';
+import { useMap } from '../context/MapContext';
 import { LayerItem } from './LayerItem';
 import { useCFSLayers } from '../hooks/useCFSLayers';
+import { useTerrain } from '../hooks/useTerrain';
+import { BasemapStyle, BASEMAP_STYLES } from '../types';
 
 /**
  * Props for LayerPanel component
@@ -58,6 +61,24 @@ export function LayerPanel({
   }, []);
   const isMobile = windowWidth < 480;
   const [collapsed, setCollapsed] = useState(isMobile);
+
+  // Basemap state
+  const { map } = useMap();
+  const BASEMAP_STORAGE_KEY = 'nomad-basemap-style';
+  const [activeBasemap, setActiveBasemap] = useState<BasemapStyle>(() => {
+    const stored = localStorage.getItem(BASEMAP_STORAGE_KEY);
+    return (stored as BasemapStyle) || 'outdoors';
+  });
+
+  const handleBasemapChange = useCallback((style: BasemapStyle) => {
+    if (!map || style === activeBasemap) return;
+    map.setStyle(BASEMAP_STYLES[style].url);
+    setActiveBasemap(style);
+    localStorage.setItem(BASEMAP_STORAGE_KEY, style);
+  }, [map, activeBasemap]);
+
+  // Terrain state
+  const terrain = useTerrain();
 
   // Drag and drop state
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -327,6 +348,104 @@ export function LayerPanel({
     </div>
   ) : null;
 
+  /** Map Settings section — basemap + terrain */
+  const sectionHeaderBase: React.CSSProperties = {
+    padding: '6px 8px',
+    fontWeight: 600,
+    fontSize: '12px',
+    color: '#555',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.05em',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+  };
+
+  const basemapOptionStyle = (isActive: boolean): React.CSSProperties => ({
+    padding: '6px 8px',
+    fontSize: '13px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    backgroundColor: isActive ? '#e3f2fd' : 'transparent',
+    borderRadius: '4px',
+  });
+
+  const MapSettingsSection = (
+    <div style={{ borderTop: '1px solid #eee', padding: '8px' }}>
+      {/* Basemap */}
+      <div style={sectionHeaderBase}>
+        <i className="fa-solid fa-map" style={{ color: '#1976d2' }} />
+        Basemap
+      </div>
+      {(Object.entries(BASEMAP_STYLES) as [BasemapStyle, { name: string; url: string }][]).map(([key, config]) => (
+        <div
+          key={key}
+          style={basemapOptionStyle(key === activeBasemap)}
+          onClick={() => handleBasemapChange(key)}
+        >
+          <i className={`fa-solid fa-${key === 'streets' ? 'road' : key === 'satellite' ? 'satellite' : 'mountain'}`}
+            style={{ width: '16px', textAlign: 'center', color: '#666' }} />
+          <span>{config.name}</span>
+          {key === activeBasemap && <i className="fa-solid fa-check" style={{ marginLeft: 'auto', color: '#1976d2', fontSize: '12px' }} />}
+        </div>
+      ))}
+
+      {/* 3D Terrain */}
+      {terrain.isSupported && (
+        <>
+          <div style={{ ...sectionHeaderBase, marginTop: '8px' }}>
+            <i className="fa-solid fa-mountain" style={{ color: '#4caf50' }} />
+            3D Terrain
+            <div
+              style={{
+                marginLeft: 'auto',
+                width: '36px',
+                height: '18px',
+                backgroundColor: terrain.config.enabled ? '#4caf50' : '#ccc',
+                borderRadius: '9px',
+                cursor: 'pointer',
+                position: 'relative',
+                transition: 'background-color 0.2s',
+              }}
+              onClick={terrain.toggle}
+            >
+              <div style={{
+                position: 'absolute',
+                top: '2px',
+                left: terrain.config.enabled ? '20px' : '2px',
+                width: '14px',
+                height: '14px',
+                backgroundColor: 'white',
+                borderRadius: '50%',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                transition: 'left 0.2s',
+              }} />
+            </div>
+          </div>
+          {terrain.config.enabled && (
+            <div style={{ padding: '4px 8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#666' }}>
+                <span>Exaggeration</span>
+                <span>{terrain.config.exaggeration.toFixed(1)}x</span>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="3"
+                step="0.1"
+                value={terrain.config.exaggeration}
+                onChange={(e) => terrain.setExaggeration(Number(e.target.value))}
+                style={{ width: '100%', height: '4px', cursor: 'pointer' }}
+              />
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+
   if (state.layers.length === 0 && !cfs.available) {
     return (
       <div className={`layer-panel ${className}`} style={containerStyle}>
@@ -334,6 +453,7 @@ export function LayerPanel({
         <div style={emptyStyle}>
           No layers added yet
         </div>
+        {MapSettingsSection}
       </div>
     );
   }
@@ -346,6 +466,7 @@ export function LayerPanel({
           No layers added yet
         </div>
         {CFSSection}
+        {MapSettingsSection}
       </div>
     );
   }
@@ -373,6 +494,7 @@ export function LayerPanel({
         ))}
       </div>
       {CFSSection}
+      {MapSettingsSection}
     </div>
   );
 }
