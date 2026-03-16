@@ -4,10 +4,84 @@ Auto-generated from git history. Do not edit manually.
 
 ---
 
-## v0.3.18
+## v0.4.0
+
+### 2026-03-16
+
+- [`f43b7ff`](https://github.com/WISE-Developers/project_nomad/commit/f43b7ffadd9008bde40fb6c610f36a488feac09b) Merge pull request #214 from WISE-Developers/dev — *Franco Nogarin, 16:17*
+- [`1f99244`](https://github.com/WISE-Developers/project_nomad/commit/1f99244c501c0aedb1d66147c159cabdcae148b5) chore: dev build 26 [skip ci] — *github-actions[bot], 22:09*
+- [`803884a`](https://github.com/WISE-Developers/project_nomad/commit/803884ac8773f1652e26171573f2f7796d22be4f) Fix Report Issue link to use issue type chooser — *Franco Nogarin, 16:08*
+- [`4c74031`](https://github.com/WISE-Developers/project_nomad/commit/4c74031aaada9d2268696ed53704b825705c1855) chore: dev build 25 [skip ci] — *github-actions[bot], 22:05*
+- [`0bf21d1`](https://github.com/WISE-Developers/project_nomad/commit/0bf21d1299bc5b435ff3bea4abb36adf9d154579) About modal: add Report Issue link with bug icon — *Franco Nogarin, 16:04*
+- [`8a76594`](https://github.com/WISE-Developers/project_nomad/commit/8a765941f3d09f60556eff8a534f720e1452e590) chore: dev build 24 [skip ci] — *github-actions[bot], 21:52*
+- [`cb781d1`](https://github.com/WISE-Developers/project_nomad/commit/cb781d12477e2e02a920b82e5d5ae30e07d41114) About button: use logo image directly, no button wrapper — *Franco Nogarin, 15:52*
+- [`d8a5c72`](https://github.com/WISE-Developers/project_nomad/commit/d8a5c727e10c7c511efce3610299717baec476a0) chore: dev build 23 [skip ci] — *github-actions[bot], 21:49*
+- [`66e5b71`](https://github.com/WISE-Developers/project_nomad/commit/66e5b71ba72a2103e8548d49d335981982adb028) Fix license: AGPL-3.0, not MIT (matches LICENSE file) — *Franco Nogarin, 15:49*
+- [`c935f31`](https://github.com/WISE-Developers/project_nomad/commit/c935f31a9ae6e30cbdc5ca0af870d1c32b180c1d) chore: dev build 22 [skip ci] — *github-actions[bot], 21:46*
+- [`20af998`](https://github.com/WISE-Developers/project_nomad/commit/20af9983563cd8bb2bfe803af61e49973bf38664) Raster hover: show discrete band label matching actual color, no interpolation — *Franco Nogarin, 15:46*
+- [`7ef7cb0`](https://github.com/WISE-Developers/project_nomad/commit/7ef7cb03f3e35446ad019ce12839a41828dc901c) chore: dev build 21 [skip ci] — *github-actions[bot], 21:43*
+- [`607086f`](https://github.com/WISE-Developers/project_nomad/commit/607086f9dda19fadc4172290c58191e060c40406) Update contributors heading to Source Code Contributors — *Franco Nogarin, 15:43*
+- [`cd0b1d3`](https://github.com/WISE-Developers/project_nomad/commit/cd0b1d3bed618c55c0dbc3cb7327422561e8d4ee) chore: dev build 20 [skip ci] — *github-actions[bot], 21:40*
+- [`59d3782`](https://github.com/WISE-Developers/project_nomad/commit/59d3782101787d71d48d94b54a5c14e4264374ef) Add About modal with app info, GitHub links, and contributors — *Franco Nogarin, 15:39*
+- [`6f8bfd8`](https://github.com/WISE-Developers/project_nomad/commit/6f8bfd8b0a1cf7035902fa2f76310039f999ff17) chore: dev build 19 [skip ci] — *github-actions[bot], 21:28*
+- [`192fdaa`](https://github.com/WISE-Developers/project_nomad/commit/192fdaa9f11e5dae88a237d4a5ba450abbc8e619) Raster hover: checkbox per layer, 100% opacity required, slider locked when enabled — *Franco Nogarin, 15:28*
+- [`793ce95`](https://github.com/WISE-Developers/project_nomad/commit/793ce95e53e3725baac90aa4faee4858bb81f46d) chore: dev build 18 [skip ci] — *github-actions[bot], 21:13*
+- [`53a8133`](https://github.com/WISE-Developers/project_nomad/commit/53a81338c51a651d7867fcf639de1b3b2ec1ee9f) Fix hover: tighter color matching, reject black/white basemap pixels — *Franco Nogarin, 15:13*
+- [`c75118e`](https://github.com/WISE-Developers/project_nomad/commit/c75118e7e1426c40b807bd5db611e32c9b53692f) chore: dev build 17 [skip ci] — *github-actions[bot], 21:03*
+- [`a3d2ba7`](https://github.com/WISE-Developers/project_nomad/commit/a3d2ba76ce63dee6529cc3a2ea5a544916b64557) Fix hover: reject basemap pixels via alpha check, tighten color distance — *Franco Nogarin, 15:03*
+- [`c371fc7`](https://github.com/WISE-Developers/project_nomad/commit/c371fc762930b5db8b49cd78a4073c70bb8975e2) chore: dev build 16 [skip ci] — *github-actions[bot], 20:52*
+- [`99550f0`](https://github.com/WISE-Developers/project_nomad/commit/99550f03510a5b56cb3b0e37b984fe9bb418b15f) Map capture: word-wrap legend labels, persist model metadata across panel close — *Franco Nogarin, 14:51*
+- [`c06d0cb`](https://github.com/WISE-Developers/project_nomad/commit/c06d0cb6fded8e77ffef708e40ec6cc45018b805) chore: dev build 15 [skip ci] — *github-actions[bot], 20:45*
+- [`0ef15c6`](https://github.com/WISE-Developers/project_nomad/commit/0ef15c60df7d7ed34068fe01fa26a97195422f37) Fix raster hover: correct color ramp matching, darker tooltip text — *Franco Nogarin, 14:45*
+- [`5c36c01`](https://github.com/WISE-Developers/project_nomad/commit/5c36c0186cdfdd266a6bd055a23b5d377ec62b88) chore: dev build 14 [skip ci] — *github-actions[bot], 19:42*
+- [`24feb7c`](https://github.com/WISE-Developers/project_nomad/commit/24feb7cd290aa542334e24da9513e3482cf2ec5f) Map capture: raster legend, full model metadata, wider legend panel (#192) — *Franco Nogarin, 13:42*
+- [`35d2e93`](https://github.com/WISE-Developers/project_nomad/commit/35d2e93086ba94903fa362fbdf66d34ff6158e0d) chore: dev build 13 [skip ci] — *github-actions[bot], 19:33*
+- [`61e1074`](https://github.com/WISE-Developers/project_nomad/commit/61e1074efb377aee3a0d5b7427c5cd5095a7ca42) Replace blue with green for 1-10% probability band — avoids water confusion — *Franco Nogarin, 13:33*
+- [`a2593b1`](https://github.com/WISE-Developers/project_nomad/commit/a2593b14e748e6e3e33eae8ba1232fb5e43e3a83) chore: dev build 12 [skip ci] — *github-actions[bot], 19:28*
+- [`0ac437b`](https://github.com/WISE-Developers/project_nomad/commit/0ac437b6e39ce9a9560f7595f5f8e4c3083d58e0) Fix raster legend to match FireSTARR QML 10-class discrete color ramp — *Franco Nogarin, 13:28*
+- [`7fcf710`](https://github.com/WISE-Developers/project_nomad/commit/7fcf710daef8598a511313e70c12a6cd326293e3) chore: dev build 11 [skip ci] — *github-actions[bot], 19:19*
+- [`ea23b8f`](https://github.com/WISE-Developers/project_nomad/commit/ea23b8f0298f1161c20dbbf966d77b23c274c4fd) Map capture: legend panel, colorblind perimeter colors, metadata, fix print (#192) — *Franco Nogarin, 13:19*
+- [`6e08022`](https://github.com/WISE-Developers/project_nomad/commit/6e0802252651b2ea2b7a06762aae32a1dbd69b36) chore: dev build 10 [skip ci] — *github-actions[bot], 19:02*
+- [`d6d0b58`](https://github.com/WISE-Developers/project_nomad/commit/d6d0b58936947c60257aafa9eb20b673c21a7fda) Add label to map capture button (#192) — *Franco Nogarin, 13:01*
+- [`45e56db`](https://github.com/WISE-Developers/project_nomad/commit/45e56dbe6052a208c6ca30834796f46faa783c09) chore: dev build 9 [skip ci] — *github-actions[bot], 18:52*
+- [`73f4c64`](https://github.com/WISE-Developers/project_nomad/commit/73f4c64b1c313277c8ce5b5097be7b8947485642) Add map capture: screenshot to PNG/PDF/print with metadata strip (#192) — *Franco Nogarin, 12:52*
+- [`aa31411`](https://github.com/WISE-Developers/project_nomad/commit/aa314115cfbc83885b41e92ee47b2f8ebb4d1d93) chore: dev build 8 [skip ci] — *github-actions[bot], 18:40*
+- [`6f389de`](https://github.com/WISE-Developers/project_nomad/commit/6f389de68c11e82f0469e5aaa744718e335368e3) Set minimum duration to 1 day, default 3 days, step by day (#189) — *Franco Nogarin, 12:40*
+- [`c3ab085`](https://github.com/WISE-Developers/project_nomad/commit/c3ab08516b06bb10502cecbae741e910a9be12fc) chore: dev build 7 [skip ci] — *github-actions[bot], 18:30*
+- [`8dfb470`](https://github.com/WISE-Developers/project_nomad/commit/8dfb470b40912dfef1a7daa840a0d5b4e8e0cf24) Hide Drafts and Active Jobs tabs, hide tab bar when single tab (#212) — *Franco Nogarin, 12:29*
+- [`df9b2ab`](https://github.com/WISE-Developers/project_nomad/commit/df9b2ab4149e1370fdb4b44bda34e8d5210fb1db) chore: dev build 6 [skip ci] — *github-actions[bot], 18:26*
+- [`379c934`](https://github.com/WISE-Developers/project_nomad/commit/379c934477a876070361baed1aee002fbf62ba9c) Fix export filename from backend header, add spinner to generating button (#213) — *Franco Nogarin, 12:18*
+- [`b09e2eb`](https://github.com/WISE-Developers/project_nomad/commit/b09e2eba026b984b9c0521239d03431748daa036) Remove non-functional Add to Map button from Dashboard model cards — *Franco Nogarin, 12:13*
+- [`e1255ef`](https://github.com/WISE-Developers/project_nomad/commit/e1255ef34e8ee68261e70758e308e33ca4ab66c5) Export ZIP: metadata.txt, log file, mode+username in filename (#213) — *Franco Nogarin, 12:10*
+- [`8f6450c`](https://github.com/WISE-Developers/project_nomad/commit/8f6450c5c73efb4b8fb533bf994c9548d6c02805) Skip aggregated results in export manifest for deterministic mode (#213) — *Franco Nogarin, 12:03*
+- [`75edbd8`](https://github.com/WISE-Developers/project_nomad/commit/75edbd829535e64d87923ba06cee5d5819695009) File-based ZIP export from sim directory (#213) — *Franco Nogarin, 11:54*
+- [`310f22c`](https://github.com/WISE-Developers/project_nomad/commit/310f22c091c792a4f87d1bf7d1297d2e90969f3f) Update share link button label to show expiry (#213) — *Franco Nogarin, 11:47*
+- [`ed44e18`](https://github.com/WISE-Developers/project_nomad/commit/ed44e186aebb53942b12838241bcc2116a313546) Export All: categorized manifest with inputs, aggregated, and final outputs (#213) — *Franco Nogarin, 11:36*
+- [`1b4d369`](https://github.com/WISE-Developers/project_nomad/commit/1b4d3693f266be7a1a84129dd4aaf23e4594d45b) Fix deterministic results: correct mode badge, hide rasters, fix dates, perimeter colors (#151) — *Franco Nogarin, 11:17*
+- [`4cc0893`](https://github.com/WISE-Developers/project_nomad/commit/4cc089374857d10da0b379c4529ab98f0bee5f83) Add arrival-time extractor and deterministic perimeter display (#151 Phase 3+4) — *Franco Nogarin, 10:53*
+- [`44a74fa`](https://github.com/WISE-Developers/project_nomad/commit/44a74fade0ba0d9457f4b8d533c77b31bbb2d9a2) Remove pseudo-deterministic, enable deterministic mode, add --deterministic flag (#151 Phase 1+2) — *Franco Nogarin, 10:45*
+- [`999d84a`](https://github.com/WISE-Developers/project_nomad/commit/999d84a4d3499a349b3a55c43c9c95da39a75bf3) chore: dev build 5 [skip ci] — *github-actions[bot], 15:04*
+- [`281dc76`](https://github.com/WISE-Developers/project_nomad/commit/281dc76fe44c0a41a6624846187a07637fa3df9d) Fix layer reorder not syncing to MapBox map (regression) — *Franco Nogarin, 09:04*
+- [`7b22bf6`](https://github.com/WISE-Developers/project_nomad/commit/7b22bf6832bf5b3c0d9bbbc8afd93393598cb906) chore: dev build 4 [skip ci] — *github-actions[bot], 15:00*
+- [`81bd073`](https://github.com/WISE-Developers/project_nomad/commit/81bd07370c80e2a745f45e34c0a8830f679155ed) Fix light text color in LayerPanel basemap options (#186) — *Franco Nogarin, 08:59*
+- [`8ca2d24`](https://github.com/WISE-Developers/project_nomad/commit/8ca2d2422684d8a6682bcdd97e4ccde4afed6551) chore: dev build 3 [skip ci] — *github-actions[bot], 14:53*
+- [`6f19241`](https://github.com/WISE-Developers/project_nomad/commit/6f19241171b79194d0bd5f4ae085666a6059a24d) Consolidate map tools: merge MeasurementTool into DrawingToolbar (#187), merge BasemapSwitcher+TerrainControl into LayerPanel (#186) — *Franco Nogarin, 08:53*
+- [`94b5e75`](https://github.com/WISE-Developers/project_nomad/commit/94b5e758a3b15689e17689b7fc84c01a19e31260) chore: dev build 2 [skip ci] — *github-actions[bot], 14:12*
+- [`8d97a82`](https://github.com/WISE-Developers/project_nomad/commit/8d97a82fc08a1005ee52126464785923e7d5c910) Replace stochastic with probabilistic in all UI text (#191) — *Franco Nogarin, 08:11*
+- [`c21d790`](https://github.com/WISE-Developers/project_nomad/commit/c21d79065244295d7cd0e9d528c617a17b83f96b) chore: dev build 1 [skip ci] — *github-actions[bot], 14:04*
+- [`1b63987`](https://github.com/WISE-Developers/project_nomad/commit/1b63987c8a11a48926686660c4ea6d4554b2c8b5) Move raster legend left to avoid right-edge clipping (#129) — *Franco Nogarin, 07:43*
+- [`532d279`](https://github.com/WISE-Developers/project_nomad/commit/532d279bd453e618fdbc4f65c7c33c2b416d80ff) Bump desktop breakpoint to 1100px — iPad landscape gets side panel (#129) — *Franco Nogarin, 07:03*
 
 ### 2026-03-15
 
+- [`2d60cf8`](https://github.com/WISE-Developers/project_nomad/commit/2d60cf830fd661ee06df6d5f99a5f4260ae9d2ec) Side panels dock LEFT, raster legend moves to RIGHT (#129) — *Franco Nogarin, 10:01*
+- [`5ee7157`](https://github.com/WISE-Developers/project_nomad/commit/5ee71579a6442ff5e954ec0a8b1406e9431dd623) Three-mode responsive: phone=fullscreen, tablet=side panel, desktop=Rnd (#129) — *Franco Nogarin, 09:47*
+- [`9cb7912`](https://github.com/WISE-Developers/project_nomad/commit/9cb7912863519c9177a609e900bf3aa75cd02c26) Responsive Model Results internals — wrapping layout, compact grid (#129) — *Franco Nogarin, 08:25*
+- [`b452154`](https://github.com/WISE-Developers/project_nomad/commit/b45215484c8c3ff692ae87bbaf1b0ba6dd674ff6) Fix close buttons blocked by drag handles, reduce tablet panel sizes (#129) — *Franco Nogarin, 08:12*
+- [`dae41b9`](https://github.com/WISE-Developers/project_nomad/commit/dae41b975ced027ae84d2bfd6fd716fb04c1630e) Full-app responsive design for mobile and tablet (#129) — *Franco Nogarin, 07:25*
+- [`1e71878`](https://github.com/WISE-Developers/project_nomad/commit/1e71878a08f66ed27b93698c62ae4b540edb5693) Responsive wizard for tablet and mobile (#129) — *Franco Nogarin, 07:09*
+- [`522d042`](https://github.com/WISE-Developers/project_nomad/commit/522d042601d036c23cd241dd7ad2c7156dcf8584) chore: reset dev build counter after v0.3.18 [skip ci] — *github-actions[bot], 12:34*
+- [`debbed1`](https://github.com/WISE-Developers/project_nomad/commit/debbed16c2900c9696d56330d6cd561c0ef04b29) chore: release v0.3.18 [skip ci] — *github-actions[bot], 12:33*
 - [`0889d2c`](https://github.com/WISE-Developers/project_nomad/commit/0889d2c37ca05e2d3102562122615bc7b8c94d2d) Merge pull request #211 from WISE-Developers/dev — *Franco Nogarin, 06:33*
 - [`65a2506`](https://github.com/WISE-Developers/project_nomad/commit/65a250644ba6cb4e7ade7dc977e157f4e8a31f6b) chore: dev build 1 [skip ci] — *github-actions[bot], 12:33*
 - [`981b2e8`](https://github.com/WISE-Developers/project_nomad/commit/981b2e864827066fab3a8e5fb2683cd96622af3c) Merge branch 'feature/oauth-social-login' into dev — *Franco Nogarin, 06:32*
