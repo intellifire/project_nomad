@@ -98,6 +98,15 @@ export function AboutModal({ onClose }: AboutModalProps) {
             <i className="fa-solid fa-clock-rotate-left" style={{ marginRight: '6px' }} />
             Changelog
           </a>
+          <a
+            href="https://github.com/WISE-Developers/project_nomad/issues/new?template=bug_report.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#60a5fa', fontSize: '13px', textDecoration: 'none' }}
+          >
+            <i className="fa-solid fa-bug" style={{ marginRight: '6px' }} />
+            Report Issue
+          </a>
         </div>
 
         {/* Contributors */}
