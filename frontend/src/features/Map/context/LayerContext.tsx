@@ -579,9 +579,36 @@ export function LayerProvider({ children }: { children: ReactNode }) {
       layers.splice(newIndex, 0, layer);
 
       const updated = layers.map((l, i) => ({ ...l, zIndex: i }));
+
+      // Sync order on the MapBox map
+      if (map) {
+        // Move layers in order — last in array renders on top
+        for (let i = 1; i < updated.length; i++) {
+          const layerConfig = updated[i];
+          // Each layer may have sub-layers (fill, line, circle for GeoJSON, or just id for raster)
+          const suffixes = layerConfig.type === 'raster' ? [''] : ['-fill', '-line', '-circle'];
+          const moveId = `${layerConfig.id}${suffixes[0]}`;
+          try {
+            if (map.getLayer(moveId)) {
+              // moveLayer without beforeId moves to top; we move each in sequence
+              map.moveLayer(moveId);
+              // Also move other sub-layers
+              for (let s = 1; s < suffixes.length; s++) {
+                const subId = `${layerConfig.id}${suffixes[s]}`;
+                if (map.getLayer(subId)) {
+                  map.moveLayer(subId);
+                }
+              }
+            }
+          } catch {
+            // Layer may not exist on map yet
+          }
+        }
+      }
+
       return { ...prev, layers: updated };
     });
-  }, []);
+  }, [map]);
 
   const addGroup = useCallback((group: LayerGroup) => {
     setState((prev) => ({
