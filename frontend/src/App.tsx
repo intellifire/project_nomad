@@ -489,13 +489,19 @@ function AppContent() {
       {/* Header buttons */}
       {!showWizard && (
         <div style={headerContainerStyle}>
-          <button
-            style={{ ...headerButtonStyle, backgroundColor: '#1f2937', padding: '12px 16px' }}
-            onClick={() => setShowAbout(true)}
+          <img
+            src="/nomad-logo.png"
+            alt="About Project Nomad"
             title="About Project Nomad"
-          >
-            <img src="/nomad-logo.png" alt="About" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />
-          </button>
+            onClick={() => setShowAbout(true)}
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+            }}
+          />
           <button
             style={{ ...headerButtonStyle, backgroundColor: '#ff6b35' }}
             onClick={handleNewModel}
