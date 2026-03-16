@@ -37,7 +37,7 @@ const LEGEND_ENTRIES: LegendEntry[] = [
 const containerStyle: React.CSSProperties = {
   position: 'absolute',
   bottom: '40px',
-  right: '10px',
+  right: '180px',
   backgroundColor: 'rgba(255, 255, 255, 0.85)',
   borderRadius: '4px',
   padding: '8px 12px',
