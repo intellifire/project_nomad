@@ -57,7 +57,7 @@ function rgbDistance(
  * Setting the threshold to 130 keeps midpoint interpolation working while
  * firmly rejecting background colours (black ~255, white ~224, blue ~360).
  */
-const MAX_RAMP_DISTANCE = 80;
+const MAX_RAMP_DISTANCE = 45;
 
 /**
  * Map an RGB pixel from a FireSTARR raster tile to its burn-probability
@@ -84,10 +84,11 @@ export function colorToPercentage(
   // Fully transparent — no data
   if (a === 0) return null;
 
-  // Raster tiles render at alpha ~200 (set in ContourGenerator color table).
-  // Basemap pixels render at alpha 255. Reject fully opaque pixels — they're
-  // from the basemap, not our probability overlay.
-  if (a !== undefined && a > 220) return null;
+  // Reject very dark pixels (basemap shadows, labels)
+  if (r < 20 && g < 20 && b < 20) return null;
+  // Reject very bright pixels (white areas, clouds)
+  if (r > 240 && g > 240 && b > 240) return null;
+
 
   // Find the two closest anchor points
   const distances = RAMP.map(([pct, ar, ag, ab]) => ({
@@ -173,8 +174,36 @@ export function useRasterHover({
 
     const popup = popupRef.current;
 
+    // Get raster layer IDs from the map style to check cursor overlap
+    function isOverRasterLayer(_point: mapboxgl.Point): boolean {
+      // Check if any of our raster sources have tiles at this location
+      const style = map!.getStyle();
+      if (!style?.layers) return false;
+      for (const layer of style.layers) {
+        if (layer.type === 'raster' && layer.source && typeof layer.source === 'string') {
+          // Check if this is one of our layers (not basemap)
+          const source = map!.getSource(layer.source);
+          if (source && source.type === 'raster' && 'tiles' in (source as any).serialize()) {
+            // Our raster tile layers have /api/v1/ in their tile URLs
+            const serialized = (source as any).serialize();
+            const tiles = serialized.tiles || [];
+            if (tiles.some((t: string) => t.includes('/api/v1/'))) {
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
+
     function handleMouseMove(e: mapboxgl.MapMouseEvent) {
       if (!gl) return;
+
+      // Only show tooltip when cursor is over our raster layers
+      if (!isOverRasterLayer(e.point)) {
+        popup.remove();
+        return;
+      }
 
       const pixel = new Uint8Array(4);
       const x = e.point.x;
