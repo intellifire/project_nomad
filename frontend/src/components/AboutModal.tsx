@@ -99,7 +99,7 @@ export function AboutModal({ onClose }: AboutModalProps) {
             Changelog
           </a>
           <a
-            href="https://github.com/WISE-Developers/project_nomad/issues/new?template=bug_report.md"
+            href="https://github.com/WISE-Developers/project_nomad/issues/new/choose"
             target="_blank"
             rel="noopener noreferrer"
             style={{ color: '#60a5fa', fontSize: '13px', textDecoration: 'none' }}
