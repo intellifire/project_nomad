@@ -164,6 +164,9 @@ function TabNavigation({ activeTab, onTabChange, jobCount = 0 }: TabNavigationPr
     borderBottom: `2px solid ${theme['--nomad-primary']}`,
   };
 
+  // Hide tab bar when only one tab is visible
+  if (visibleTabs.length <= 1) return null;
+
   return (
     <SlotRenderer name="toolbar">
       <div

@@ -139,8 +139,8 @@ export const DEFAULT_LABELS: ResolvedNomadLabels = {
 export const DEFAULT_FEATURES: Required<NomadFeatures> = {
   export: true,
   compare: true,
-  drafts: true,
-  jobs: true,
+  drafts: false,
+  jobs: false,
   delete: true,
   addToMap: true,
   search: true,
