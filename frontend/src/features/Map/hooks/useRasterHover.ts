@@ -57,7 +57,7 @@ function rgbDistance(
  * Setting the threshold to 130 keeps midpoint interpolation working while
  * firmly rejecting background colours (black ~255, white ~224, blue ~360).
  */
-const MAX_RAMP_DISTANCE = 130;
+const MAX_RAMP_DISTANCE = 80;
 
 /**
  * Map an RGB pixel from a FireSTARR raster tile to its burn-probability
@@ -83,6 +83,11 @@ export function colorToPercentage(
 ): number | null {
   // Fully transparent — no data
   if (a === 0) return null;
+
+  // Raster tiles render at alpha ~200 (set in ContourGenerator color table).
+  // Basemap pixels render at alpha 255. Reject fully opaque pixels — they're
+  // from the basemap, not our probability overlay.
+  if (a !== undefined && a > 220) return null;
 
   // Find the two closest anchor points
   const distances = RAMP.map(([pct, ar, ag, ab]) => ({
