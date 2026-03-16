@@ -131,6 +131,17 @@ router.get(
       return;
     }
 
+    // Read output config to determine mode
+    let outputMode: 'probabilistic' | 'deterministic' = 'probabilistic';
+    const configPath = `${simDir}/output-config.json`;
+    if (existsSync(configPath)) {
+      try {
+        const { readFileSync } = await import('fs');
+        const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+        if (config.outputMode === 'deterministic') outputMode = 'deterministic';
+      } catch { /* use default */ }
+    }
+
     // Scan directory
     const allFiles = readdirSync(simDir);
 
@@ -162,11 +173,14 @@ router.get(
       }
     }
 
+    // Deterministic mode: aggregated results are probabilistic artifacts, skip them
+    const filteredAggregated = outputMode === 'deterministic' ? [] : aggregated;
+
     res.json({
       modelId: id,
-      simDir,
-      categories: { inputs, aggregated, final },
-      totalFiles: inputs.length + aggregated.length + final.length,
+      outputMode,
+      categories: { inputs, aggregated: filteredAggregated, final },
+      totalFiles: inputs.length + filteredAggregated.length + final.length,
     });
   })
 );
