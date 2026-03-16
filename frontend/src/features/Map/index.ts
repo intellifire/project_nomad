@@ -15,6 +15,7 @@ export { TerrainControl } from './components/TerrainControl';
 export { MapInfoControl } from './components/MapInfoControl';
 export { MapContextMenu } from './components/MapContextMenu';
 export { RasterLegend } from './components/RasterLegend';
+export { MapCapture } from './components/MapCapture';
 
 // Context
 export { MapProvider, useMap } from './context/MapContext';

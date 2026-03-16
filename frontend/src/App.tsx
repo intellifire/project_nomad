@@ -9,6 +9,7 @@ import {
   MapInfoControl,
   MapContextMenu,
   RasterLegend,
+  MapCapture,
   useDraw,
   useMap,
   useLayers,
@@ -498,6 +499,7 @@ function AppContent() {
           >
             <i className="fa-solid fa-clipboard-list" style={{ marginRight: '8px' }} />Dashboard
           </button>
+          <MapCapture />
           <button
             style={{ ...headerButtonStyle, backgroundColor: '#4b5563', padding: '12px 16px' }}
             onClick={() => setShowSettings(true)}
