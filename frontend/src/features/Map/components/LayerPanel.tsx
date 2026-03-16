@@ -364,6 +364,7 @@ export function LayerPanel({
   const basemapOptionStyle = (isActive: boolean): React.CSSProperties => ({
     padding: '6px 8px',
     fontSize: '13px',
+    color: '#333',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
