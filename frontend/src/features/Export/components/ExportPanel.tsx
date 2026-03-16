@@ -304,7 +304,7 @@ export function ExportPanel({
               style={delivery === 'share' ? toggleButtonActiveStyle : toggleButtonStyle}
               onClick={() => setDelivery('share')}
             >
-              <i className="fa-solid fa-link" style={{ marginRight: '8px' }} />Link
+              <i className="fa-solid fa-link" style={{ marginRight: '8px' }} />Link (24hr)
             </button>
           </div>
 
