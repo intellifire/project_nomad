@@ -120,7 +120,7 @@ const quickSelectActiveStyle: React.CSSProperties = {
   color: 'white',
 };
 
-const DURATION_PRESETS = [6, 12, 24, 48, 72, 168];
+const DURATION_PRESETS = [24, 48, 72, 120, 168];
 
 // Fire season typically starts in April in Canada
 const FIRE_SEASON_START_MONTH = 3; // April (0-indexed)
@@ -417,14 +417,15 @@ export function TemporalStep() {
         <div style={rangeContainerStyle}>
           <input
             type="range"
-            min={1}
+            min={24}
             max={720}
+            step={24}
             value={temporal.durationHours}
             onChange={(e) => handleDurationChange(parseInt(e.target.value, 10))}
             style={rangeStyle}
           />
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#888' }}>
-            <span>1 hour</span>
+            <span>1 day</span>
             <span>30 days</span>
           </div>
         </div>

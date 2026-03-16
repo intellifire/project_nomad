@@ -250,7 +250,7 @@ export const DEFAULT_MODEL_SETUP_DATA: ModelSetupData = {
   temporal: {
     startDate: '',
     startTime: '12:00',
-    durationHours: 24,
+    durationHours: 72,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     isForecast: false,
   },
