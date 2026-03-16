@@ -205,7 +205,7 @@ export function MapCapture() {
         whiteSpace: 'nowrap' as const,
       }}
     >
-      <i className="fa-solid fa-camera" />
+      <i className="fa-solid fa-camera" style={{ marginRight: '8px' }} />Save Map
     </button>
   );
 }
