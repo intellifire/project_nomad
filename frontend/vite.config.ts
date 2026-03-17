@@ -1,7 +1,6 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import { execSync } from 'child_process';
 
 export default defineConfig(({ mode }) => {
   // Load env from project root (parent directory)
@@ -13,22 +12,9 @@ export default defineConfig(({ mode }) => {
   const apiPort = env.VITE_API_PORT || '3001';
   const apiTarget = `http://localhost:${apiPort}`;
 
-  // Inject git branch at build time
-  // Prefers GIT_BRANCH env var (set by Docker build arg) over execSync (unavailable in containers)
-  const gitBranch = process.env.GIT_BRANCH || (() => {
-    try {
-      return execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8' }).trim();
-    } catch {
-      return 'unknown';
-    }
-  })();
-
   return {
     plugins: [react()],
     envDir,
-    define: {
-      __GIT_BRANCH__: JSON.stringify(gitBranch),
-    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
