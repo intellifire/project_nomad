@@ -48,26 +48,17 @@ export function JobStatusToast({
   const logScrollRef = useRef<HTMLDivElement>(null);
   const wasAtBottomRef = useRef(true);
 
-  if (!status) return null;
-
-  const isTerminal = ['completed', 'failed', 'cancelled'].includes(status.status);
-  const color = statusColors[status.status];
-  const currentWidth = nerdMode ? NERD_WIDTH : TOAST_WIDTH;
-
-  const filteredLines = logFilter
-    ? logLines.filter((line) => line.toLowerCase().includes(logFilter.toLowerCase()))
-    : logLines;
+  const isTerminal = status ? ['completed', 'failed', 'cancelled'].includes(status.status) : false;
 
   // Auto-scroll to bottom during execution (not after completion)
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     const el = logScrollRef.current;
-    if (!el || !nerdMode) return;
+    if (!el || !nerdMode || !status) return;
 
     if (!isTerminal && wasAtBottomRef.current) {
       el.scrollTop = el.scrollHeight;
     }
-  }, [logLines, nerdMode, isTerminal]);
+  }, [logLines, nerdMode, isTerminal, status]);
 
   // Track whether user has scrolled away from bottom
   const handleLogScroll = () => {
@@ -76,6 +67,15 @@ export function JobStatusToast({
     const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 20;
     wasAtBottomRef.current = atBottom;
   };
+
+  if (!status) return null;
+
+  const color = statusColors[status.status];
+  const currentWidth = nerdMode ? NERD_WIDTH : TOAST_WIDTH;
+
+  const filteredLines = logFilter
+    ? logLines.filter((line) => line.toLowerCase().includes(logFilter.toLowerCase()))
+    : logLines;
 
   return (
     <Rnd
