@@ -14,7 +14,6 @@ import {
   EngineCapabilities,
 } from '../../application/interfaces/IFireModelingEngine.js';
 import { IContainerExecutor, OutputCallback } from '../../application/interfaces/IContainerExecutor.js';
-import { getJobLogEmitter } from '../services/JobLogEmitter.js';
 import { IInputGenerator, InputGenerationResult } from '../../application/interfaces/IInputGenerator.js';
 import { IOutputParser, ParsedOutput } from '../../application/interfaces/IOutputParser.js';
 import {
@@ -191,9 +190,6 @@ export class FireSTARREngine implements IFireModelingEngine {
       } else {
         logger.info(line, 'FireSTARR:output');
       }
-
-      // Emit to SSE subscribers for live log streaming
-      getJobLogEmitter().emit(modelId, line);
     };
 
     // Build environment variables for native binary execution

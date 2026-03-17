@@ -12,7 +12,6 @@ import type { JobStatus } from '../hooks/useJobNotifications';
 
 interface JobStatusToastProps {
   status: JobStatus | null;
-  logLines?: string[];
   onDismiss?: () => void;
   onViewResults?: () => void;
 }
@@ -39,18 +38,68 @@ const TOAST_MARGIN = 20;
 
 export function JobStatusToast({
   status,
-  logLines = [],
   onDismiss,
   onViewResults,
 }: JobStatusToastProps): React.ReactElement | null {
   const [nerdMode, setNerdMode] = useState(false);
+  const [logLines, setLogLines] = useState<string[]>([]);
   const [logFilter, setLogFilter] = useState('');
   const logScrollRef = useRef<HTMLDivElement>(null);
   const wasAtBottomRef = useRef(true);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   const isTerminal = status ? ['completed', 'failed', 'cancelled'].includes(status.status) : false;
+  const jobId = status?.id ?? null;
 
-  // Auto-scroll to bottom during execution (not after completion)
+  // Connect/disconnect log stream based on nerd mode
+  useEffect(() => {
+    if (!nerdMode || !jobId) {
+      // Close connection when nerd mode is off
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+      return;
+    }
+
+    // Open log stream
+    const es = new EventSource(`/api/v1/jobs/${jobId}/log-stream`);
+    eventSourceRef.current = es;
+
+    es.addEventListener('log', (event) => {
+      try {
+        const data = JSON.parse(event.data) as { line: string };
+        setLogLines((prev) => [...prev, data.line]);
+      } catch {
+        // Ignore malformed events
+      }
+    });
+
+    es.addEventListener('complete', () => {
+      es.close();
+      eventSourceRef.current = null;
+    });
+
+    es.onerror = () => {
+      // SSE auto-reconnects; don't close manually
+    };
+
+    return () => {
+      es.close();
+      eventSourceRef.current = null;
+    };
+  }, [nerdMode, jobId]);
+
+  // Clear log lines when status clears (toast dismissed)
+  useEffect(() => {
+    if (!status) {
+      setLogLines([]);
+      setNerdMode(false);
+      setLogFilter('');
+    }
+  }, [status]);
+
+  // Auto-scroll to bottom during execution
   useEffect(() => {
     const el = logScrollRef.current;
     if (!el || !nerdMode || !status) return;
