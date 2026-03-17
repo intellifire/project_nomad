@@ -8,7 +8,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import type { Feature, FeatureCollection, Point, Polygon } from 'geojson';
+import type { Feature, FeatureCollection, Point, LineString, Polygon } from 'geojson';
 import { Result } from '../common/index.js';
 import { DomainError, NotFoundError } from '../../domain/errors/index.js';
 import {
@@ -56,8 +56,8 @@ export interface OutputItem {
  * Ignition geometry for display on map
  */
 export interface IgnitionGeometry {
-  type: 'point' | 'polygon';
-  coordinates: [number, number] | [number, number][][];
+  type: 'point' | 'polygon' | 'linestring';
+  coordinates: [number, number] | [number, number][] | [number, number][][];
   geojson: Feature | FeatureCollection;
 }
 
@@ -314,6 +314,13 @@ export class ModelResultsService {
               const coords = (feature.geometry as Point).coordinates as [number, number];
               inputs.ignition = {
                 type: 'point',
+                coordinates: coords,
+                geojson,
+              };
+            } else if (geomType === 'LineString') {
+              const coords = (feature.geometry as LineString).coordinates as [number, number][];
+              inputs.ignition = {
+                type: 'linestring',
                 coordinates: coords,
                 geojson,
               };
