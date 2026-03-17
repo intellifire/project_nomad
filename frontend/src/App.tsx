@@ -126,6 +126,7 @@ function AppContent() {
   // Job notifications
   const {
     status: jobStatus,
+    logLines,
     watchJob,
     stopWatching,
     requestPermission,
@@ -481,6 +482,7 @@ function AppContent() {
       {/* Job status toast */}
       <JobStatusToast
         status={jobStatus}
+        logLines={logLines}
         onDismiss={handleDismissToast}
         onViewResults={handleViewResults}
       />

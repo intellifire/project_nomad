@@ -46,6 +46,8 @@ interface UseJobNotificationsResult {
   isConnected: boolean;
   /** Any connection error */
   error: string | null;
+  /** Live log lines from FireSTARR engine */
+  logLines: string[];
   /** Start watching a job */
   watchJob: (jobId: string) => void;
   /** Stop watching the current job */
@@ -88,6 +90,7 @@ export function useJobNotifications(
   const [status, setStatus] = useState<JobStatus | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [logLines, setLogLines] = useState<string[]>([]);
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>(
     typeof Notification !== 'undefined' ? Notification.permission : 'default'
   );
@@ -180,6 +183,7 @@ export function useJobNotifications(
     setIsConnected(false);
     setStatus(null); // Clear status so toast disappears
     setError(null);
+    setLogLines([]); // Clear log lines with toast
   }, []);
 
   // Start watching a job
@@ -249,6 +253,16 @@ export function useJobNotifications(
         }
       };
 
+      // Listen for log lines from FireSTARR engine
+      eventSource.addEventListener('log', (event) => {
+        try {
+          const data = JSON.parse(event.data) as { line: string };
+          setLogLines((prev) => [...prev, data.line]);
+        } catch {
+          // Ignore malformed log events
+        }
+      });
+
       eventSource.addEventListener('complete', () => {
         setIsConnected(false);
         eventSource.close();
@@ -287,6 +301,7 @@ export function useJobNotifications(
     status,
     isConnected,
     error,
+    logLines,
     watchJob,
     stopWatching,
     requestPermission,

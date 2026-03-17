@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { asyncHandler } from '../../middleware/index.js';
 import { createJobId } from '../../../domain/entities/index.js';
 import { getJobQueue } from '../../../infrastructure/services/index.js';
+import { getJobLogEmitter } from '../../../infrastructure/services/JobLogEmitter.js';
 
 const router = Router();
 
@@ -57,8 +58,29 @@ router.get(
 
     sendStatus(initialResult.value);
 
+    // Subscribe to log lines for this model
+    const logEmitter = getJobLogEmitter();
+    const modelId = initialResult.value.modelId;
+
+    const sendLogLine = (line: string) => {
+      try {
+        res.write(`event: log\ndata: ${JSON.stringify({ line })}\n\n`);
+      } catch {
+        // Connection may be closed
+      }
+    };
+
+    // Replay buffered log lines (for late-connecting clients)
+    for (const line of logEmitter.getBuffer(modelId)) {
+      sendLogLine(line);
+    }
+
+    // Subscribe to new log lines
+    const unsubscribeLogs = logEmitter.subscribe(modelId, sendLogLine);
+
     // If job is already terminal, close connection
     if (initialResult.value.isTerminal()) {
+      unsubscribeLogs();
       res.write('event: complete\ndata: {}\n\n');
       res.end();
       return;
@@ -69,6 +91,7 @@ router.get(
       const result = await jobQueue.getJob(jobId);
       if (!result.success) {
         clearInterval(pollInterval);
+        unsubscribeLogs();
         res.write(`event: error\ndata: ${JSON.stringify({ error: 'Job not found' })}\n\n`);
         res.end();
         return;
@@ -80,6 +103,7 @@ router.get(
       // Check if job is terminal
       if (job.isTerminal()) {
         clearInterval(pollInterval);
+        unsubscribeLogs();
         res.write('event: complete\ndata: {}\n\n');
         res.end();
       }
@@ -88,6 +112,7 @@ router.get(
     // Clean up on client disconnect
     req.on('close', () => {
       clearInterval(pollInterval);
+      unsubscribeLogs();
     });
   })
 );
