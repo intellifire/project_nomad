@@ -49,21 +49,70 @@ export interface RasterizeResult {
 }
 
 /**
- * Converts polygon coordinates to WKT format.
+ * Converts geometry coordinates to WKT format.
+ * Supports Polygon and LineString geometries.
  */
 function geometryToWKT(geometry: SpatialGeometry): string {
-  if (geometry.type !== GeometryType.Polygon) {
-    throw new Error(`Expected Polygon geometry, got ${geometry.type}`);
+  if (geometry.type === GeometryType.Polygon) {
+    const coords = geometry.coordinates as number[][][];
+    const rings = coords.map((ring) =>
+      ring.map(([x, y]) => `${x} ${y}`).join(', ')
+    );
+    return `POLYGON((${rings.join('), (')}))`;
   }
 
-  const coords = geometry.coordinates as number[][][];
+  if (geometry.type === GeometryType.LineString) {
+    const coords = geometry.coordinates as number[][];
+    const points = coords.map(([x, y]) => `${x} ${y}`).join(', ');
+    return `LINESTRING(${points})`;
+  }
 
-  // WKT format: POLYGON((x1 y1, x2 y2, ...))
-  const rings = coords.map((ring) =>
-    ring.map(([x, y]) => `${x} ${y}`).join(', ')
-  );
+  throw new Error(`Expected Polygon or LineString geometry, got ${geometry.type}`);
+}
 
-  return `POLYGON((${rings.join('), (')}))`;
+/**
+ * Rasterizes a line segment into grid cells using Bresenham-style traversal.
+ * Returns the set of [col, row] pairs that the line passes through.
+ */
+function rasterizeLine(
+  lineCoords: number[][],
+  minX: number,
+  maxY: number,
+  pixelWidth: number,
+  pixelHeight: number,
+  width: number,
+  height: number
+): Set<string> {
+  const cells = new Set<string>();
+
+  for (let i = 0; i < lineCoords.length - 1; i++) {
+    const x0 = lineCoords[i][0];
+    const y0 = lineCoords[i][1];
+    const x1 = lineCoords[i + 1][0];
+    const y1 = lineCoords[i + 1][1];
+
+    // Sample along the segment at sub-pixel intervals
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const segmentLength = Math.sqrt(dx * dx + dy * dy);
+    const stepSize = Math.min(pixelWidth, pixelHeight) * 0.5;
+    const steps = Math.max(Math.ceil(segmentLength / stepSize), 1);
+
+    for (let s = 0; s <= steps; s++) {
+      const t = s / steps;
+      const px = x0 + dx * t;
+      const py = y0 + dy * t;
+
+      const col = Math.floor((px - minX) / pixelWidth);
+      const row = Math.floor((maxY - py) / pixelHeight);
+
+      if (col >= 0 && col < width && row >= 0 && row < height) {
+        cells.add(`${col},${row}`);
+      }
+    }
+  }
+
+  return cells;
 }
 
 /**
@@ -102,11 +151,13 @@ export async function rasterizePerimeter(
   const { geometry, templatePath, outputPath, burnValue = 1 } = options;
 
   // Validate geometry type
-  if (geometry.type !== GeometryType.Polygon) {
+  if (geometry.type !== GeometryType.Polygon && geometry.type !== GeometryType.LineString) {
     return Result.fail(
-      new ValidationError(`Perimeter must be a polygon, got ${geometry.type}`)
+      new ValidationError(`Perimeter must be a polygon or linestring, got ${geometry.type}`)
     );
   }
+
+  const isLineString = geometry.type === GeometryType.LineString;
 
   try {
     // Dynamic import of gdal-async for coordinate transformation
@@ -167,7 +218,7 @@ export async function rasterizePerimeter(
     const centerX = utmCentroid.x as number;
     const centerY = utmCentroid.y as number;
 
-    console.log(`[PerimeterRasterizer] Polygon centroid (UTM): ${centerX.toFixed(1)}, ${centerY.toFixed(1)}`);
+    console.log(`[PerimeterRasterizer] ${isLineString ? 'LineString' : 'Polygon'} centroid (UTM): ${centerX.toFixed(1)}, ${centerY.toFixed(1)}`);
 
     // Transform UTM centroid back to WGS84 for use as ignition point
     // This ensures the ignition point matches the perimeter raster center
@@ -175,8 +226,8 @@ export async function rasterizePerimeter(
     const wgs84Centroid = inverseTransform.transformPoint(centerX, centerY);
     const centroidLongitude = wgs84Centroid.x;
     const centroidLatitude = wgs84Centroid.y;
-    console.log(`[PerimeterRasterizer] Polygon centroid (WGS84): ${centroidLongitude.toFixed(6)}, ${centroidLatitude.toFixed(6)}`);
-    console.log(`[PerimeterRasterizer] Polygon envelope: [${envelope.minX.toFixed(1)}, ${envelope.minY.toFixed(1)}, ${envelope.maxX.toFixed(1)}, ${envelope.maxY.toFixed(1)}]`);
+    console.log(`[PerimeterRasterizer] ${isLineString ? 'LineString' : 'Polygon'} centroid (WGS84): ${centroidLongitude.toFixed(6)}, ${centroidLatitude.toFixed(6)}`);
+    console.log(`[PerimeterRasterizer] ${isLineString ? 'LineString' : 'Polygon'} envelope: [${envelope.minX.toFixed(1)}, ${envelope.minY.toFixed(1)}, ${envelope.maxX.toFixed(1)}, ${envelope.maxY.toFixed(1)}]`);
 
     // Calculate local extent: 200km buffer around polygon centroid, snapped to pixel boundaries
     let minX = centerX - FIRESTARR_GRID_HALF_SIZE;
@@ -197,18 +248,9 @@ export async function rasterizePerimeter(
     console.log(`[PerimeterRasterizer] Local extent: [${minX}, ${minY}, ${maxX}, ${maxY}]`);
     console.log(`[PerimeterRasterizer] Output size: ${width}x${height} (${pixelWidth}m resolution)`);
 
-    // Extract transformed polygon coordinates for rasterization
+    // Extract transformed coordinates for rasterization
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const transformedWkt = (gdalGeom as any).toWKT() as string;
-    const coordMatch = transformedWkt.match(/POLYGON\s*\(\((.+)\)\)/i);
-    if (!coordMatch) {
-      return Result.fail(new ValidationError('Failed to extract transformed polygon coordinates'));
-    }
-
-    const polygonCoords = coordMatch[1].split(',').map(coordStr => {
-      const [x, y] = coordStr.trim().split(/\s+/).map(Number);
-      return [x, y];
-    });
 
     console.log(`[PerimeterRasterizer] Creating output raster: ${outputPath}`);
 
@@ -241,42 +283,69 @@ export async function rasterizePerimeter(
     const band = outDs.bands.get(1);
     band.noDataValue = 0;
 
-    // Create data buffer and burn polygon
-    // We only need to check cells near the polygon, not the entire 4000x4000 grid
-    const polyMinX = envelope.minX;
-    const polyMaxX = envelope.maxX;
-    const polyMinY = envelope.minY;
-    const polyMaxY = envelope.maxY;
-
-    // Convert polygon bounds to pixel coordinates
-    const startCol = Math.max(0, Math.floor((polyMinX - minX) / pixelWidth) - 1);
-    const endCol = Math.min(width - 1, Math.ceil((polyMaxX - minX) / pixelWidth) + 1);
-    const startRow = Math.max(0, Math.floor((maxY - polyMaxY) / pixelHeight) - 1);
-    const endRow = Math.min(height - 1, Math.ceil((maxY - polyMinY) / pixelHeight) + 1);
-
-    console.log(`[PerimeterRasterizer] Polygon pixel extent: rows ${startRow}-${endRow}, cols ${startCol}-${endCol}`);
-
-    // Process row by row in the polygon bounding box
     let burnedCells = 0;
-    const rowWidth = endCol - startCol + 1;
 
-    for (let row = startRow; row <= endRow; row++) {
-      const rowData = new Uint8Array(rowWidth);
-
-      for (let col = startCol; col <= endCol; col++) {
-        // Convert pixel center to UTM coordinates
-        const cellX = minX + (col + 0.5) * pixelWidth;
-        const cellY = maxY - (row + 0.5) * pixelHeight;
-
-        // Check if cell center is inside polygon
-        if (pointInPolygon(cellX, cellY, polygonCoords)) {
-          rowData[col - startCol] = burnValue;
-          burnedCells++;
-        }
+    if (isLineString) {
+      // LineString rasterization: burn cells along the line
+      const coordMatch = transformedWkt.match(/LINESTRING\s*\((.+)\)/i);
+      if (!coordMatch) {
+        outDs.close();
+        return Result.fail(new ValidationError('Failed to extract transformed linestring coordinates'));
       }
 
-      // Write row to raster
-      band.pixels.write(startCol, row, rowWidth, 1, rowData);
+      const lineCoords = coordMatch[1].split(',').map(coordStr => {
+        const [x, y] = coordStr.trim().split(/\s+/).map(Number);
+        return [x, y];
+      });
+
+      console.log(`[PerimeterRasterizer] LineString has ${lineCoords.length} vertices`);
+
+      const cells = rasterizeLine(lineCoords, minX, maxY, pixelWidth, pixelHeight, width, height);
+
+      for (const key of cells) {
+        const [col, row] = key.split(',').map(Number);
+        const pixel = new Uint8Array([burnValue]);
+        band.pixels.write(col, row, 1, 1, pixel);
+        burnedCells++;
+      }
+    } else {
+      // Polygon rasterization: burn cells inside the polygon
+      const coordMatch = transformedWkt.match(/POLYGON\s*\(\((.+)\)\)/i);
+      if (!coordMatch) {
+        outDs.close();
+        return Result.fail(new ValidationError('Failed to extract transformed polygon coordinates'));
+      }
+
+      const polygonCoords = coordMatch[1].split(',').map(coordStr => {
+        const [x, y] = coordStr.trim().split(/\s+/).map(Number);
+        return [x, y];
+      });
+
+      const polyMinX = envelope.minX;
+      const polyMaxX = envelope.maxX;
+      const polyMinY = envelope.minY;
+      const polyMaxY = envelope.maxY;
+
+      const startCol = Math.max(0, Math.floor((polyMinX - minX) / pixelWidth) - 1);
+      const endCol = Math.min(width - 1, Math.ceil((polyMaxX - minX) / pixelWidth) + 1);
+      const startRow = Math.max(0, Math.floor((maxY - polyMaxY) / pixelHeight) - 1);
+      const endRow = Math.min(height - 1, Math.ceil((maxY - polyMinY) / pixelHeight) + 1);
+
+      console.log(`[PerimeterRasterizer] Polygon pixel extent: rows ${startRow}-${endRow}, cols ${startCol}-${endCol}`);
+
+      const rowWidth = endCol - startCol + 1;
+      for (let row = startRow; row <= endRow; row++) {
+        const rowData = new Uint8Array(rowWidth);
+        for (let col = startCol; col <= endCol; col++) {
+          const cellX = minX + (col + 0.5) * pixelWidth;
+          const cellY = maxY - (row + 0.5) * pixelHeight;
+          if (pointInPolygon(cellX, cellY, polygonCoords)) {
+            rowData[col - startCol] = burnValue;
+            burnedCells++;
+          }
+        }
+        band.pixels.write(startCol, row, rowWidth, 1, rowData);
+      }
     }
 
     // Flush and close
