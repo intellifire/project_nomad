@@ -685,7 +685,7 @@ export class FireSTARREngine implements IFireModelingEngine {
       longitude.toString(),
       params.startTime,
       '--tz', utcOffset.toString(),
-      '--wx', weatherFile,
+      '--wx', `"${weatherFile}"`,
       '--ffmc', params.previousFFMC.toString(),
       '--dmc', params.previousDMC.toString(),
       '--dc', params.previousDC.toString(),
@@ -699,17 +699,17 @@ export class FireSTARREngine implements IFireModelingEngine {
     if (inputResult.perimeterFile) {
       if (isBinaryMode()) {
         // Binary mode: use host path directly
-        args.push('--perim', inputResult.perimeterFile);
+        args.push('--perim', `"${inputResult.perimeterFile}"`);
       } else {
         // Docker mode: extract filename and build container path
         const perimeterFilename = inputResult.perimeterFile.split('/').pop();
         const containerPerimeterFile = `${workingDir}/${perimeterFilename}`;
-        args.push('--perim', containerPerimeterFile);
+        args.push('--perim', `"${containerPerimeterFile}"`);
       }
     }
 
     if (params.outputDateOffsets) {
-      args.push('--output_date_offsets', JSON.stringify(params.outputDateOffsets));
+      args.push('--output_date_offsets', `"${JSON.stringify(params.outputDateOffsets)}"`);
     }
 
     // Always include simulation area grids for output portability
