@@ -723,8 +723,8 @@ export class FireSTARREngine implements IFireModelingEngine {
       args.push('--deterministic');
     }
 
-    // Add verbosity (extra -v flags for debug-level output)
-    args.push('-v', '-v', '-v');
+    // Add verbosity
+    args.push('-v');
 
     return args;
   }
