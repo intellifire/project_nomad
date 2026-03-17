@@ -97,9 +97,9 @@ export interface CreateModelResponse {
 
 export interface ExecuteModelRequest {
   ignition: {
-    type: 'point' | 'polygon';
-    /** Point: [lng, lat], Polygon: [[[lng, lat], ...ring positions...]] */
-    coordinates: [number, number] | [number, number][][];
+    type: 'point' | 'polygon' | 'linestring';
+    /** Point: [lng, lat], LineString: [[lng, lat], ...], Polygon: [[[lng, lat], ...ring positions...]] */
+    coordinates: [number, number] | [number, number][] | [number, number][][];
   };
   timeRange: {
     start: string;
@@ -203,8 +203,8 @@ export interface RunModelRequest {
   name: string;
   engineType: 'firestarr' | 'wise';
   ignition: {
-    type: 'point' | 'polygon';
-    coordinates: [number, number] | [number, number][][];
+    type: 'point' | 'polygon' | 'linestring';
+    coordinates: [number, number] | [number, number][] | [number, number][][];
   };
   timeRange: {
     start: string;

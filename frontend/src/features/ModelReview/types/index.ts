@@ -68,8 +68,8 @@ export interface OutputItem {
  * Ignition geometry for display on map
  */
 export interface IgnitionGeometry {
-  type: 'point' | 'polygon';
-  coordinates: [number, number] | [number, number][][];
+  type: 'point' | 'polygon' | 'linestring';
+  coordinates: [number, number] | [number, number][] | [number, number][][];
   geojson: GeoJSON.Feature | GeoJSON.FeatureCollection;
 }
 

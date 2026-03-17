@@ -410,12 +410,14 @@ export function ResultsSummary({
             }}>
               <div>
                 <div style={{ fontSize: '14px', fontWeight: 500, color: '#e65100' }}>
-                  Ignition {ignition.type === 'point' ? 'Point' : 'Polygon'}
+                  Ignition {ignition.type === 'point' ? 'Point' : ignition.type === 'linestring' ? 'Line' : 'Polygon'}
                 </div>
                 <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
                   {ignition.type === 'point'
                     ? `${(ignition.coordinates as [number, number])[1].toFixed(4)}°N, ${(ignition.coordinates as [number, number])[0].toFixed(4)}°W`
-                    : 'Fire perimeter polygon'
+                    : ignition.type === 'linestring'
+                      ? 'Fire line ignition'
+                      : 'Fire perimeter polygon'
                   }
                 </div>
               </div>

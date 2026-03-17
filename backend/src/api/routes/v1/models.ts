@@ -34,7 +34,7 @@ interface RunModelRequestBody {
   name: string;
   engineType: EngineType;
   ignition: {
-    type: 'point' | 'polygon';
+    type: 'point' | 'polygon' | 'linestring';
     coordinates: [number, number] | [number, number][];
   };
   timeRange: {
@@ -143,7 +143,11 @@ router.post(
     }
 
     // Validate geometry and time range BEFORE creating DB records (prevents orphaned rows)
-    const geometryType = body.ignition.type === 'point' ? GeometryType.Point : GeometryType.Polygon;
+    const geometryType = body.ignition.type === 'point'
+      ? GeometryType.Point
+      : body.ignition.type === 'linestring'
+        ? GeometryType.LineString
+        : GeometryType.Polygon;
     const ignitionGeometry = new SpatialGeometry({
       type: geometryType,
       coordinates: body.ignition.coordinates,
@@ -400,7 +404,7 @@ router.get(
  */
 interface ExecuteRequestBody {
   ignition: {
-    type: 'point' | 'polygon';
+    type: 'point' | 'polygon' | 'linestring';
     coordinates: [number, number] | [number, number][];
   };
   timeRange: {
@@ -443,7 +447,7 @@ interface ExecuteRequestBody {
  *                 properties:
  *                   type:
  *                     type: string
- *                     enum: [point, polygon]
+ *                     enum: [point, polygon, linestring]
  *                   coordinates:
  *                     oneOf:
  *                       - type: array
@@ -554,7 +558,11 @@ router.post(
     }
 
     // Create ignition geometry
-    const geometryType = body.ignition.type === 'point' ? GeometryType.Point : GeometryType.Polygon;
+    const geometryType = body.ignition.type === 'point'
+      ? GeometryType.Point
+      : body.ignition.type === 'linestring'
+        ? GeometryType.LineString
+        : GeometryType.Polygon;
     logger.model(`Creating ignition geometry: type=${body.ignition.type} -> ${geometryType}`, id);
     const ignitionGeometry = new SpatialGeometry({
       type: geometryType,
