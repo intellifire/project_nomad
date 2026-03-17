@@ -14,7 +14,8 @@ export default defineConfig(({ mode }) => {
   const apiTarget = `http://localhost:${apiPort}`;
 
   // Inject git branch at build time
-  const gitBranch = (() => {
+  // Prefers GIT_BRANCH env var (set by Docker build arg) over execSync (unavailable in containers)
+  const gitBranch = process.env.GIT_BRANCH || (() => {
     try {
       return execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8' }).trim();
     } catch {

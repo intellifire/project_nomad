@@ -13,6 +13,7 @@ services:
         - VITE_MAPBOX_TOKEN=${VITE_MAPBOX_TOKEN}
         - VITE_API_BASE_URL=${VITE_API_BASE_URL:-}
         - VITE_AUTH_MODE=${VITE_AUTH_MODE:-simple}
+        - GIT_BRANCH=${GIT_BRANCH:-unknown}
     ports:
       - "${NOMAD_FRONTEND_HOST_PORT}:3001"
     volumes:
