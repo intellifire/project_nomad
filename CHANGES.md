@@ -4,10 +4,53 @@ Auto-generated from git history. Do not edit manually.
 
 ---
 
-## v0.4.0
+## v0.4.1
+
+### 2026-03-18
+
+- [`5977ced`](https://github.com/WISE-Developers/project_nomad/commit/5977cedae18278029b18e850ebe5bccb07a0da88) Merge pull request #216 from WISE-Developers/dev — *Franco Nogarin, 10:16*
+- [`0ffc312`](https://github.com/WISE-Developers/project_nomad/commit/0ffc3128a99b24554230cec3208f7705f39ae763) chore: dev build 17 [skip ci] — *github-actions[bot], 13:33*
+- [`a64dfc1`](https://github.com/WISE-Developers/project_nomad/commit/a64dfc15f4fb01f2f68c100b82ab5816d3853490) Export AboutModal from openNomad library — *Franco Nogarin, 07:33*
+- [`4148e97`](https://github.com/WISE-Developers/project_nomad/commit/4148e97ddab7433382bd61e9adc7594b3ddf6391) chore: dev build 16 [skip ci] — *github-actions[bot], 13:29*
+- [`63dcbb7`](https://github.com/WISE-Developers/project_nomad/commit/63dcbb7e9085bdad89f1c463d48df22f05135803) Add FireSTARR hover popover to About modal — *Franco Nogarin, 07:28*
+- [`9fba98e`](https://github.com/WISE-Developers/project_nomad/commit/9fba98e63da17113c6e3e569b2742545cec00477) chore: dev build 15 [skip ci] — *github-actions[bot], 11:49*
+- [`da6a6f0`](https://github.com/WISE-Developers/project_nomad/commit/da6a6f0f341bee49171f12a8dec2ae3f51831ca1) Fix openNomad embedded mode rendering issues — *Franco Nogarin, 05:49*
+- [`5c8736d`](https://github.com/WISE-Developers/project_nomad/commit/5c8736df6f60335fd70c930e17aa5319521983be) chore: dev build 14 [skip ci] — *github-actions[bot], 11:16*
+- [`7fb524c`](https://github.com/WISE-Developers/project_nomad/commit/7fb524c0a94196c6ca64eb752746e6f9185f9bcb) Update installer to use unstable-latest FireSTARR image tag — *Franco Nogarin, 05:15*
+
+### 2026-03-17
+
+- [`d8fb02a`](https://github.com/WISE-Developers/project_nomad/commit/d8fb02a37fad0b684775527d1e754102ae27d565) chore: dev build 13 [skip ci] — *github-actions[bot], 18:38*
+- [`784ebf6`](https://github.com/WISE-Developers/project_nomad/commit/784ebf685b53915012018e0b8ab9968da6848336) Revert to single -v — triple verbosity floods log with point data — *Franco Nogarin, 12:38*
+- [`90d6c18`](https://github.com/WISE-Developers/project_nomad/commit/90d6c1851c29e622fd58166ec9f75c91412a2e9d) chore: dev build 12 [skip ci] — *github-actions[bot], 18:25*
+- [`2222794`](https://github.com/WISE-Developers/project_nomad/commit/222279413c0aa508d3660192679797dcb32428e1) Increase FireSTARR verbosity to -v -v -v for debugging — *Franco Nogarin, 12:25*
+- [`bb82946`](https://github.com/WISE-Developers/project_nomad/commit/bb82946b4bf9f7148969c6e93d8a67520f75644d) chore: dev build 11 [skip ci] — *github-actions[bot], 18:01*
+- [`957e832`](https://github.com/WISE-Developers/project_nomad/commit/957e832c68257a90f9d252d251ab299f12453dd5) Revert CLI arg quoting — spawn args array handles escaping — *Franco Nogarin, 12:01*
+- [`5997a96`](https://github.com/WISE-Developers/project_nomad/commit/5997a96f04021561ff6b1e7fe595a28fa6bf1242) chore: dev build 10 [skip ci] — *github-actions[bot], 17:55*
+- [`e282ffe`](https://github.com/WISE-Developers/project_nomad/commit/e282ffe02ada102ea17e02e71d6d7746695444c8) Quote --output_date_offsets, --wx, and --perim values in FireSTARR CLI — *Franco Nogarin, 11:55*
+- [`1c27cf4`](https://github.com/WISE-Developers/project_nomad/commit/1c27cf4a452236d34ab30c14d465b6ba7ab3acb9) chore: dev build 9 [skip ci] — *github-actions[bot], 16:41*
+- [`cac5447`](https://github.com/WISE-Developers/project_nomad/commit/cac5447ae7cb184b53e175f9c794849fba910a68) Replace in-memory log emitter with file-based log streaming — *Franco Nogarin, 10:41*
+- [`2a83f32`](https://github.com/WISE-Developers/project_nomad/commit/2a83f32a332ec9dfc9b3cbbf004565c623278979) chore: dev build 8 [skip ci] — *github-actions[bot], 15:14*
+- [`10e3075`](https://github.com/WISE-Developers/project_nomad/commit/10e30752c3cc489d1b257c7560076da5e9db413e) Include LineString ignition in model results — *Franco Nogarin, 09:13*
+- [`cefabf2`](https://github.com/WISE-Developers/project_nomad/commit/cefabf29a5f9d24d64c390c3fe1ed57013009252) chore: dev build 7 [skip ci] — *github-actions[bot], 15:03*
+- [`12f0723`](https://github.com/WISE-Developers/project_nomad/commit/12f0723cd614031b1c9df4ef370d410a631e54b5) Fix React hooks violation in JobStatusToast — *Franco Nogarin, 09:03*
+- [`830a8b9`](https://github.com/WISE-Developers/project_nomad/commit/830a8b99052e5ac3283b19c7f96d0c37b77c847b) chore: dev build 6 [skip ci] — *github-actions[bot], 15:02*
+- [`76048d4`](https://github.com/WISE-Developers/project_nomad/commit/76048d4ac0e75ae2db6e41994f3e5e1888c36651) Revert branch display from About modal — *Franco Nogarin, 09:02*
+- [`390b883`](https://github.com/WISE-Developers/project_nomad/commit/390b883336d9af9d9082f768c1b2a6c7ac390e56) chore: dev build 5 [skip ci] — *github-actions[bot], 14:30*
+- [`b9e0116`](https://github.com/WISE-Developers/project_nomad/commit/b9e011634a7ceb5ae7b1b914eb4cfce2d0be9ca8) Fix branch display in Docker builds — *Franco Nogarin, 08:30*
+- [`3792181`](https://github.com/WISE-Developers/project_nomad/commit/37921819ec9b9b15ecd8934e837a787357e7e1ec) chore: dev build 4 [skip ci] — *github-actions[bot], 14:22*
+- [`9b4b4f7`](https://github.com/WISE-Developers/project_nomad/commit/9b4b4f7f222b35e6426dbd7274b3a402e1024d45) Fix LineString rasterization in PerimeterRasterizer — *Franco Nogarin, 08:22*
+- [`eb2efee`](https://github.com/WISE-Developers/project_nomad/commit/eb2efeed6f2e6f23069c742b3cf0f4c80f43bc3c) chore: dev build 3 [skip ci] — *github-actions[bot], 14:12*
+- [`2630971`](https://github.com/WISE-Developers/project_nomad/commit/2630971edca3d6ce2368b9fe2dc202c7b279f067) Add draggable toast with nerd mode live log viewer — *Franco Nogarin, 08:11*
+- [`0a11c07`](https://github.com/WISE-Developers/project_nomad/commit/0a11c0761175bd6e9f4ad65e1eca22794d8e4689) chore: dev build 2 [skip ci] — *github-actions[bot], 13:50*
+- [`f3a085d`](https://github.com/WISE-Developers/project_nomad/commit/f3a085d515564dd0aa9002e9105bcd10cce250c5) Show git branch in About modal — *Franco Nogarin, 07:50*
+- [`543eb5d`](https://github.com/WISE-Developers/project_nomad/commit/543eb5d7745eb7bd2cb8bdcef1d46937f4544901) chore: dev build 1 [skip ci] — *github-actions[bot], 13:38*
+- [`385aed3`](https://github.com/WISE-Developers/project_nomad/commit/385aed32afc391727b07aff771b55a50bc4cc2d7) Fix #215: Line ignitions fail with 400 bad request — *Franco Nogarin, 07:37*
 
 ### 2026-03-16
 
+- [`f681cf5`](https://github.com/WISE-Developers/project_nomad/commit/f681cf5f75177b6dc6944b3c6ffe312330f70a0e) chore: reset dev build counter after v0.4.0 [skip ci] — *github-actions[bot], 22:18*
+- [`20c5964`](https://github.com/WISE-Developers/project_nomad/commit/20c5964a77c4ca06bd36290505d62ded42478212) chore: release v0.4.0 [skip ci] — *github-actions[bot], 22:18*
 - [`f43b7ff`](https://github.com/WISE-Developers/project_nomad/commit/f43b7ffadd9008bde40fb6c610f36a488feac09b) Merge pull request #214 from WISE-Developers/dev — *Franco Nogarin, 16:17*
 - [`1f99244`](https://github.com/WISE-Developers/project_nomad/commit/1f99244c501c0aedb1d66147c159cabdcae148b5) chore: dev build 26 [skip ci] — *github-actions[bot], 22:09*
 - [`803884a`](https://github.com/WISE-Developers/project_nomad/commit/803884ac8773f1652e26171573f2f7796d22be4f) Fix Report Issue link to use issue type chooser — *Franco Nogarin, 16:08*
