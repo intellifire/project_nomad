@@ -4,10 +4,15 @@ Auto-generated from git history. Do not edit manually.
 
 ---
 
-## v0.4.1
+## v0.4.2
 
 ### 2026-03-18
 
+- [`cd94b10`](https://github.com/WISE-Developers/project_nomad/commit/cd94b102cb945b627e2851d9957a7982f940c5fe) Merge pull request #217 from WISE-Developers/dev — *Franco Nogarin, 16:41*
+- [`6293bd4`](https://github.com/WISE-Developers/project_nomad/commit/6293bd400123c5c31d797919160c8f6ce69ae913) chore: dev build 1 [skip ci] — *github-actions[bot], 21:13*
+- [`46e8d73`](https://github.com/WISE-Developers/project_nomad/commit/46e8d73748e8d0fb9449a11c1bf53642360c8ca8) Fix outputMode and userId not persisted on execute endpoint — *Franco Nogarin, 15:12*
+- [`e1bdca3`](https://github.com/WISE-Developers/project_nomad/commit/e1bdca3e41fe61ea4fc4e1ba78e935adc3304142) chore: reset dev build counter after v0.4.1 [skip ci] — *github-actions[bot], 16:17*
+- [`85f9c54`](https://github.com/WISE-Developers/project_nomad/commit/85f9c544059c8add998aadf8ceaa2b41720168a4) chore: release v0.4.1 [skip ci] — *github-actions[bot], 16:17*
 - [`5977ced`](https://github.com/WISE-Developers/project_nomad/commit/5977cedae18278029b18e850ebe5bccb07a0da88) Merge pull request #216 from WISE-Developers/dev — *Franco Nogarin, 10:16*
 - [`0ffc312`](https://github.com/WISE-Developers/project_nomad/commit/0ffc3128a99b24554230cec3208f7705f39ae763) chore: dev build 17 [skip ci] — *github-actions[bot], 13:33*
 - [`a64dfc1`](https://github.com/WISE-Developers/project_nomad/commit/a64dfc15f4fb01f2f68c100b82ab5816d3853490) Export AboutModal from openNomad library — *Franco Nogarin, 07:33*
