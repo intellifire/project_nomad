@@ -153,8 +153,8 @@ function AppContent() {
       await requestPermission();
 
       // Extract coordinates from geometry
-      let coordinates: [number, number] | [number, number][][] = [0, 0];
-      let ignitionType: 'point' | 'polygon' = 'point';
+      let coordinates: [number, number] | [number, number][] | [number, number][][] = [0, 0];
+      let ignitionType: 'point' | 'polygon' | 'linestring' = 'point';
 
       if (data.geometry.features.length > 0) {
         const feature = data.geometry.features[0];
@@ -178,11 +178,10 @@ function AppContent() {
           ignitionType = 'polygon';
           console.log('[App] Using polygon ignition with coordinates:', coordinates);
         } else if (geomType === 'LineString') {
-          // LineString treated as polygon for fire line ignition
-          // Wrap in array to match polygon coordinate structure
-          coordinates = [feature.geometry.coordinates as [number, number][]];
-          ignitionType = 'polygon';
-          console.log('[App] Using line ignition (as polygon) with coordinates:', coordinates);
+          // LineString sent as native linestring type for fire line ignition
+          coordinates = feature.geometry.coordinates as [number, number][];
+          ignitionType = 'linestring';
+          console.log('[App] Using line ignition with coordinates:', coordinates);
         }
       }
 

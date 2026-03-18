@@ -210,9 +210,9 @@ export class FireSTARRInputGenerator implements IInputGenerator<FireSTARRParams>
       let perimeterFile: string | undefined;
       let perimeterCentroid: { latitude: number; longitude: number } | undefined;
       if (params.perimeter) {
-        if (params.perimeter.type !== GeometryType.Polygon) {
+        if (params.perimeter.type !== GeometryType.Polygon && params.perimeter.type !== GeometryType.LineString) {
           return Result.fail(
-            new ValidationError(`Perimeter must be a polygon, got ${params.perimeter.type}`)
+            new ValidationError(`Perimeter must be a polygon or linestring, got ${params.perimeter.type}`)
           );
         }
 

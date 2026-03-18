@@ -622,7 +622,7 @@ export class FireSTARREngine implements IFireModelingEngine {
       previousDC: firstPoint.dc,
       previousPrecip: firstPoint.precipitation,
       outputDateOffsets,
-      perimeter: ignition.type === GeometryType.Polygon ? ignition : undefined,
+      perimeter: (ignition.type === GeometryType.Polygon || ignition.type === GeometryType.LineString) ? ignition : undefined,
       ignitionGeometry: ignition, // Save original ignition geometry for export
     };
   }

@@ -59,6 +59,9 @@ export {
   type DashboardMode,
 } from '../features/Dashboard/components/DashboardContainer.js';
 
+// About modal (shows Nomad + FireSTARR info)
+export { AboutModal } from '../components/AboutModal.js';
+
 // White-label customization (theming, labels, actions, slots, features)
 export {
   // Provider
