@@ -331,6 +331,8 @@ router.post(
       engineType: model.engineType,
       status: model.status,
       createdAt: model.createdAt.toISOString(),
+      userId: model.userId ?? null,
+      notes: model.notes ?? null,
     });
   })
 );
@@ -393,6 +395,7 @@ router.get(
       status: model.status,
       createdAt: model.createdAt.toISOString(),
       updatedAt: model.updatedAt.toISOString(),
+      userId: model.userId ?? null,
       notes: model.notes ?? null,
       outputMode: model.outputMode ?? null,
     });
@@ -587,9 +590,20 @@ router.post(
       smoothPerimeter: false,
     };
 
-    // Update model status to queued
-    const queuedModel = model.withStatus(ModelStatus.Queued);
-    await modelRepo.save(queuedModel);
+    // Update model with execution metadata and queue it
+    const updatedModel = new FireModel({
+      id: model.id,
+      name: model.name,
+      engineType: model.engineType,
+      status: ModelStatus.Queued,
+      createdAt: model.createdAt,
+      updatedAt: new Date(),
+      userId: model.userId ?? resolveUserId(req),
+      notes: model.notes,
+      outputMode: body.outputMode === 'deterministic' ? 'deterministic' : 'probabilistic',
+    });
+    await modelRepo.save(updatedModel);
+    const queuedModel = updatedModel;
 
     // Create job in queue
     const jobQueue = getJobQueue();
