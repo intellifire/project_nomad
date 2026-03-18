@@ -57,6 +57,7 @@ const presetButtonStyle: React.CSSProperties = {
   border: '1px solid #ccc',
   borderRadius: '4px',
   background: 'white',
+  color: '#333',
   cursor: 'pointer',
 };
 
@@ -108,6 +109,7 @@ const quickSelectButtonStyle: React.CSSProperties = {
   border: '1px solid #ddd',
   borderRadius: '6px',
   background: 'white',
+  color: '#333',
   cursor: 'pointer',
   transition: 'all 0.2s',
   fontWeight: 500,

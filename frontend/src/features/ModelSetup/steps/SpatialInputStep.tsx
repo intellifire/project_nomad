@@ -98,13 +98,6 @@ const deleteButtonStyle: React.CSSProperties = {
   cursor: 'pointer',
 };
 
-const drawButtonContainerStyle: React.CSSProperties = {
-  padding: '16px',
-  backgroundColor: '#f5f5f5',
-  borderRadius: '4px',
-  marginTop: '16px',
-};
-
 const drawButtonStyle: React.CSSProperties = {
   padding: '8px 16px',
   backgroundColor: '#ff6b35',
@@ -168,12 +161,10 @@ export function SpatialInputStep() {
   // Embedded mode: track drawn geometry locally
   const [embeddedGeometry, setEmbeddedGeometry] = useState<GeoJSONGeometry | null>(null);
 
-  // Determine available tabs based on mode
-  const availableTabs = isEmbeddedMode
-    ? tabs.filter((t) => t.id !== 'draw') // No "draw on map" in embedded mode (host handles that)
-    : tabs;
+  // All tabs available in both modes — draw tab shows host map buttons in embedded mode
+  const availableTabs = tabs;
 
-  const defaultTab = isEmbeddedMode ? 'coordinates' : 'draw';
+  const defaultTab = 'draw';
   const [activeTab, setActiveTab] = useState<SpatialInputMethod>(data.geometry?.inputMethod ?? defaultTab);
 
   // Update input method when tab changes
@@ -351,42 +342,44 @@ export function SpatialInputStep() {
           </div>
         )}
 
+        {activeTab === 'draw' && isEmbeddedMode && (
+          <div style={drawInstructionStyle}>
+            <strong>Draw on the map:</strong>
+            <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
+              <li>Draw a <strong>point</strong> for an ignition location</li>
+              <li>Draw a <strong>line</strong> for a fire front</li>
+              <li>Draw a <strong>polygon</strong> for a fire perimeter</li>
+            </ul>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+              <button
+                style={drawButtonStyle}
+                onClick={() => handleDrawOnHostMap('point')}
+              >
+                <i className="fa-solid fa-location-dot" style={{ marginRight: '4px' }} />
+                Point
+              </button>
+              <button
+                style={drawButtonStyle}
+                onClick={() => handleDrawOnHostMap('line')}
+              >
+                <i className="fa-solid fa-minus" style={{ marginRight: '4px' }} />
+                Line
+              </button>
+              <button
+                style={drawButtonStyle}
+                onClick={() => handleDrawOnHostMap('polygon')}
+              >
+                <i className="fa-solid fa-draw-polygon" style={{ marginRight: '4px' }} />
+                Polygon
+              </button>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'coordinates' && <CoordinateInput onSubmit={handleCoordinateSubmit} />}
 
         {activeTab === 'upload' && <GeometryUpload onUpload={handleFileUpload} />}
       </div>
-
-      {/* Embedded mode: Draw buttons to trigger host map drawing */}
-      {isEmbeddedMode && (
-        <div style={drawButtonContainerStyle}>
-          <div style={{ fontSize: '14px', color: '#333', marginBottom: '8px' }}>
-            Or draw geometry on the map:
-          </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              style={drawButtonStyle}
-              onClick={() => handleDrawOnHostMap('point')}
-            >
-              <i className="fa-solid fa-location-dot" style={{ marginRight: '4px' }} />
-              Point
-            </button>
-            <button
-              style={drawButtonStyle}
-              onClick={() => handleDrawOnHostMap('line')}
-            >
-              <i className="fa-solid fa-minus" style={{ marginRight: '4px' }} />
-              Line
-            </button>
-            <button
-              style={drawButtonStyle}
-              onClick={() => handleDrawOnHostMap('polygon')}
-            >
-              <i className="fa-solid fa-draw-polygon" style={{ marginRight: '4px' }} />
-              Polygon
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Feature list */}
       {displayFeatures.length > 0 && (
