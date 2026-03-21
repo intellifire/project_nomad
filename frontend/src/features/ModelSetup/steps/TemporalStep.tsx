@@ -228,7 +228,7 @@ export function TemporalStep() {
     const defaultTemporal = {
       startDate: getTodayDate(),
       startTime: '12:00',
-      durationHours: 24,
+      durationHours: 72,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       isForecast: false,
     };
@@ -432,6 +432,20 @@ export function TemporalStep() {
           </div>
         </div>
       </div>
+
+      {/* Short duration warning */}
+      {temporal.durationHours < 72 && (
+        <div style={{
+          ...infoBoxStyle,
+          backgroundColor: '#fff8e1',
+          border: '1px solid #ffe082',
+          color: '#6d4c00',
+        }}>
+          <strong><i className="fa-solid fa-triangle-exclamation" style={{ marginRight: '8px' }} />Short-term projection:</strong>{' '}
+          Simulations under 3 days produce non-smooth burn probability maps due to limited random sampling.
+          Results may appear blocky or binary. A minimum of 3 days is recommended for meaningful probabilistic output.
+        </div>
+      )}
 
       {/* End Time Display */}
       {endDateTime && (
