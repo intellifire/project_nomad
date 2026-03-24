@@ -10,7 +10,8 @@
 
 set -e
 
-# URL to the full bootstrap script (uses curl-installer branch for testing)
+# URL to the full bootstrap script
+# Uses curl-installer branch for testing; will be main after merge
 BOOTSTRAP_URL="https://raw.githubusercontent.com/WISE-Developers/project_nomad/curl-installer/scripts/install-nomad-bootstrap.sh"
 
 # Colors
@@ -37,16 +38,18 @@ download_bootstrap() {
     temp_file=$(mktemp -t nomad_bootstrap.XXXXXX)
 
     if command -v curl &> /dev/null; then
+        print_info "Using curl" >&2
         curl -fsSL "$BOOTSTRAP_URL" -o "$temp_file"
     elif command -v wget &> /dev/null; then
+        print_info "Using wget" >&2
         wget -q "$BOOTSTRAP_URL" -O "$temp_file"
     else
-        print_error "Neither curl nor wget is installed"
-        echo ""
-        echo "Please install curl or wget and try again:"
-        echo "  Ubuntu/Debian: sudo apt-get install curl"
-        echo "  macOS: brew install curl"
-        echo "  RHEL/CentOS: sudo yum install curl"
+        print_error "Neither curl nor wget is installed" >&2
+        echo "" >&2
+        echo "Please install curl or wget and try again:" >&2
+        echo "  Ubuntu/Debian: sudo apt-get install curl" >&2
+        echo "  macOS: brew install curl" >&2
+        echo "  RHEL/CentOS: sudo yum install curl" >&2
         rm -f "$temp_file"
         exit 1
     fi
