@@ -435,11 +435,26 @@ run_installer() {
     print_info "Handing off to: $installer_script"
     echo ""
 
-    # If stdin is not a tty (e.g., curl | bash), try to restore terminal input
-    # This allows the interactive installer to prompt for user input
-    if [ ! -t 0 ] && [ -r /dev/tty ]; then
-        print_info "Restoring terminal input for interactive prompts"
-        exec </dev/tty
+    # Check if we can actually prompt for input
+    # When running via curl | bash, stdin is the pipe, not the terminal
+    if [ ! -t 0 ]; then
+        print_error "Interactive input required but stdin is not a terminal"
+        echo ""
+        echo "The Nomad installer requires user interaction. When installing via curl,"
+        echo "your options are:"
+        echo ""
+        echo "  Option 1: Download first, then run (recommended)"
+        echo "    curl -fsSL https://.../install-nomad.sh -o install-nomad.sh"
+        echo "    bash install-nomad.sh"
+        echo ""
+        echo "  Option 2: Use a configuration file"
+        echo "    curl -fsSL https://.../install-nomad.sh | bash -s -- --help"
+        echo "    (see the bootstrap script for non-interactive options)"
+        echo ""
+        echo "  Option 3: Force terminal access (Linux/macOS only)"
+        echo "    curl -fsSL https://.../install-nomad.sh | bash </dev/tty"
+        echo ""
+        exit 1
     fi
 
     # Execute the installer

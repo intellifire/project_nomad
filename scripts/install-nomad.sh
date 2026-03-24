@@ -68,6 +68,23 @@ print_info "This will download and install Project Nomad"
 print_info "Installer source: $BOOTSTRAP_URL"
 echo ""
 
+# Check if stdin is a terminal (required for interactive installer)
+if [ ! -t 0 ]; then
+    echo -e "${RED}✖${NC} Interactive input required"
+    echo ""
+    echo "The Nomad installer requires user interaction and cannot run via 'curl | bash'."
+    echo ""
+    echo "Instead, download the script first, then run it:"
+    echo ""
+    echo "  curl -fsSL $BOOTSTRAP_URL -o install-nomad.sh"
+    echo "  bash install-nomad.sh"
+    echo ""
+    echo "Or force terminal access (Linux/macOS only):"
+    echo "  curl -fsSL $BOOTSTRAP_URL | bash < /dev/tty"
+    echo ""
+    exit 1
+fi
+
 print_step "Downloading Nomad installer..."
 BOOTSTRAP_FILE=$(download_bootstrap)
 
