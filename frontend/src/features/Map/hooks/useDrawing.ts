@@ -1,6 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
-import MapboxDraw from '@mapbox/mapbox-gl-draw';
-import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
+import { useEffect, useCallback, useState } from 'react';
 import { useMap } from '../context/MapContext';
 import type { DrawingMode, DrawnFeature, DrawingState, DrawingStyles } from '../types/geometry';
 
@@ -42,27 +40,22 @@ interface UseDrawingReturn {
   isReady: boolean;
 }
 
-/**
- * Map drawing mode to MapboxDraw mode
- */
-function toDrawMode(mode: DrawingMode): string {
-  switch (mode) {
-    case 'point':
-      return 'draw_point';
-    case 'line':
-      return 'draw_line_string';
-    case 'polygon':
-      return 'draw_polygon';
-    default:
-      return 'simple_select';
-  }
-}
+// Unique ID generator for features
+let featureIdCounter = 0;
 
 /**
  * Hook for managing map drawing operations.
  *
- * Provides point, line, and polygon drawing capabilities using Mapbox Draw.
- * Handles mode switching, feature creation/deletion, and selection.
+ * NOTE: This is a stub implementation. The original implementation used
+ * @mapbox/mapbox-gl-draw which is not compatible with MapLibre.
+ *
+ * TODO: Implement drawing functionality using a MapLibre-compatible library:
+ * - Option 1: terra-draw (framework-agnostic, actively maintained)
+ * - Option 2: maplibre-gl-draw (community fork)
+ * - Option 3: Custom implementation using MapLibre GL JS directly
+ *
+ * For now, this provides the same API surface but drawing operations
+ * are no-ops that log warnings.
  *
  * @example
  * ```tsx
@@ -83,7 +76,6 @@ function toDrawMode(mode: DrawingMode): string {
  */
 export function useDrawing(options: UseDrawingOptions = {}): UseDrawingReturn {
   const { map, isLoaded } = useMap();
-  const drawRef = useRef<MapboxDraw | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [state, setState] = useState<DrawingState>({
     mode: options.initialMode || 'none',
@@ -91,118 +83,65 @@ export function useDrawing(options: UseDrawingOptions = {}): UseDrawingReturn {
     features: [],
   });
 
-  // Initialize MapboxDraw
+  // Initialize when map is loaded
   useEffect(() => {
     if (!map || !isLoaded) return;
 
-    const draw = new MapboxDraw({
-      displayControlsDefault: false,
-      controls: {},
-      defaultMode: 'simple_select',
-    });
-
-    map.addControl(draw as unknown as mapboxgl.IControl);
-    drawRef.current = draw;
     setIsReady(true);
 
-    // Set initial mode
-    if (options.initialMode && options.initialMode !== 'none') {
-      draw.changeMode(toDrawMode(options.initialMode));
-    }
+    // TODO: Initialize actual drawing library here
+    console.warn('[useDrawing] Drawing functionality is stubbed. ' +
+      'Implement using terra-draw or maplibre-gl-draw for MapLibre compatibility.');
 
     return () => {
-      if (map && drawRef.current) {
-        map.removeControl(drawRef.current as unknown as mapboxgl.IControl);
-        drawRef.current = null;
-        setIsReady(false);
-      }
+      setIsReady(false);
     };
   }, [map, isLoaded]);
 
-  // Set up event handlers
-  useEffect(() => {
-    if (!map || !isLoaded || !drawRef.current) return;
-
-    const handleCreate = (e: { features: DrawnFeature[] }) => {
-      setState((prev) => ({
-        ...prev,
-        features: [...prev.features, ...e.features],
-      }));
-      options.onCreate?.(e.features);
-    };
-
-    const handleUpdate = (e: { features: DrawnFeature[] }) => {
-      setState((prev) => ({
-        ...prev,
-        features: prev.features.map((f) => {
-          const updated = e.features.find((u) => u.id === f.id);
-          return updated || f;
-        }),
-      }));
-      options.onUpdate?.(e.features);
-    };
-
-    const handleDelete = (e: { features: DrawnFeature[] }) => {
-      const deletedIds = new Set(e.features.map((f) => f.id));
-      setState((prev) => ({
-        ...prev,
-        features: prev.features.filter((f) => !deletedIds.has(f.id)),
-        selectedIds: prev.selectedIds.filter((id) => !deletedIds.has(id)),
-      }));
-      options.onDelete?.(e.features);
-    };
-
-    const handleSelectionChange = (e: { features: DrawnFeature[] }) => {
-      setState((prev) => ({
-        ...prev,
-        selectedIds: e.features.map((f) => String(f.id)),
-      }));
-      options.onSelectionChange?.(e.features);
-    };
-
-    map.on('draw.create', handleCreate);
-    map.on('draw.update', handleUpdate);
-    map.on('draw.delete', handleDelete);
-    map.on('draw.selectionchange', handleSelectionChange);
-
-    return () => {
-      map.off('draw.create', handleCreate);
-      map.off('draw.update', handleUpdate);
-      map.off('draw.delete', handleDelete);
-      map.off('draw.selectionchange', handleSelectionChange);
-    };
-  }, [map, isLoaded, options.onCreate, options.onUpdate, options.onDelete, options.onSelectionChange]);
-
   const setMode = useCallback((mode: DrawingMode) => {
-    if (!drawRef.current) return;
-    drawRef.current.changeMode(toDrawMode(mode));
     setState((prev) => ({ ...prev, mode }));
+    console.warn('[useDrawing] setMode called but drawing is not implemented');
   }, []);
 
   const getFeatures = useCallback((): DrawnFeature[] => {
-    if (!drawRef.current) return [];
-    return drawRef.current.getAll().features as DrawnFeature[];
-  }, []);
+    return state.features;
+  }, [state.features]);
 
   const deleteSelected = useCallback(() => {
-    if (!drawRef.current) return;
-    const selected = drawRef.current.getSelectedIds();
-    if (selected.length > 0) {
-      drawRef.current.delete(selected);
-    }
-  }, []);
+    if (state.selectedIds.length === 0) return;
+
+    const deletedFeatures = state.features.filter(f => state.selectedIds.includes(String(f.id)));
+    setState((prev) => ({
+      ...prev,
+      features: prev.features.filter(f => !state.selectedIds.includes(String(f.id))),
+      selectedIds: [],
+    }));
+    options.onDelete?.(deletedFeatures);
+  }, [state.selectedIds, state.features, options.onDelete]);
 
   const deleteAll = useCallback(() => {
-    if (!drawRef.current) return;
-    drawRef.current.deleteAll();
-    setState((prev) => ({ ...prev, features: [], selectedIds: [] }));
-  }, []);
+    const deletedFeatures = [...state.features];
+    setState((prev) => ({
+      ...prev,
+      features: [],
+      selectedIds: [],
+    }));
+    options.onDelete?.(deletedFeatures);
+  }, [state.features, options.onDelete]);
 
   const addFeatures = useCallback((features: DrawnFeature[]) => {
-    if (!drawRef.current) return;
-    features.forEach((f) => drawRef.current!.add(f));
-    setState((prev) => ({ ...prev, features: [...prev.features, ...features] }));
-  }, []);
+    // Assign IDs to features if they don't have them
+    const featuresWithIds = features.map(f => ({
+      ...f,
+      id: f.id ?? `feature-${++featureIdCounter}`,
+    }));
+
+    setState((prev) => ({
+      ...prev,
+      features: [...prev.features, ...featuresWithIds],
+    }));
+    options.onCreate?.(featuresWithIds);
+  }, [options.onCreate]);
 
   return {
     state,

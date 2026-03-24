@@ -9,7 +9,7 @@
  */
 
 import { useEffect, useRef } from 'react';
-import mapboxgl from 'mapbox-gl';
+import maplibregl from 'maplibre-gl';
 
 // =============================================================================
 // FireSTARR Colour Ramp
@@ -126,7 +126,7 @@ export function colorToPercentage(
  */
 interface UseRasterHoverProps {
   /** Mapbox map instance */
-  map: mapboxgl.Map | null;
+  map: maplibregl.Map | null;
   /** Whether any raster layer has hover enabled (visible + 100% opacity) */
   hasVisibleRasterLayer: boolean;
 }
@@ -148,7 +148,7 @@ export function useRasterHover({
   map,
   hasVisibleRasterLayer,
 }: UseRasterHoverProps): void {
-  const popupRef = useRef<mapboxgl.Popup | null>(null);
+  const popupRef = useRef<maplibregl.Popup | null>(null);
 
   useEffect(() => {
     if (!map || !hasVisibleRasterLayer) {
@@ -165,7 +165,7 @@ export function useRasterHover({
 
     // Initialise popup (lazy)
     if (!popupRef.current) {
-      popupRef.current = new mapboxgl.Popup({
+      popupRef.current = new maplibregl.Popup({
         closeButton: false,
         closeOnClick: false,
         className: 'raster-probability-popup',
@@ -174,7 +174,7 @@ export function useRasterHover({
 
     const popup = popupRef.current;
 
-    function handleMouseMove(e: mapboxgl.MapMouseEvent) {
+    function handleMouseMove(e: maplibregl.MapMouseEvent) {
       if (!gl) return;
 
       const pixel = new Uint8Array(4);

@@ -1,5 +1,5 @@
 import { createContext, useContext, ReactNode, useState, useCallback } from 'react';
-import type { Map as MapboxMap } from 'mapbox-gl';
+import type { Map as MapLibreMap } from 'maplibre-gl';
 import type { MapContextValue } from '../types';
 
 const MapContext = createContext<MapContextValue | null>(null);
@@ -15,7 +15,7 @@ interface MapProviderProps {
  * Extended context value with setters for internal use
  */
 interface MapContextInternal extends MapContextValue {
-  setMap: (map: MapboxMap | null) => void;
+  setMap: (map: MapLibreMap | null) => void;
   setIsLoaded: (loaded: boolean) => void;
   setIsLoading: (loading: boolean) => void;
   setError: (error: Error | null) => void;
@@ -30,7 +30,7 @@ const MapContextInternal = createContext<MapContextInternal | null>(null);
  * making them available to any child component via the useMap hook.
  */
 export function MapProvider({ children }: MapProviderProps) {
-  const [map, setMap] = useState<MapboxMap | null>(null);
+  const [map, setMap] = useState<MapLibreMap | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -40,7 +40,7 @@ export function MapProvider({ children }: MapProviderProps) {
     isLoaded,
     isLoading,
     error,
-    setMap: useCallback((m: MapboxMap | null) => setMap(m), []),
+    setMap: useCallback((m: MapLibreMap | null) => setMap(m), []),
     setIsLoaded: useCallback((l: boolean) => setIsLoaded(l), []),
     setIsLoading: useCallback((l: boolean) => setIsLoading(l), []),
     setError: useCallback((e: Error | null) => setError(e), []),

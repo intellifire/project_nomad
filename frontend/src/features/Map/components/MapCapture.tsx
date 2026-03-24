@@ -72,7 +72,7 @@ export function MapCapture() {
       backgroundColor: null,
       ignoreElements: (el) => {
         if (el.tagName === 'CANVAS') return true;
-        if (el.classList?.contains('mapboxgl-ctrl')) return true;
+        if (el.classList?.contains('maplibregl-ctrl')) return true;
         if (el.classList?.contains('drawing-toolbar')) return true;
         if (el.classList?.contains('layer-panel')) return true;
         if (el.classList?.contains('layer-panel-toggle')) return true;

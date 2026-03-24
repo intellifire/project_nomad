@@ -1,6 +1,4 @@
 import { createContext, useContext, ReactNode, useState, useCallback, useEffect, useRef } from 'react';
-import MapboxDraw from '@mapbox/mapbox-gl-draw';
-import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 import { useMap } from './MapContext';
 import type { DrawingMode, DrawnFeature, DrawingState } from '../types/geometry';
 
@@ -33,37 +31,31 @@ interface DrawContextValue {
 const DrawContext = createContext<DrawContextValue | null>(null);
 
 /**
- * Map drawing mode to MapboxDraw mode
- */
-function toDrawMode(mode: DrawingMode): string {
-  switch (mode) {
-    case 'point':
-      return 'draw_point';
-    case 'line':
-      return 'draw_line_string';
-    case 'polygon':
-      return 'draw_polygon';
-    default:
-      return 'simple_select';
-  }
-}
-
-/**
  * Props for DrawProvider
  */
 interface DrawProviderProps {
   children: ReactNode;
 }
 
+// Unique ID generator for features
+let featureIdCounter = 0;
+
 /**
- * Provides a shared MapboxDraw instance to all child components.
+ * Provides drawing functionality to child components.
  *
- * This solves the conflict between DrawingToolbar and MeasurementTool
- * by ensuring only one Draw control exists on the map.
+ * NOTE: This is a stub implementation. The original implementation used
+ * @mapbox/mapbox-gl-draw which is not compatible with MapLibre.
+ *
+ * TODO: Implement drawing functionality using a MapLibre-compatible library:
+ * - Option 1: terra-draw (framework-agnostic, actively maintained)
+ * - Option 2: maplibre-gl-draw (community fork)
+ * - Option 3: Custom implementation using MapLibre GL JS directly
+ *
+ * For now, this provides the same API surface but drawing operations
+ * are no-ops that log warnings.
  */
 export function DrawProvider({ children }: DrawProviderProps) {
   const { map, isLoaded } = useMap();
-  const drawRef = useRef<MapboxDraw | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [state, setState] = useState<DrawingState>({
     mode: 'none',
@@ -76,181 +68,64 @@ export function DrawProvider({ children }: DrawProviderProps) {
   const updateSubscribers = useRef<Set<(features: DrawnFeature[]) => void>>(new Set());
   const deleteSubscribers = useRef<Set<(features: DrawnFeature[]) => void>>(new Set());
 
-  // Initialize MapboxDraw once
+  // Initialize when map is loaded
   useEffect(() => {
-    if (!map || !isLoaded || drawRef.current) return;
+    if (!map || !isLoaded) return;
 
-    const draw = new MapboxDraw({
-      displayControlsDefault: false,
-      controls: {},
-      defaultMode: 'simple_select',
-      styles: [
-        // Polygon fill - transparent yellow
-        {
-          id: 'gl-draw-polygon-fill',
-          type: 'fill',
-          filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
-          paint: {
-            'fill-color': '#FFD700',
-            'fill-opacity': 0.2,
-          },
-        },
-        // Polygon outline - solid yellow
-        {
-          id: 'gl-draw-polygon-stroke',
-          type: 'line',
-          filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
-          paint: {
-            'line-color': '#FFD700',
-            'line-width': 4,
-          },
-        },
-        // Line - solid yellow
-        {
-          id: 'gl-draw-line',
-          type: 'line',
-          filter: ['all', ['==', '$type', 'LineString'], ['!=', 'mode', 'static']],
-          paint: {
-            'line-color': '#FFD700',
-            'line-width': 4,
-          },
-        },
-        // Point (outer circle) - solid yellow
-        {
-          id: 'gl-draw-point-outer',
-          type: 'circle',
-          filter: ['all', ['==', '$type', 'Point'], ['!=', 'mode', 'static']],
-          paint: {
-            'circle-radius': 10,
-            'circle-color': '#FFD700',
-          },
-        },
-        // Point (inner circle for selection)
-        {
-          id: 'gl-draw-point-inner',
-          type: 'circle',
-          filter: ['all', ['==', '$type', 'Point'], ['!=', 'mode', 'static']],
-          paint: {
-            'circle-radius': 5,
-            'circle-color': '#FFFFFF',
-          },
-        },
-        // Vertex points (for editing)
-        {
-          id: 'gl-draw-vertex',
-          type: 'circle',
-          filter: ['all', ['==', 'meta', 'vertex'], ['!=', 'mode', 'static']],
-          paint: {
-            'circle-radius': 6,
-            'circle-color': '#FFFFFF',
-            'circle-stroke-color': '#FFD700',
-            'circle-stroke-width': 2,
-          },
-        },
-        // Midpoint vertices
-        {
-          id: 'gl-draw-midpoint',
-          type: 'circle',
-          filter: ['all', ['==', 'meta', 'midpoint']],
-          paint: {
-            'circle-radius': 4,
-            'circle-color': '#FFD700',
-          },
-        },
-      ],
-    });
-
-    map.addControl(draw as unknown as mapboxgl.IControl);
-    drawRef.current = draw;
     setIsReady(true);
 
-    // Event handlers
-    const handleCreate = (e: { features: DrawnFeature[] }) => {
-      setState((prev) => ({
-        ...prev,
-        features: [...prev.features, ...e.features],
-      }));
-      createSubscribers.current.forEach((cb) => cb(e.features));
-    };
-
-    const handleUpdate = (e: { features: DrawnFeature[] }) => {
-      setState((prev) => ({
-        ...prev,
-        features: prev.features.map((f) => {
-          const updated = e.features.find((u) => u.id === f.id);
-          return updated || f;
-        }),
-      }));
-      updateSubscribers.current.forEach((cb) => cb(e.features));
-    };
-
-    const handleDelete = (e: { features: DrawnFeature[] }) => {
-      const deletedIds = new Set(e.features.map((f) => f.id));
-      setState((prev) => ({
-        ...prev,
-        features: prev.features.filter((f) => !deletedIds.has(f.id)),
-        selectedIds: prev.selectedIds.filter((id) => !deletedIds.has(id)),
-      }));
-      deleteSubscribers.current.forEach((cb) => cb(e.features));
-    };
-
-    const handleSelectionChange = (e: { features: DrawnFeature[] }) => {
-      setState((prev) => ({
-        ...prev,
-        selectedIds: e.features.map((f) => String(f.id)),
-      }));
-    };
-
-    map.on('draw.create', handleCreate);
-    map.on('draw.update', handleUpdate);
-    map.on('draw.delete', handleDelete);
-    map.on('draw.selectionchange', handleSelectionChange);
+    // TODO: Initialize actual drawing library here
+    console.warn('[DrawProvider] Drawing functionality is stubbed. ' +
+      'Implement using terra-draw or maplibre-gl-draw for MapLibre compatibility.');
 
     return () => {
-      map.off('draw.create', handleCreate);
-      map.off('draw.update', handleUpdate);
-      map.off('draw.delete', handleDelete);
-      map.off('draw.selectionchange', handleSelectionChange);
-
-      if (drawRef.current) {
-        map.removeControl(drawRef.current as unknown as mapboxgl.IControl);
-        drawRef.current = null;
-        setIsReady(false);
-      }
+      setIsReady(false);
     };
   }, [map, isLoaded]);
 
   const setMode = useCallback((mode: DrawingMode) => {
-    if (!drawRef.current) return;
-    drawRef.current.changeMode(toDrawMode(mode));
     setState((prev) => ({ ...prev, mode }));
+    console.warn('[DrawProvider] setMode called but drawing is not implemented');
   }, []);
 
   const getFeatures = useCallback((): DrawnFeature[] => {
-    if (!drawRef.current) return [];
-    return drawRef.current.getAll().features as DrawnFeature[];
-  }, []);
+    return state.features;
+  }, [state.features]);
 
   const deleteSelected = useCallback(() => {
-    if (!drawRef.current) return;
-    const selected = drawRef.current.getSelectedIds();
-    if (selected.length > 0) {
-      drawRef.current.delete(selected);
-    }
-  }, []);
+    if (state.selectedIds.length === 0) return;
+
+    const deletedFeatures = state.features.filter(f => state.selectedIds.includes(String(f.id)));
+    setState((prev) => ({
+      ...prev,
+      features: prev.features.filter(f => !state.selectedIds.includes(String(f.id))),
+      selectedIds: [],
+    }));
+    deleteSubscribers.current.forEach((cb) => cb(deletedFeatures));
+  }, [state.selectedIds, state.features]);
 
   const deleteAll = useCallback(() => {
-    if (!drawRef.current) return;
-    drawRef.current.deleteAll();
-    setState((prev) => ({ ...prev, features: [], selectedIds: [] }));
-  }, []);
+    const deletedFeatures = [...state.features];
+    setState((prev) => ({
+      ...prev,
+      features: [],
+      selectedIds: [],
+    }));
+    deleteSubscribers.current.forEach((cb) => cb(deletedFeatures));
+  }, [state.features]);
 
   const addFeatures = useCallback((features: DrawnFeature[]) => {
-    if (!drawRef.current) return;
-    features.forEach((f) => drawRef.current!.add(f));
-    setState((prev) => ({ ...prev, features: [...prev.features, ...features] }));
-    // Notify create subscribers so useGeometrySync picks up the change
-    createSubscribers.current.forEach((cb) => cb(features));
+    // Assign IDs to features if they don't have them
+    const featuresWithIds = features.map(f => ({
+      ...f,
+      id: f.id ?? `feature-${++featureIdCounter}`,
+    }));
+
+    setState((prev) => ({
+      ...prev,
+      features: [...prev.features, ...featuresWithIds],
+    }));
+    createSubscribers.current.forEach((cb) => cb(featuresWithIds));
   }, []);
 
   const onCreateSubscribe = useCallback((callback: (features: DrawnFeature[]) => void) => {
@@ -304,7 +179,7 @@ export function useDraw(): DrawContextValue {
 /**
  * Optional version of useDraw that returns null if no provider.
  *
- * Use this when the component may be rendered outside of a DrawProvider,
+ * Use this when the component may be rendered outside of DrawProvider,
  * such as when embedded in a host application that provides its own map.
  */
 export function useDrawOptional(): DrawContextValue | null {
