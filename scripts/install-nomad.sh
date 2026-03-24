@@ -10,7 +10,7 @@
 
 set -e
 
-# URL to the full bootstrap script
+# URL to the full bootstrap script (uses curl-installer branch for testing)
 BOOTSTRAP_URL="https://raw.githubusercontent.com/WISE-Developers/project_nomad/curl-installer/scripts/install-nomad-bootstrap.sh"
 
 # Colors
