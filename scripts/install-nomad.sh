@@ -37,10 +37,8 @@ download_bootstrap() {
     temp_file=$(mktemp -t nomad_bootstrap.XXXXXX)
 
     if command -v curl &> /dev/null; then
-        print_info "Using curl"
         curl -fsSL "$BOOTSTRAP_URL" -o "$temp_file"
     elif command -v wget &> /dev/null; then
-        print_info "Using wget"
         wget -q "$BOOTSTRAP_URL" -O "$temp_file"
     else
         print_error "Neither curl nor wget is installed"
