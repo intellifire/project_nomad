@@ -238,6 +238,7 @@ download_json() {
 # ============================================
 
 get_latest_version() {
+    # Output progress to stderr to avoid polluting return value
     print_step "Fetching latest release version..." >&2
 
     local api_url="${GITHUB_API_URL}/releases/latest"
