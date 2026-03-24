@@ -435,6 +435,13 @@ run_installer() {
     print_info "Handing off to: $installer_script"
     echo ""
 
+    # If stdin is not a tty (e.g., curl | bash), try to restore terminal input
+    # This allows the interactive installer to prompt for user input
+    if [ ! -t 0 ] && [ -r /dev/tty ]; then
+        print_info "Restoring terminal input for interactive prompts"
+        exec </dev/tty
+    fi
+
     # Execute the installer
     cd "$INSTALL_DIR"
     exec "$installer_script" "${installer_args[@]}"
