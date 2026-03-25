@@ -161,20 +161,20 @@ parse_args() {
 check_prerequisites() {
     print_step "Checking prerequisites..."
 
-    local missing=()
+    local missing=""
 
     # Check for curl or wget
     if ! command -v curl &> /dev/null && ! command -v wget &> /dev/null; then
-        missing+=("curl or wget")
+        missing="$missing curl or wget"
     fi
 
     # Check for tar
     if ! command -v tar &> /dev/null; then
-        missing+=("tar")
+        missing="$missing tar"
     fi
 
-    if [ ${#missing[@]} -ne 0 ]; then
-        print_error "Missing required tools: ${missing[*]}"
+    if [ -n "$missing" ]; then
+        print_error "Missing required tools:$missing"
         echo ""
         echo "Please install the missing dependencies and try again:"
         echo "  - Ubuntu/Debian: sudo apt-get install curl tar"

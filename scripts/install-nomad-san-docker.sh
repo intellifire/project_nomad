@@ -216,15 +216,23 @@ generate_env() {
         touch "$env_file"
     fi
 
-    # Helper function to update env values
+    # Helper function to update env values (cross-platform sed)
     update_env() {
         local key="$1"
         local value="$2"
 
         if grep -q "^${key}=" "$env_file" 2>/dev/null; then
-            sed -i "s|^${key}=.*|${key}=${value}|" "$env_file"
+            if [[ "$OSTYPE" == "darwin"* ]]; then
+                sed -i '' "s|^${key}=.*|${key}=${value}|" "$env_file"
+            else
+                sed -i "s|^${key}=.*|${key}=${value}|" "$env_file"
+            fi
         elif grep -q "^#.*${key}=" "$env_file" 2>/dev/null; then
-            sed -i "s|^#.*${key}=.*|${key}=${value}|" "$env_file"
+            if [[ "$OSTYPE" == "darwin"* ]]; then
+                sed -i '' "s|^#.*${key}=.*|${key}=${value}|" "$env_file"
+            else
+                sed -i "s|^#.*${key}=.*|${key}=${value}|" "$env_file"
+            fi
         else
             echo "${key}=${value}" >> "$env_file"
         fi

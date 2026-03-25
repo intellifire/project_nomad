@@ -11,8 +11,7 @@
 set -e
 
 # URL to the full bootstrap script
-# Uses curl-installer branch for testing; will be main after merge
-BOOTSTRAP_URL="https://raw.githubusercontent.com/WISE-Developers/project_nomad/curl-installer/scripts/install-nomad-bootstrap.sh"
+BOOTSTRAP_URL="https://raw.githubusercontent.com/WISE-Developers/project_nomad/main/scripts/install-nomad-bootstrap.sh"
 
 # Colors
 RED='\033[0;31m'
