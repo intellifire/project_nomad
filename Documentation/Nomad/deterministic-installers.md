@@ -21,16 +21,16 @@ Unlike the interactive `./install.sh` wizard, deterministic installers:
 ## Prerequisites
 
 All installers require:
-- **MapBox API token** ([get free](https://account.mapbox.com/access-tokens/))
 - **Docker installers**: Docker Desktop or Docker Engine
 - **Metal installers**: Node.js >= 20, GDAL libraries
+
+Note: No API token required for maps - uses open-source MapLibre GL with CartoDB basemaps.
 
 ## Quick Start
 
 ### Linux/macOS - Docker (Recommended)
 
 ```bash
-export VITE_MAPBOX_TOKEN=pk.your_token_here
 curl -fsSL https://raw.githubusercontent.com/WISE-Developers/project_nomad/main/scripts/install-nomad-san-docker.sh | bash
 ```
 
@@ -39,7 +39,6 @@ Access Nomad at: `http://localhost:3901`
 ### Linux/macOS - Metal
 
 ```bash
-export VITE_MAPBOX_TOKEN=pk.your_token_here
 curl -fsSL https://raw.githubusercontent.com/WISE-Developers/project_nomad/main/scripts/install-nomad-san-metal.sh | bash
 ```
 
@@ -48,7 +47,6 @@ Access Nomad at: `http://localhost:4901`
 ### Windows - Docker (PowerShell)
 
 ```powershell
-$env:VITE_MAPBOX_TOKEN = "pk.your_token_here"
 iwr -useb https://raw.githubusercontent.com/WISE-Developers/project_nomad/main/scripts/install-nomad-san-docker.ps1 | iex
 ```
 
@@ -60,7 +58,6 @@ Configure via environment variables:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `VITE_MAPBOX_TOKEN` | (required) | MapBox API token for maps |
 | `INSTALL_DIR` | `./project_nomad` | Where to extract Nomad |
 | `FIRESTARR_DATASET_PATH` | `~/firestarr_data` | Dataset location |
 | `NOMAD_PORT` | `4901` | Server port (Metal only) |
@@ -72,16 +69,16 @@ Configure via environment variables:
 
 ```bash
 # Custom install directory
-curl ... | INSTALL_DIR=/opt/nomad VITE_MAPBOX_TOKEN=pk.xxx bash
+curl ... | INSTALL_DIR=/opt/nomad bash
 
 # Custom dataset path
-curl ... | FIRESTARR_DATASET_PATH=/data/firestarr VITE_MAPBOX_TOKEN=pk.xxx bash
+curl ... | FIRESTARR_DATASET_PATH=/data/firestarr bash
 
 # Auto-download 50GB dataset
-curl ... | VITE_MAPBOX_TOKEN=pk.xxx AUTO_INSTALL_DATASET=1 bash
+curl ... | AUTO_INSTALL_DATASET=1 bash
 
 # Install without starting
-curl ... | VITE_MAPBOX_TOKEN=pk.xxx SKIP_START=1 bash
+curl ... | SKIP_START=1 bash
 ```
 
 ## Post-Install

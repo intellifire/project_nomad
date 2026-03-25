@@ -30,9 +30,8 @@ E2E tests use Playwright to test the application through a real browser.
 2. **Configure environment** (for full functionality):
    Copy `.env.example` to `.env` and configure:
    - `VITE_API_BASE_URL` - Backend API URL
-   - `VITE_MAPBOX_TOKEN` - MapBox access token
 
-   > Note: Smoke tests will pass even without configuration, but map-related tests will skip with a note.
+   > Note: No map API key required - uses open-source MapLibre with CartoDB basemaps.
 
 ### Running E2E Tests
 

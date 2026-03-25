@@ -15,14 +15,13 @@ Get Nomad running in minutes without git clone. These scripts use pre-configured
 
 - **Docker installers**: Docker Desktop or Docker Engine
 - **Metal installers**: Node.js >= 20, GDAL libraries
-- All installers: MapBox API token ([get one free](https://account.mapbox.com/access-tokens/))
+- All installers: No API key required (uses open-source MapLibre with CartoDB basemaps)
 
 ### Quick Install
 
 #### Linux/macOS - Docker (Recommended)
 
 ```bash
-export VITE_MAPBOX_TOKEN=pk.your_token_here
 curl -fsSL https://raw.githubusercontent.com/WISE-Developers/project_nomad/main/scripts/install-nomad-san-docker.sh | bash
 ```
 
@@ -31,7 +30,6 @@ curl -fsSL https://raw.githubusercontent.com/WISE-Developers/project_nomad/main/
 #### Linux/macOS - Metal (Native)
 
 ```bash
-export VITE_MAPBOX_TOKEN=pk.your_token_here
 curl -fsSL https://raw.githubusercontent.com/WISE-Developers/project_nomad/main/scripts/install-nomad-san-metal.sh | bash
 ```
 
@@ -40,7 +38,6 @@ curl -fsSL https://raw.githubusercontent.com/WISE-Developers/project_nomad/main/
 #### Windows - Docker (PowerShell)
 
 ```powershell
-$env:VITE_MAPBOX_TOKEN = "pk.your_token_here"
 iwr -useb https://raw.githubusercontent.com/WISE-Developers/project_nomad/main/scripts/install-nomad-san-docker.ps1 | iex
 ```
 
@@ -50,7 +47,6 @@ iwr -useb https://raw.githubusercontent.com/WISE-Developers/project_nomad/main/s
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `VITE_MAPBOX_TOKEN` | (required) | MapBox API token |
 | `INSTALL_DIR` | `./project_nomad` | Where to extract Nomad |
 | `FIRESTARR_DATASET_PATH` | `~/firestarr_data` | Dataset location |
 | `AUTO_INSTALL_DATASET` | (unset) | Set to `1` to auto-download dataset |
@@ -59,13 +55,13 @@ iwr -useb https://raw.githubusercontent.com/WISE-Developers/project_nomad/main/s
 
 ```bash
 # Custom dataset path
-curl ... | VITE_MAPBOX_TOKEN=pk.xxx FIRESTARR_DATASET_PATH=/data/nomad bash
+curl ... | FIRESTARR_DATASET_PATH=/data/nomad bash
 
 # Auto-download dataset
-curl ... | VITE_MAPBOX_TOKEN=pk.xxx AUTO_INSTALL_DATASET=1 bash
+curl ... | AUTO_INSTALL_DATASET=1 bash
 
 # Install without starting
-curl ... | VITE_MAPBOX_TOKEN=pk.xxx SKIP_START=1 bash
+curl ... | SKIP_START=1 bash
 ```
 
 ### Post-Install
@@ -92,7 +88,6 @@ npm run dev      # Development mode
 | "Docker not available" | Install Docker Desktop |
 | "Node.js too old" | Install Node.js >= 20 |
 | "GDAL not found" | `sudo apt-get install gdal-bin` |
-| "MapBox token required" | Get free token at mapbox.com |
 
 ---
 
