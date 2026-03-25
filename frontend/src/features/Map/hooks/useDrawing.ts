@@ -1,4 +1,7 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
+import { TerraDraw, TerraDrawPointMode, TerraDrawLineStringMode, TerraDrawPolygonMode, TerraDrawSelectMode } from 'terra-draw';
+import { TerraDrawMapLibreGLAdapter } from 'terra-draw-maplibre-gl-adapter';
+import type { Map } from 'maplibre-gl';
 import { useMap } from '../context/MapContext';
 import type { DrawingMode, DrawnFeature, DrawingState, DrawingStyles } from '../types/geometry';
 
@@ -43,19 +46,18 @@ interface UseDrawingReturn {
 // Unique ID generator for features
 let featureIdCounter = 0;
 
+// Mode name mapping
+const MODE_MAP: Record<DrawingMode, string> = {
+  point: 'point',
+  line: 'linestring',
+  polygon: 'polygon',
+  none: 'select',
+};
+
 /**
- * Hook for managing map drawing operations.
+ * Hook for managing map drawing operations using TerraDraw.
  *
- * NOTE: This is a stub implementation. The original implementation used
- * @mapbox/mapbox-gl-draw which is not compatible with MapLibre.
- *
- * TODO: Implement drawing functionality using a MapLibre-compatible library:
- * - Option 1: terra-draw (framework-agnostic, actively maintained)
- * - Option 2: maplibre-gl-draw (community fork)
- * - Option 3: Custom implementation using MapLibre GL JS directly
- *
- * For now, this provides the same API surface but drawing operations
- * are no-ops that log warnings.
+ * Uses terra-draw with the MapLibre GL adapter for cross-platform compatibility.
  *
  * @example
  * ```tsx
@@ -83,44 +85,129 @@ export function useDrawing(options: UseDrawingOptions = {}): UseDrawingReturn {
     features: [],
   });
 
-  // Initialize when map is loaded
+  // TerraDraw instance ref
+  const terraDrawRef = useRef<TerraDraw | null>(null);
+
+  // Initialize TerraDraw when map is loaded
   useEffect(() => {
     if (!map || !isLoaded) return;
 
+    const adapter = new TerraDrawMapLibreGLAdapter({
+      map: map as unknown as Map,
+    });
+
+    const draw = new TerraDraw({
+      adapter,
+      modes: [
+        new TerraDrawPointMode(),
+        new TerraDrawLineStringMode(),
+        new TerraDrawPolygonMode(),
+        new TerraDrawSelectMode(),
+      ],
+    });
+
+    // Set up event listeners
+    draw.on('finish', (id) => {
+      const feature = draw.getSnapshotFeature(id);
+      if (feature) {
+        const drawnFeature = feature as unknown as DrawnFeature;
+        setState((prev) => ({
+          ...prev,
+          features: [...prev.features, drawnFeature],
+        }));
+        options.onCreate?.([drawnFeature]);
+      }
+    });
+
+    draw.on('change', (ids, type) => {
+      if (type === 'delete') {
+        const deletedFeatures = state.features.filter(f => ids.includes(String(f.id)));
+        if (deletedFeatures.length > 0) {
+          setState((prev) => ({
+            ...prev,
+            features: prev.features.filter(f => !ids.includes(String(f.id))),
+            selectedIds: prev.selectedIds.filter(id => !ids.includes(String(id))),
+          }));
+          options.onDelete?.(deletedFeatures);
+        }
+      } else if (type === 'update') {
+        const updatedFeatures: DrawnFeature[] = [];
+        ids.forEach(id => {
+          const feature = draw.getSnapshotFeature(id);
+          if (feature) {
+            updatedFeatures.push(feature as unknown as DrawnFeature);
+          }
+        });
+        if (updatedFeatures.length > 0) {
+          setState((prev) => ({
+            ...prev,
+            features: prev.features.map(f =>
+              ids.includes(String(f.id))
+                ? updatedFeatures.find(uf => String(uf.id) === String(f.id)) ?? f
+                : f
+            ),
+          }));
+          options.onUpdate?.(updatedFeatures);
+        }
+      }
+    });
+
+    draw.on('select', (id) => {
+      setState((prev) => ({
+        ...prev,
+        selectedIds: [...prev.selectedIds, String(id)],
+      }));
+      options.onSelectionChange?.(state.features.filter(f => String(f.id) === String(id)));
+    });
+
+    draw.on('deselect', (id) => {
+      setState((prev) => ({
+        ...prev,
+        selectedIds: prev.selectedIds.filter(sid => sid !== String(id)),
+      }));
+    });
+
+    // Start TerraDraw
+    draw.start();
+    terraDrawRef.current = draw;
     setIsReady(true);
 
-    // TODO: Initialize actual drawing library here
-    console.warn('[useDrawing] Drawing functionality is stubbed. ' +
-      'Implement using terra-draw or maplibre-gl-draw for MapLibre compatibility.');
-
     return () => {
+      draw.stop();
+      terraDrawRef.current = null;
       setIsReady(false);
     };
   }, [map, isLoaded]);
 
   const setMode = useCallback((mode: DrawingMode) => {
     setState((prev) => ({ ...prev, mode }));
-    console.warn('[useDrawing] setMode called but drawing is not implemented');
+    if (terraDrawRef.current) {
+      terraDrawRef.current.setMode(MODE_MAP[mode]);
+    }
   }, []);
 
   const getFeatures = useCallback((): DrawnFeature[] => {
-    return state.features;
-  }, [state.features]);
+    if (!terraDrawRef.current) return [];
+    return terraDrawRef.current.getSnapshot() as unknown as DrawnFeature[];
+  }, []);
 
   const deleteSelected = useCallback(() => {
-    if (state.selectedIds.length === 0) return;
+    if (!terraDrawRef.current || state.selectedIds.length === 0) return;
 
     const deletedFeatures = state.features.filter(f => state.selectedIds.includes(String(f.id)));
+    terraDrawRef.current.removeFeatures(state.selectedIds.map(id => String(id)));
     setState((prev) => ({
       ...prev,
-      features: prev.features.filter(f => !state.selectedIds.includes(String(f.id))),
       selectedIds: [],
     }));
     options.onDelete?.(deletedFeatures);
   }, [state.selectedIds, state.features, options.onDelete]);
 
   const deleteAll = useCallback(() => {
+    if (!terraDrawRef.current) return;
+
     const deletedFeatures = [...state.features];
+    terraDrawRef.current.clear();
     setState((prev) => ({
       ...prev,
       features: [],
@@ -130,12 +217,15 @@ export function useDrawing(options: UseDrawingOptions = {}): UseDrawingReturn {
   }, [state.features, options.onDelete]);
 
   const addFeatures = useCallback((features: DrawnFeature[]) => {
+    if (!terraDrawRef.current) return;
+
     // Assign IDs to features if they don't have them
     const featuresWithIds = features.map(f => ({
       ...f,
       id: f.id ?? `feature-${++featureIdCounter}`,
     }));
 
+    terraDrawRef.current.addFeatures(featuresWithIds as any[]);
     setState((prev) => ({
       ...prev,
       features: [...prev.features, ...featuresWithIds],
