@@ -1,14 +1,112 @@
-# Project Nomad - Quick Start Guide (SAN Mode)
+# Project Nomad Quick Start Guide
 
-This guide walks you through the interactive installer for a Stand Alone Nomad (SAN) deployment.
+Choose your installation method:
 
-## Prerequisites
+- **[Deterministic Installers (New)](#deterministic-installers)** - One-line curl install, no git required
+- **[Interactive Installer](#interactive-installer)** - Full wizard with all options (requires git)
+
+---
+
+## Deterministic Installers (Recommended)
+
+Get Nomad running in minutes without git clone. These scripts use pre-configured defaults for SAN mode.
+
+### Prerequisites
+
+- **Docker installers**: Docker Desktop or Docker Engine
+- **Metal installers**: Node.js >= 20, GDAL libraries
+- All installers: MapBox API token ([get one free](https://account.mapbox.com/access-tokens/))
+
+### Quick Install
+
+#### Linux/macOS - Docker (Recommended)
+
+```bash
+export VITE_MAPBOX_TOKEN=pk.your_token_here
+curl -fsSL https://raw.githubusercontent.com/WISE-Developers/project_nomad/main/scripts/install-nomad-san-docker.sh | bash
+```
+
+**Access**: http://localhost:3901
+
+#### Linux/macOS - Metal (Native)
+
+```bash
+export VITE_MAPBOX_TOKEN=pk.your_token_here
+curl -fsSL https://raw.githubusercontent.com/WISE-Developers/project_nomad/main/scripts/install-nomad-san-metal.sh | bash
+```
+
+**Access**: http://localhost:4901
+
+#### Windows - Docker (PowerShell)
+
+```powershell
+$env:VITE_MAPBOX_TOKEN = "pk.your_token_here"
+iwr -useb https://raw.githubusercontent.com/WISE-Developers/project_nomad/main/scripts/install-nomad-san-docker.ps1 | iex
+```
+
+**Access**: http://localhost:3901
+
+### Custom Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VITE_MAPBOX_TOKEN` | (required) | MapBox API token |
+| `INSTALL_DIR` | `./project_nomad` | Where to extract Nomad |
+| `FIRESTARR_DATASET_PATH` | `~/firestarr_data` | Dataset location |
+| `AUTO_INSTALL_DATASET` | (unset) | Set to `1` to auto-download dataset |
+
+**Examples:**
+
+```bash
+# Custom dataset path
+curl ... | VITE_MAPBOX_TOKEN=pk.xxx FIRESTARR_DATASET_PATH=/data/nomad bash
+
+# Auto-download dataset
+curl ... | VITE_MAPBOX_TOKEN=pk.xxx AUTO_INSTALL_DATASET=1 bash
+
+# Install without starting
+curl ... | VITE_MAPBOX_TOKEN=pk.xxx SKIP_START=1 bash
+```
+
+### Post-Install
+
+**Docker:**
+```bash
+cd project_nomad
+docker compose logs -f    # View logs
+docker compose down         # Stop
+docker compose up -d        # Start
+```
+
+**Metal:**
+```bash
+cd project_nomad
+npm run start    # Production mode
+npm run dev      # Development mode
+```
+
+### Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| "Docker not available" | Install Docker Desktop |
+| "Node.js too old" | Install Node.js >= 20 |
+| "GDAL not found" | `sudo apt-get install gdal-bin` |
+| "MapBox token required" | Get free token at mapbox.com |
+
+---
+
+## Interactive Installer
+
+For full control over all options (ACN mode, custom database, OIDC auth, etc.), use the interactive wizard.
+
+### Prerequisites
 
 - **Git** - to clone the repository
-- **Docker & Docker Compose** (for Docker mode) or **Node.js >= 20** (for Metal mode)
-- **~55GB disk space** - for the FireSTARR national dataset
+- Docker & Docker Compose (Docker mode) or Node.js >= 20 (Metal mode)
+- ~55GB disk space for the FireSTARR dataset
 
-## Step 1: Clone and Run Installer
+### Installation
 
 ```bash
 git clone https://github.com/WISE-Developers/project_nomad.git
@@ -16,184 +114,45 @@ cd project_nomad
 ./install.sh
 ```
 
-You'll see the welcome screen:
+The wizard will guide you through:
+1. **Deployment Mode** - SAN (standalone) or ACN (agency)
+2. **Infrastructure** - Docker or Metal
+3. **Dataset** - Download new or use existing
+4. **FireSTARR Binary** - Download or use existing (Metal only)
 
-```
-════════════════════════════════════════════════════════════
-         Project Nomad Setup Wizard v2.0.0
-════════════════════════════════════════════════════════════
-```
+### Start the Application
 
-## Step 2: Deployment Mode
-
-```
-════════════════════════════════════════════════════════════
-              Step 1: Deployment Mode
-════════════════════════════════════════════════════════════
-
-    1) SAN (Stand Alone Nomad)
-       Complete self-contained deployment
-       - SQLite database (no external DB required)
-       - Simple username-based authentication
-       - Ideal for: single users, demonstrations, field deployments
-
-Select an option [1-2] (default: 1):
-```
-
-**Choose 1** for SAN.
-
-## Step 3: Infrastructure
-
-```
-════════════════════════════════════════════════════════════
-              Step 2: Infrastructure
-════════════════════════════════════════════════════════════
-
-    1) Docker (Recommended)
-       Everything runs in containers
-       - Easiest setup, consistent across platforms
-       - Requires: Docker Desktop or Docker Engine
-
-    2) Metal
-       Everything runs natively on host
-       - Maximum performance, no containerization overhead
-       - Requires: Node.js >= 20, GDAL libraries, FireSTARR binary
-
-Select an option [1-2] (default: 1):
-```
-
-**Choose 1 (Docker)** for easiest setup, or **2 (Metal)** for bare metal.
-
-If you choose Metal on Linux, the installer validates system libraries and PROJ database schema, offering to fix issues automatically.
-
-## Step 4: FireSTARR Dataset
-
-```
-FireSTARR Dataset
-    The dataset includes fuel grids, DEM data (~50GB).
-
-    1) Use existing dataset
-       Point to an already-installed FireSTARR dataset
-
-    2) Download dataset
-       Download the dataset during installation
-
-    3) Skip for now
-       Configure dataset location later
-
-Select an option [1-3] (default: 2):
-```
-
-**Choose 2** to download the national dataset (~50GB), or **1** if you already have it.
-
-If downloading, you'll be prompted for:
-- **Download folder** - where to save the archive (default: `~/Downloads`)
-- **Install path** - where to extract the dataset (default: `~/firestarr_data`)
-
-## Step 5: FireSTARR Binary (Metal mode only)
-
-If you chose Metal mode:
-
-```
-FireSTARR Binary
-    The FireSTARR fire modeling engine.
-
-    1) Use existing installation
-       Point to an already-installed FireSTARR binary
-
-    2) Download binary
-       Download the appropriate binary for your system
-
-Select an option [1-2] (default: 2):
-```
-
-**Choose 2** to download, or **1** to point to an existing binary.
-
-## Step 6: Configuration Summary
-
-The installer shows your configuration and asks for confirmation:
-
-```
-════════════════════════════════════════════════════════════
-              Configuration Summary
-════════════════════════════════════════════════════════════
-
-    Deployment Mode:     SAN
-    Infrastructure:      Docker
-    Dataset Path:        /home/user/firestarr_data
-    ...
-
-Proceed with installation? [Y/n]:
-```
-
-Press **Enter** or **Y** to proceed.
-
-## Step 7: Installation
-
-The installer:
-1. Downloads the FireSTARR dataset (if selected)
-2. Downloads the FireSTARR binary (Metal mode)
-3. Generates the `.env` configuration file
-4. Builds the application (Metal mode) or prepares Docker config
-
-## Step 8: Start the Application
-
-After installation completes:
-
-### Docker Mode
-
+**Docker:**
 ```bash
 docker compose up -d
 ```
+Access at `http://<hostname>:3901`
 
-Access Nomad at **http://\<your-hostname\>:3901**
-
-### Metal Mode
-
+**Metal:**
 ```bash
 npm start
 ```
-
-Access Nomad at **http://\<your-hostname\>:4901**
-
-> The installer detects your hostname automatically and displays the correct URL at the end of setup.
-
-## Verify It's Working
-
-```bash
-# Health check (use the hostname shown by the installer)
-curl http://<your-hostname>:4901/api/health
-
-# Docker: check containers
-docker compose ps
-```
-
-## Troubleshooting
-
-### PROJ schema version error (Linux Metal)
-
-The installer detects this and offers to fix it. If you see:
-
-```
-✖ PROJ database schema version too old
-    Found: proj.db schema version 2
-    Required: schema version >= 6
-```
-
-Answer **Y** when prompted to install updated PROJ data.
-
-### Dataset download fails
-
-- Check your internet connection
-- Try downloading manually from the URL shown
-- Use option 1 (existing dataset) and point to the downloaded location
-
-### Permission denied
-
-```bash
-chmod +x ./install.sh
-```
+Access at `http://<hostname>:4901`
 
 ---
 
-For more details, see [README.md](README.md).
+## Available Installers
+
+| Script | Platform | Mode | Use Case |
+|--------|----------|------|----------|
+| `install-nomad-san-docker.sh` | Linux/macOS | Docker | Quick start, no dependencies |
+| `install-nomad-san-metal.sh` | Linux/macOS | Metal | Native performance |
+| `install-nomad-san-docker.ps1` | Windows | Docker | PowerShell users |
+| `./install.sh` (interactive) | All | Any | Full configuration |
+
+---
+
+## Need Help?
+
+- **Documentation**: See `README.md` and `Documentation/` folder
+- **Issues**: https://github.com/WISE-Developers/project_nomad/issues
+- **Original Installer**: Use `./install.sh` from a git clone
+
+## License
+
+Project Nomad is licensed under AGPL-3.0. See `LICENSE` file for details.
