@@ -68,6 +68,12 @@ export function DrawProvider({ children }: DrawProviderProps) {
   // TerraDraw instance ref
   const terraDrawRef = useRef<TerraDraw | null>(null);
 
+  // Ref to avoid stale closure in event handlers
+  const featuresRef = useRef<DrawnFeature[]>(state.features);
+  useEffect(() => {
+    featuresRef.current = state.features;
+  }, [state.features]);
+
   // Subscriber refs
   const createSubscribers = useRef<Set<(features: DrawnFeature[]) => void>>(new Set());
   const updateSubscribers = useRef<Set<(features: DrawnFeature[]) => void>>(new Set());
@@ -106,7 +112,7 @@ export function DrawProvider({ children }: DrawProviderProps) {
 
     draw.on('change', (ids, type) => {
       if (type === 'delete') {
-        const deletedFeatures = state.features.filter(f => ids.includes(String(f.id)));
+        const deletedFeatures = featuresRef.current.filter(f => ids.includes(String(f.id)));
         if (deletedFeatures.length > 0) {
           setState((prev) => ({
             ...prev,

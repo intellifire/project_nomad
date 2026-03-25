@@ -105,6 +105,7 @@ export function MapContainer({
         pitch: initialPitch,
         bearing: initialBearing,
         attributionControl: { compact: true },
+        canvasContextAttributes: { preserveDrawingBuffer: true }, // Required for useRasterHover (gl.readPixels)
       });
 
       mapRef.current = map;
