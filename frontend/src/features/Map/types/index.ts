@@ -48,12 +48,12 @@ export type BasemapStyle = 'streets' | 'satellite' | 'outdoors';
 export interface BasemapConfig {
   id: BasemapStyle;
   name: string;
-  url: string;
+  url: string | StyleSpecification;
   thumbnail?: string;
 }
 
 /**
- * Available basemap styles (using free CartoDB and OSM sources)
+ * Available basemap styles (using free CartoDB and Esri sources)
  */
 export const BASEMAP_STYLES: Record<BasemapStyle, BasemapConfig> = {
   streets: {
@@ -64,7 +64,30 @@ export const BASEMAP_STYLES: Record<BasemapStyle, BasemapConfig> = {
   satellite: {
     id: 'satellite',
     name: 'Satellite',
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    // Esri World Imagery — wrapped in a full MapLibre style spec because
+    // map.setStyle() requires a style JSON URL or StyleSpecification object,
+    // not a bare raster-tile template string.
+    url: {
+      version: 8,
+      sources: {
+        'esri-satellite': {
+          type: 'raster',
+          tiles: [
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+          ],
+          tileSize: 256,
+          attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+          maxzoom: 19,
+        },
+      },
+      layers: [
+        {
+          id: 'esri-satellite-layer',
+          type: 'raster',
+          source: 'esri-satellite',
+        },
+      ],
+    } as StyleSpecification,
   },
   outdoors: {
     id: 'outdoors',

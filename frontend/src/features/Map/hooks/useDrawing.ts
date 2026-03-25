@@ -1,7 +1,6 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { TerraDraw, TerraDrawPointMode, TerraDrawLineStringMode, TerraDrawPolygonMode, TerraDrawSelectMode } from 'terra-draw';
 import { TerraDrawMapLibreGLAdapter } from 'terra-draw-maplibre-gl-adapter';
-import type { Map } from 'maplibre-gl';
 import { useMap } from '../context/MapContext';
 import type { DrawingMode, DrawnFeature, DrawingState, DrawingStyles } from '../types/geometry';
 
@@ -42,9 +41,6 @@ interface UseDrawingReturn {
   /** Whether drawing is ready */
   isReady: boolean;
 }
-
-// Unique ID generator for features
-let featureIdCounter = 0;
 
 // Mode name mapping
 const MODE_MAP: Record<DrawingMode, string> = {
@@ -88,12 +84,33 @@ export function useDrawing(options: UseDrawingOptions = {}): UseDrawingReturn {
   // TerraDraw instance ref
   const terraDrawRef = useRef<TerraDraw | null>(null);
 
+  // Per-instance ID counter (avoids issues under React Strict Mode / HMR)
+  const featureIdCounterRef = useRef(0);
+
+  // Ref tracking the latest features list — used in event handlers to avoid
+  // stale closures (the effect that sets up listeners runs only on mount).
+  const featuresRef = useRef<DrawnFeature[]>([]);
+  useEffect(() => {
+    featuresRef.current = state.features;
+  }, [state.features]);
+
+  // Refs for the latest option callbacks — keeps event handlers up-to-date
+  // without needing to tear down and re-register listeners on every render.
+  const onCreateRef = useRef(options.onCreate);
+  const onUpdateRef = useRef(options.onUpdate);
+  const onDeleteRef = useRef(options.onDelete);
+  const onSelectionChangeRef = useRef(options.onSelectionChange);
+  useEffect(() => { onCreateRef.current = options.onCreate; }, [options.onCreate]);
+  useEffect(() => { onUpdateRef.current = options.onUpdate; }, [options.onUpdate]);
+  useEffect(() => { onDeleteRef.current = options.onDelete; }, [options.onDelete]);
+  useEffect(() => { onSelectionChangeRef.current = options.onSelectionChange; }, [options.onSelectionChange]);
+
   // Initialize TerraDraw when map is loaded
   useEffect(() => {
     if (!map || !isLoaded) return;
 
     const adapter = new TerraDrawMapLibreGLAdapter({
-      map: map as unknown as Map,
+      map,
     });
 
     const draw = new TerraDraw({
@@ -115,20 +132,21 @@ export function useDrawing(options: UseDrawingOptions = {}): UseDrawingReturn {
           ...prev,
           features: [...prev.features, drawnFeature],
         }));
-        options.onCreate?.([drawnFeature]);
+        onCreateRef.current?.([drawnFeature]);
       }
     });
 
     draw.on('change', (ids, type) => {
       if (type === 'delete') {
-        const deletedFeatures = state.features.filter(f => ids.includes(String(f.id)));
+        // Use the ref to read the current feature list — avoids stale closure
+        const deletedFeatures = featuresRef.current.filter(f => ids.includes(String(f.id)));
         if (deletedFeatures.length > 0) {
           setState((prev) => ({
             ...prev,
             features: prev.features.filter(f => !ids.includes(String(f.id))),
             selectedIds: prev.selectedIds.filter(id => !ids.includes(String(id))),
           }));
-          options.onDelete?.(deletedFeatures);
+          onDeleteRef.current?.(deletedFeatures);
         }
       } else if (type === 'update') {
         const updatedFeatures: DrawnFeature[] = [];
@@ -147,17 +165,23 @@ export function useDrawing(options: UseDrawingOptions = {}): UseDrawingReturn {
                 : f
             ),
           }));
-          options.onUpdate?.(updatedFeatures);
+          onUpdateRef.current?.(updatedFeatures);
         }
       }
     });
 
     draw.on('select', (id) => {
-      setState((prev) => ({
-        ...prev,
-        selectedIds: [...prev.selectedIds, String(id)],
-      }));
-      options.onSelectionChange?.(state.features.filter(f => String(f.id) === String(id)));
+      // Dedup: only add if not already selected
+      setState((prev) => {
+        const idStr = String(id);
+        if (prev.selectedIds.includes(idStr)) return prev;
+        return { ...prev, selectedIds: [...prev.selectedIds, idStr] };
+      });
+      // Fetch the selected feature from the snapshot to avoid stale state
+      const feature = draw.getSnapshotFeature(id);
+      if (feature) {
+        onSelectionChangeRef.current?.([feature as unknown as DrawnFeature]);
+      }
     });
 
     draw.on('deselect', (id) => {
@@ -222,7 +246,7 @@ export function useDrawing(options: UseDrawingOptions = {}): UseDrawingReturn {
     // Assign IDs to features if they don't have them
     const featuresWithIds = features.map(f => ({
       ...f,
-      id: f.id ?? `feature-${++featureIdCounter}`,
+      id: f.id ?? `feature-${++featureIdCounterRef.current}`,
     }));
 
     terraDrawRef.current.addFeatures(featuresWithIds as any[]);

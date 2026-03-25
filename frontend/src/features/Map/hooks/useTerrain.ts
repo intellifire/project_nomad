@@ -88,54 +88,10 @@ export function useTerrain(): UseTerrainReturn {
     if (!map || !isLoaded) return;
 
     const applyTerrain = () => {
-      try {
-        // DEM source requires configuration - disabled for now
-        // To enable, add a DEM source compatible with MapLibre:
-        // - MapTiler: url: 'https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json?key=YOUR_KEY'
-        // - Self-hosted: url: 'path/to/your/dem/tiles'
-        // See: https://maplibre.org/maplibre-style-spec/sources/#raster-dem
-
-        // Skip terrain application - DEM not configured
-        setIsSupported(false);
-        return;
-
-        /* eslint-disable no-unreachable */
-        // The following code is unreachable but kept for future reference
-        // when a DEM source is configured:
-        /*
-        // Add DEM source if not exists
-        if (!map.getSource('terrain-dem')) {
-          map.addSource('terrain-dem', {
-            type: 'raster-dem',
-            url: 'YOUR_DEM_SOURCE_URL_HERE',
-            tileSize: 512,
-            maxzoom: 14,
-          });
-        }
-
-        if (config.enabled) {
-          map.setTerrain({
-            source: 'terrain-dem',
-            exaggeration: config.exaggeration,
-          });
-          // Set pitch for better 3D viewing
-          if (map.getPitch() < 30) {
-            map.easeTo({ pitch: 45, duration: 500 });
-          }
-        } else {
-          map.setTerrain(null);
-          // Reset pitch when disabling
-          if (map.getPitch() > 0) {
-            map.easeTo({ pitch: 0, duration: 500 });
-          }
-        }
-
-        setIsSupported(true);
-        */
-      } catch (error) {
-        console.warn('Terrain not supported:', error);
-        setIsSupported(false);
-      }
+      // TODO: Enable terrain by configuring a MapLibre-compatible DEM source.
+      // Options: MapTiler terrain-rgb-v2, or a self-hosted raster-dem tile set.
+      // See: https://maplibre.org/maplibre-style-spec/sources/#raster-dem
+      setIsSupported(false);
     };
 
     // Apply on style load (in case style changes)

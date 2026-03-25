@@ -2,7 +2,7 @@
  * useRasterHover — raster burn-probability hover tooltip
  *
  * Reads pixel colour under the mouse via WebGL readPixels and maps it back
- * to a probability percentage using the FireSTARR colour ramp.  A Mapbox
+ * to a probability percentage using the FireSTARR colour ramp.  A MapLibre
  * popup is shown/hidden as the cursor moves over the map canvas.
  *
  * @module features/Map/hooks/useRasterHover
@@ -125,16 +125,16 @@ export function colorToPercentage(
  * Props for useRasterHover
  */
 interface UseRasterHoverProps {
-  /** Mapbox map instance */
+  /** MapLibre map instance */
   map: maplibregl.Map | null;
   /** Whether any raster layer has hover enabled (visible + 100% opacity) */
   hasVisibleRasterLayer: boolean;
 }
 
 /**
- * Hook that attaches a mousemove listener to the Mapbox canvas, reads the
- * pixel colour under the cursor using WebGL readPixels, and shows a popup
- * displaying the burn probability percentage.
+ * Hook that attaches a mousemove listener to the MapLibre canvas, reads the
+ * pixel colour under the cursor using WebGL readPixels, and shows a MapLibre
+ * popup displaying the burn probability percentage.
  *
  * The popup is removed when the cursor leaves the canvas or when no visible
  * raster layers are present.

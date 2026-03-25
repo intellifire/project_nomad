@@ -4,7 +4,7 @@
 # Menu-driven installer supporting multiple deployment configurations
 #
 # Usage:
-#   ./scripts/install_nomad_setup.sh [--dry-run]
+#   ./scripts/install-nomad-headless.sh [--dry-run]
 #
 # Options:
 #   --dry-run    Show what would be done without making changes
@@ -240,8 +240,8 @@ check_metal_deps_early() {
             local glibc_major glibc_minor
             glibc_major=$(echo "$glibc_version" | cut -d. -f1)
             glibc_minor=$(echo "$glibc_version" | cut -d. -f2)
-            if [ "$glibc_major" -lt 2 ] || { [ "$glibc_major" -eq 2 ] && [ "$glibc_minor" -lt 38 ]; }; then
-                missing+=("glibc >= 2.38 (found: $glibc_version) - need Ubuntu 24.04+")
+            if [ "$glibc_major" -lt 2 ] || { [ "$glibc_major" -eq 2 ] && [ "$glibc_minor" -lt 34 ]; }; then
+                missing+=("glibc >= 2.34 (found: $glibc_version) - need Ubuntu 22.04+")
             fi
         fi
 
