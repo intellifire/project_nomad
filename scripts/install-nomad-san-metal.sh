@@ -124,9 +124,10 @@ check_prerequisites() {
         local glibc_version
         glibc_version=$(ldd --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+$')
         if [ -n "$glibc_version" ]; then
-            local glibc_major
+            local glibc_major glibc_minor
             glibc_major=$(echo "$glibc_version" | cut -d. -f1)
-            if [ "$glibc_major" -lt 2 ]; then
+            glibc_minor=$(echo "$glibc_version" | cut -d. -f2)
+            if [ "$glibc_major" -lt 2 ] || { [ "$glibc_major" -eq 2 ] && [ "$glibc_minor" -lt 34 ]; }; then
                 print_error "glibc $glibc_version is too old (need >= 2.34)"
                 exit 1
             fi
@@ -147,7 +148,20 @@ get_latest_version() {
     if [ -n "$response" ]; then
         VERSION=$(echo "$response" | grep -o '"tag_name": "[^"]*"' | head -1 | sed 's/.*: "\(.*\)".*/\1/')
     else
-        VERSION="main"
+        print_error "Failed to fetch latest version from GitHub API"
+        echo ""
+        echo "This could be due to:"
+        echo "  - Network connectivity issues"
+        echo "  - GitHub API rate limiting"
+        echo ""
+        echo "To retry with explicit version:"
+        echo "  curl ... | VERSION=v0.4.2 bash"
+        exit 1
+    fi
+
+    if [ -z "$VERSION" ]; then
+        print_error "Could not parse version from GitHub API response"
+        exit 1
     fi
 }
 

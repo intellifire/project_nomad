@@ -110,12 +110,23 @@ get_latest_version() {
     response=$(curl -fsSL "$api_url" 2>/dev/null || echo "")
 
     if [ -z "$response" ]; then
-        print_error "Failed to fetch latest version"
-        VERSION="main"
-        return
+        print_error "Failed to fetch latest version from GitHub API"
+        echo ""
+        echo "This could be due to:"
+        echo "  - Network connectivity issues"
+        echo "  - GitHub API rate limiting"
+        echo ""
+        echo "To retry with explicit version:"
+        echo "  curl ... | VERSION=v0.4.2 bash"
+        exit 1
     fi
 
     VERSION=$(echo "$response" | grep -o '"tag_name": "[^"]*"' | head -1 | sed 's/.*: "\(.*\)".*/\1/')
+
+    if [ -z "$VERSION" ]; then
+        print_error "Could not parse version from GitHub API response"
+        exit 1
+    fi
 }
 
 # ============================================
