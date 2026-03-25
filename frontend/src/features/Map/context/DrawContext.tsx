@@ -1,7 +1,6 @@
 import { createContext, useContext, ReactNode, useState, useCallback, useEffect, useRef } from 'react';
 import { TerraDraw, TerraDrawPointMode, TerraDrawLineStringMode, TerraDrawPolygonMode, TerraDrawSelectMode } from 'terra-draw';
 import { TerraDrawMapLibreGLAdapter } from 'terra-draw-maplibre-gl-adapter';
-import type { Map } from 'maplibre-gl';
 import { useMap } from './MapContext';
 import type { DrawingMode, DrawnFeature, DrawingState } from '../types/geometry';
 
@@ -40,9 +39,6 @@ interface DrawProviderProps {
   children: ReactNode;
 }
 
-// Unique ID generator for features
-let featureIdCounter = 0;
-
 // Mode name mapping
 const MODE_MAP: Record<DrawingMode, string> = {
   point: 'point',
@@ -68,6 +64,9 @@ export function DrawProvider({ children }: DrawProviderProps) {
   // TerraDraw instance ref
   const terraDrawRef = useRef<TerraDraw | null>(null);
 
+  // Per-instance ID counter (avoids issues under React Strict Mode / HMR)
+  const featureIdCounterRef = useRef(0);
+
   // Ref to avoid stale closure in event handlers
   const featuresRef = useRef<DrawnFeature[]>(state.features);
   useEffect(() => {
@@ -84,7 +83,7 @@ export function DrawProvider({ children }: DrawProviderProps) {
     if (!map || !isLoaded) return;
 
     const adapter = new TerraDrawMapLibreGLAdapter({
-      map: map as unknown as Map,
+      map,
     });
 
     const draw = new TerraDraw({
@@ -144,10 +143,11 @@ export function DrawProvider({ children }: DrawProviderProps) {
     });
 
     draw.on('select', (id) => {
-      setState((prev) => ({
-        ...prev,
-        selectedIds: [...prev.selectedIds, String(id)],
-      }));
+      setState((prev) => {
+        const idStr = String(id);
+        if (prev.selectedIds.includes(idStr)) return prev;
+        return { ...prev, selectedIds: [...prev.selectedIds, idStr] };
+      });
     });
 
     draw.on('deselect', (id) => {
@@ -212,7 +212,7 @@ export function DrawProvider({ children }: DrawProviderProps) {
     // Assign IDs to features if they don't have them
     const featuresWithIds = features.map(f => ({
       ...f,
-      id: f.id ?? `feature-${++featureIdCounter}`,
+      id: f.id ?? `feature-${++featureIdCounterRef.current}`,
     }));
 
     terraDrawRef.current.addFeatures(featuresWithIds as any[]);

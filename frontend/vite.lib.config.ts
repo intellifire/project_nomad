@@ -67,6 +67,8 @@ export default defineConfig({
         'react/jsx-runtime',
         'maplibre-gl',
         '@turf/turf',
+        'terra-draw',
+        'terra-draw-maplibre-gl-adapter',
       ],
       output: {
         // Preserve module structure for better tree-shaking
@@ -78,6 +80,8 @@ export default defineConfig({
           'react/jsx-runtime': 'jsxRuntime',
           'maplibre-gl': 'maplibregl',
           '@turf/turf': 'turf',
+          'terra-draw': 'TerraDraw',
+          'terra-draw-maplibre-gl-adapter': 'TerraDrawMapLibreGLAdapter',
         },
       },
     },
