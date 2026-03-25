@@ -1,4 +1,4 @@
-import type { Map as MapboxMap, LngLatLike, StyleSpecification } from 'mapbox-gl';
+import type { Map as MapLibreMap, LngLatLike, StyleSpecification } from 'maplibre-gl';
 
 // Re-export layer types
 export type { BreaksMode } from './layer';
@@ -27,8 +27,8 @@ export interface MapOptions {
  * Map context value exposed to child components
  */
 export interface MapContextValue {
-  /** The Mapbox GL map instance */
-  map: MapboxMap | null;
+  /** The MapLibre GL map instance */
+  map: MapLibreMap | null;
   /** Whether the map has loaded */
   isLoaded: boolean;
   /** Whether the map is currently loading */
@@ -48,28 +48,51 @@ export type BasemapStyle = 'streets' | 'satellite' | 'outdoors';
 export interface BasemapConfig {
   id: BasemapStyle;
   name: string;
-  url: string;
+  url: string | StyleSpecification;
   thumbnail?: string;
 }
 
 /**
- * Available basemap styles
+ * Available basemap styles (using free CartoDB and Esri sources)
  */
 export const BASEMAP_STYLES: Record<BasemapStyle, BasemapConfig> = {
   streets: {
     id: 'streets',
     name: 'Streets',
-    url: 'mapbox://styles/mapbox/streets-v11',
+    url: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
   },
   satellite: {
     id: 'satellite',
     name: 'Satellite',
-    url: 'mapbox://styles/mapbox/satellite-streets-v12',
+    // Esri World Imagery — wrapped in a full MapLibre style spec because
+    // map.setStyle() requires a style JSON URL or StyleSpecification object,
+    // not a bare raster-tile template string.
+    url: {
+      version: 8,
+      sources: {
+        'esri-satellite': {
+          type: 'raster',
+          tiles: [
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+          ],
+          tileSize: 256,
+          attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+          maxzoom: 19,
+        },
+      },
+      layers: [
+        {
+          id: 'esri-satellite-layer',
+          type: 'raster',
+          source: 'esri-satellite',
+        },
+      ],
+    } as StyleSpecification,
   },
   outdoors: {
     id: 'outdoors',
     name: 'Outdoors',
-    url: 'mapbox://styles/mapbox/outdoors-v12',
+    url: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
   },
 };
 

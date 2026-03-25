@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import type { MapMouseEvent, MapTouchEvent } from 'maplibre-gl';
 import { useMap } from '../context/MapContext';
 
 interface ContextMenuState {
@@ -58,7 +59,7 @@ export function MapContextMenu() {
 
   // Handle context menu (right-click)
   const handleContextMenu = useCallback(
-    (e: mapboxgl.MapMouseEvent & { originalEvent: MouseEvent }) => {
+    (e: MapMouseEvent & { originalEvent: MouseEvent }) => {
       e.originalEvent.preventDefault();
 
       if (!map) return;
@@ -79,7 +80,7 @@ export function MapContextMenu() {
 
   // Handle touch start (for long press)
   const handleTouchStart = useCallback(
-    (e: mapboxgl.MapTouchEvent) => {
+    (e: MapTouchEvent) => {
       if (!map) return;
 
       const touch = e.originalEvent.touches[0];

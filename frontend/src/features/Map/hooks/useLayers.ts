@@ -1,4 +1,5 @@
 import { useCallback, useState, useEffect } from 'react';
+import type { MapSourceDataEvent } from 'maplibre-gl';
 import { useMap } from '../context/MapContext';
 import type {
   LayerConfig,
@@ -232,7 +233,7 @@ export function useLayers(): UseLayersReturn {
         }, TIMEOUT_MS);
 
         // Listen for source data events
-        function onSourceData(e: mapboxgl.MapSourceDataEvent) {
+        function onSourceData(e: MapSourceDataEvent) {
           if (e.sourceId === sourceId && e.isSourceLoaded) {
             clearTimeout(timeoutId);
             mapRef.off('sourcedata', onSourceData);

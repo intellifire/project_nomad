@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
-import mapboxgl from 'mapbox-gl';
+import maplibregl from 'maplibre-gl';
 import { useMap } from './MapContext';
 import { useOpenNomad } from '../../../openNomad/context';
 import { useRasterHover } from '../hooks/useRasterHover';
@@ -66,7 +66,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
   const hasRestoredRef = useRef(false);
 
   // Popup for hover tooltips
-  const popupRef = useRef<mapboxgl.Popup | null>(null);
+  const popupRef = useRef<maplibregl.Popup | null>(null);
 
   // Track current layers state for style.load handler (avoids stale closure)
   const layersRef = useRef(state.layers);
@@ -77,7 +77,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
   // Initialize popup
   useEffect(() => {
     if (!popupRef.current) {
-      popupRef.current = new mapboxgl.Popup({
+      popupRef.current = new maplibregl.Popup({
         closeButton: false,
         closeOnClick: false,
         className: 'probability-popup',

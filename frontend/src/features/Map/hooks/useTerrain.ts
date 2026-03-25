@@ -48,6 +48,9 @@ interface UseTerrainReturn {
  * Provides controls for enabling/disabling terrain and adjusting exaggeration.
  * Settings are persisted in localStorage.
  *
+ * Note: Terrain requires a DEM source. Mapbox DEM is not compatible with MapLibre.
+ * To enable terrain, configure a compatible DEM source (e.g., MapTiler, self-hosted).
+ *
  * @example
  * ```tsx
  * function TerrainExample() {
@@ -77,46 +80,18 @@ export function useTerrain(): UseTerrainReturn {
     const stored = localStorage.getItem(STORAGE_KEY);
     return stored ? JSON.parse(stored) : DEFAULT_CONFIG;
   });
-  const [isSupported, setIsSupported] = useState(true);
+  // Terrain is disabled by default - requires DEM source configuration
+  const [isSupported, setIsSupported] = useState(false);
 
   // Apply terrain settings when map loads or config changes
   useEffect(() => {
     if (!map || !isLoaded) return;
 
     const applyTerrain = () => {
-      try {
-        // Add DEM source if not exists
-        if (!map.getSource('mapbox-dem')) {
-          map.addSource('mapbox-dem', {
-            type: 'raster-dem',
-            url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
-            tileSize: 512,
-            maxzoom: 14,
-          });
-        }
-
-        if (config.enabled) {
-          map.setTerrain({
-            source: 'mapbox-dem',
-            exaggeration: config.exaggeration,
-          });
-          // Set pitch for better 3D viewing
-          if (map.getPitch() < 30) {
-            map.easeTo({ pitch: 45, duration: 500 });
-          }
-        } else {
-          map.setTerrain(null);
-          // Reset pitch when disabling
-          if (map.getPitch() > 0) {
-            map.easeTo({ pitch: 0, duration: 500 });
-          }
-        }
-
-        setIsSupported(true);
-      } catch (error) {
-        console.warn('Terrain not supported:', error);
-        setIsSupported(false);
-      }
+      // TODO: Enable terrain by configuring a MapLibre-compatible DEM source.
+      // Options: MapTiler terrain-rgb-v2, or a self-hosted raster-dem tile set.
+      // See: https://maplibre.org/maplibre-style-spec/sources/#raster-dem
+      setIsSupported(false);
     };
 
     // Apply on style load (in case style changes)
