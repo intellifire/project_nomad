@@ -128,12 +128,22 @@ check_prerequisites() {
     # Check Docker
     if ! command -v docker &> /dev/null; then
         print_error "Docker is required but not installed"
-        echo "Install from: https://docs.docker.com/get-docker/"
+        echo ""
+        echo "    Install Docker Engine and re-run this installer:"
+        echo ""
+        echo "      curl -fsSL https://get.docker.com | sh"
+        echo ""
         exit 1
     fi
 
     if ! docker compose version &> /dev/null; then
         print_error "Docker Compose v2 is required"
+        echo ""
+        echo "    Docker Compose v2 is included with Docker Engine."
+        echo "    Re-install Docker:"
+        echo ""
+        echo "      curl -fsSL https://get.docker.com | sh"
+        echo ""
         exit 1
     fi
 
