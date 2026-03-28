@@ -97,6 +97,7 @@ export function DrawProvider({ children }: DrawProviderProps) {
       map,
     });
 
+    let idCounter = 0;
     const draw = new TerraDraw({
       adapter,
       modes: [
@@ -105,6 +106,10 @@ export function DrawProvider({ children }: DrawProviderProps) {
         new TerraDrawPolygonMode(),
         new TerraDrawSelectMode(),
       ],
+      idStrategy: {
+        isValidId: (id: string | number) => id !== undefined && id !== null,
+        getId: () => `td-${Date.now()}-${++idCounter}`,
+      },
     });
 
     // Set up event listeners
