@@ -224,7 +224,7 @@ export function DrawProvider({ children }: DrawProviderProps) {
     // TerraDraw requires every feature to have an id
     const featuresWithIds = features.map(f => ({
       ...f,
-      id: f.id ?? crypto.randomUUID(),
+      id: f.id ?? `td-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     }));
 
     terraDrawRef.current.addFeatures(featuresWithIds as GeoJSONStoreFeatures[]);
