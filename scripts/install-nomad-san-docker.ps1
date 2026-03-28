@@ -8,22 +8,18 @@
 #   or
 #   iwr -useb https://.../install-nomad-san-docker.ps1 | iex
 #
-# Required Environment Variables:
-#   $env:VITE_MAPBOX_TOKEN            MapBox API token (required)
-#
 # Optional Environment Variables (defaults shown):
 #   $env:INSTALL_DIR=.\project_nomad     Where to extract Nomad
 #   $env:FIRESTARR_DATASET_PATH=$env:USERPROFILE\firestarr_data   Dataset location
 #   $env:NOMAD_PORT=4901                Backend/server port
 #
 # Example:
-#   $env:VITE_MAPBOX_TOKEN="pk.xxx"; .\install-nomad-san-docker.ps1
+#   .\install-nomad-san-docker.ps1
 #
 
 param(
     [string]$InstallDir = $env:INSTALL_DIR,
     [string]$DatasetPath = $env:FIRESTARR_DATASET_PATH,
-    [string]$MapboxToken = $env:VITE_MAPBOX_TOKEN,
     [string]$Version = $env:VERSION,
     [switch]$SkipStart = [bool]$env:SKIP_START,
     [switch]$AutoInstallDataset = [bool]$env:AUTO_INSTALL_DATASET
@@ -253,9 +249,6 @@ function New-EnvironmentFile {
     Update-EnvValue "VITE_API_BASE_URL" "http://${Hostname}:$BackendPort"
     Update-EnvValue "NOMAD_SERVER_HOSTNAME" $Hostname
 
-    # MapBox token
-    Update-EnvValue "VITE_MAPBOX_TOKEN" $MapboxToken
-
     # FireSTARR image
     Update-EnvValue "FIRESTARR_IMAGE" $FirestarrImage
 
@@ -357,17 +350,6 @@ function Start-Nomad {
 # Main
 function Main {
     Show-Header
-
-    # Validate required token
-    if (-not $MapboxToken) {
-        Write-Error "VITE_MAPBOX_TOKEN is required"
-        Write-Host ""
-        Write-Host "Please set your MapBox API token:"
-        Write-Host "  `$env:VITE_MAPBOX_TOKEN = 'pk.your_token_here'"
-        Write-Host ""
-        Write-Host "Get a free token at: https://account.mapbox.com/access-tokens/"
-        exit 1
-    }
 
     Test-Prerequisites
 

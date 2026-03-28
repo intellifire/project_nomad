@@ -137,7 +137,7 @@ curl -fsSL https://.../install-nomad-san-docker.sh -o install.sh
 cat install.sh
 
 # Run
-VITE_MAPBOX_TOKEN=pk.xxx bash install.sh
+bash install.sh
 ```
 
 ### What the Scripts Do
@@ -150,13 +150,6 @@ VITE_MAPBOX_TOKEN=pk.xxx bash install.sh
 - **Never** modify system directories outside `INSTALL_DIR`
 
 ## Troubleshooting
-
-### "VITE_MAPBOX_TOKEN is required"
-
-Get a free token:
-1. Go to https://account.mapbox.com/access-tokens/
-2. Create a new token
-3. Export it: `export VITE_MAPBOX_TOKEN=pk.your_token`
 
 ### "Docker not available"
 

@@ -348,11 +348,14 @@ check_glibc_early() {
         return 0
     fi
 
-    # Compare versions (convert to comparable integers: 2.34 -> 234)
-    local required_int=$(echo "$required_version" | tr -d '.')
-    local current_int=$(echo "$glibc_version" | tr -d '.')
+    # Compare versions by splitting into major/minor parts
+    local required_major required_minor current_major current_minor
+    required_major=$(echo "$required_version" | cut -d. -f1)
+    required_minor=$(echo "$required_version" | cut -d. -f2)
+    current_major=$(echo "$glibc_version" | cut -d. -f1)
+    current_minor=$(echo "$glibc_version" | cut -d. -f2)
 
-    if [ "$current_int" -lt "$required_int" ]; then
+    if [ "$current_major" -lt "$required_major" ] || { [ "$current_major" -eq "$required_major" ] && [ "$current_minor" -lt "$required_minor" ]; }; then
         echo ""
         print_error "glibc $glibc_version is installed, but >= $required_version is required for FireSTARR"
         echo ""
@@ -712,26 +715,6 @@ step3_paths() {
         print_success "Server hostname: $NOMAD_SERVER_HOSTNAME"
         echo ""
     fi
-
-    # MapBox API Token
-    echo -e "${CYAN}MapBox Access Token${NC}"
-    echo "    Required for map display. The map will not render without a valid token."
-    echo ""
-    echo "    To get a free MapBox token:"
-    echo "      1. Go to https://account.mapbox.com/auth/signup/"
-    echo "      2. Create a free account (no credit card required)"
-    echo "      3. Go to https://account.mapbox.com/access-tokens/"
-    echo "      4. Copy your default public token or create a new one"
-    echo ""
-    read -p "MapBox token (or press Enter to skip): " input_mapbox
-    if [ -n "$input_mapbox" ]; then
-        MAPBOX_TOKEN="$input_mapbox"
-        print_success "MapBox token configured"
-    else
-        print_warning "MapBox token not set - maps won't render until configured"
-        echo "    You can add it later to .env as: VITE_MAPBOX_TOKEN=your_token"
-    fi
-    echo ""
 
     # FireSTARR binary source (metal FireSTARR only)
     if [ "$FIRESTARR_INFRA" = "metal" ]; then
@@ -1795,10 +1778,6 @@ generate_env_file() {
     if [ "$NOMAD_INFRA" = "docker" ] && [ -n "$NOMAD_SERVER_HOSTNAME" ] && [ -n "$NOMAD_BACKEND_HOST_PORT" ]; then
         update_env_value "VITE_API_BASE_URL" "http://${NOMAD_SERVER_HOSTNAME}:${NOMAD_BACKEND_HOST_PORT}"
         update_env_value "VITE_API_PORT" "$NOMAD_BACKEND_HOST_PORT"
-    fi
-
-    if [ -n "$MAPBOX_TOKEN" ]; then
-        update_env_value "VITE_MAPBOX_TOKEN" "$MAPBOX_TOKEN"
     fi
 
     if [ -n "$NOMAD_AGENCY_ID" ]; then

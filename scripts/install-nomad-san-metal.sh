@@ -6,9 +6,6 @@
 # Usage:
 #   curl -fsSL https://.../install-nomad-san-metal.sh | bash
 #
-# Required Environment Variables:
-#   VITE_MAPBOX_TOKEN                 MapBox API token (required)
-#
 # Optional Environment Variables (defaults shown):
 #   INSTALL_DIR=./project_nomad       Where to extract Nomad
 #   FIRESTARR_DATASET_PATH=~/firestarr_data   Dataset location
@@ -16,7 +13,7 @@
 #   FIRESTARR_BINARY_PATH=            Auto-download if not set
 #
 # Example:
-#   curl -fsSL ... | VITE_MAPBOX_TOKEN=pk.xxx bash
+#   curl -fsSL ... | INSTALL_DIR=./my_nomad bash
 #
 
 set -e
@@ -49,16 +46,6 @@ print_info() { echo -e "${CYAN}ℹ${NC} $1"; }
 # ============================================
 # Configuration
 # ============================================
-
-if [ -z "$VITE_MAPBOX_TOKEN" ]; then
-    print_error "VITE_MAPBOX_TOKEN is required"
-    echo ""
-    echo "Please set your MapBox API token:"
-    echo "  export VITE_MAPBOX_TOKEN=pk.your_token_here"
-    echo ""
-    echo "Get a free token at: https://account.mapbox.com/access-tokens/"
-    exit 1
-fi
 
 # Set defaults
 INSTALL_DIR="${INSTALL_DIR:-./project_nomad}"
@@ -173,7 +160,8 @@ download_nomad() {
 
     print_step "Downloading Nomad ${VERSION}..."
     local tarball_url="https://github.com/${REPO_OWNER}/${REPO_NAME}/archive/refs/tags/${VERSION}.tar.gz"
-    local temp_file=$(mktemp)
+    local temp_file
+    temp_file=$(mktemp)
 
     if ! curl -fsSL "$tarball_url" -o "$temp_file"; then
         print_error "Failed to download Nomad ${VERSION}"
@@ -196,11 +184,13 @@ extract_nomad() {
     fi
 
     mkdir -p "$INSTALL_DIR"
-    local temp_extract=$(mktemp -d)
+    local temp_extract
+    temp_extract=$(mktemp -d)
     tar -xzf "$tarball" -C "$temp_extract"
 
-    local extracted_dir=$(ls -1 "$temp_extract" | head -1)
-    mv "${temp_extract}/${extracted_dir}"/* "$INSTALL_DIR/"
+    local extracted_dir
+    extracted_dir=$(find "$temp_extract" -mindepth 1 -maxdepth 1 -type d | head -1)
+    mv "${extracted_dir}"/* "$INSTALL_DIR/"
     rm -rf "$temp_extract"
 
     print_success "Extracted to ${INSTALL_DIR}"
@@ -248,7 +238,6 @@ generate_env() {
     update_env "VITE_API_PORT" "$NOMAD_PORT"
     update_env "VITE_API_BASE_URL" "http://${NOMAD_SERVER_HOSTNAME}:${NOMAD_PORT}"
     update_env "NOMAD_SERVER_HOSTNAME" "$NOMAD_SERVER_HOSTNAME"
-    update_env "VITE_MAPBOX_TOKEN" "$VITE_MAPBOX_TOKEN"
     update_env "NOMAD_AUTH_MODE" "simple"
     update_env "VITE_AUTH_MODE" "simple"
 
@@ -289,8 +278,10 @@ check_dataset() {
 # ============================================
 
 get_platform_asset() {
-    local arch=$(uname -m)
-    local os_name=$(uname -s | tr '[:upper:]' '[:lower:]')
+    local arch
+    arch=$(uname -m)
+    local os_name
+    os_name=$(uname -s | tr '[:upper:]' '[:lower:]')
 
     case "$os_name" in
         darwin)
@@ -313,7 +304,8 @@ install_firestarr_binary() {
 
     print_step "Installing FireSTARR binary..."
 
-    local asset_name=$(get_platform_asset)
+    local asset_name
+    asset_name=$(get_platform_asset)
     if [ -z "$asset_name" ]; then
         print_error "Unsupported platform for auto-install"
         echo "Please set FIRESTARR_BINARY_PATH manually"
@@ -322,7 +314,8 @@ install_firestarr_binary() {
 
     local download_url="${FIRESTARR_BINARY_RELEASE_REPO}/${FIRESTARR_BINARY_RELEASE_TAG}/${asset_name}"
     local install_dir="${INSTALL_DIR}/firestarr"
-    local temp_file=$(mktemp)
+    local temp_file
+    temp_file=$(mktemp)
 
     print_info "Downloading from: $download_url"
     if ! curl -fsSL "$download_url" -o "$temp_file"; then
@@ -336,7 +329,8 @@ install_firestarr_binary() {
     rm -f "$temp_file"
 
     # Find binary
-    local binary_path=$(find "$install_dir" -name "firestarr" -type f -executable 2>/dev/null | head -1)
+    local binary_path
+    binary_path=$(find "$install_dir" -name "firestarr" -type f -executable 2>/dev/null | head -1)
     if [ -z "$binary_path" ]; then
         print_error "Could not find firestarr binary after extraction"
         exit 1
@@ -405,7 +399,8 @@ main() {
     print_header
     check_prerequisites
 
-    local tarball=$(download_nomad)
+    local tarball
+    tarball=$(download_nomad)
     extract_nomad "$tarball"
     rm -f "$tarball"
 

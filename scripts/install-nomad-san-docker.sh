@@ -10,10 +10,9 @@
 #   INSTALL_DIR=./project_nomad       Where to extract Nomad
 #   FIRESTARR_DATASET_PATH=~/firestarr_data   Dataset location
 #   NOMAD_PORT=4901                   Backend/server port
-#   VITE_MAPBOX_TOKEN=               Required - MapBox API token
 #
 # Example with custom settings:
-#   curl -fsSL ... | VITE_MAPBOX_TOKEN=pk.xxx bash
+#   curl -fsSL ... | INSTALL_DIR=./my_nomad bash
 #
 
 set -e
@@ -48,17 +47,6 @@ print_info() { echo -e "${CYAN}ℹ${NC} $1"; }
 # Configuration
 # ============================================
 
-# Required environment variables
-if [ -z "$VITE_MAPBOX_TOKEN" ]; then
-    print_error "VITE_MAPBOX_TOKEN is required"
-    echo ""
-    echo "Please set your MapBox API token before running:"
-    echo "  export VITE_MAPBOX_TOKEN=pk.your_token_here"
-    echo ""
-    echo "Get a free token at: https://account.mapbox.com/access-tokens/"
-    exit 1
-fi
-
 # Set defaults
 INSTALL_DIR="${INSTALL_DIR:-./project_nomad}"
 FIRESTARR_DATASET_PATH="${FIRESTARR_DATASET_PATH:-$HOME/firestarr_data}"
@@ -87,7 +75,8 @@ VERSION="${VERSION:-latest}"
 # ============================================
 
 detect_architecture() {
-    local arch=$(uname -m)
+    local arch
+    arch=$(uname -m)
     local base_image="${FIRESTARR_REGISTRY}/${FIRESTARR_IMAGE_NAME}"
 
     case "$arch" in
@@ -172,7 +161,8 @@ download_nomad() {
     print_step "Downloading Nomad ${VERSION}..."
 
     local tarball_url="https://github.com/${REPO_OWNER}/${REPO_NAME}/archive/refs/tags/${VERSION}.tar.gz"
-    local temp_file=$(mktemp)
+    local temp_file
+    temp_file=$(mktemp)
 
     if ! curl -fsSL "$tarball_url" -o "$temp_file"; then
         print_error "Failed to download Nomad ${VERSION}"
@@ -200,12 +190,14 @@ extract_nomad() {
     mkdir -p "$INSTALL_DIR"
 
     # Extract
-    local temp_extract=$(mktemp -d)
+    local temp_extract
+    temp_extract=$(mktemp -d)
     tar -xzf "$tarball" -C "$temp_extract"
 
     # Move contents up (GitHub tarballs have nested folder)
-    local extracted_dir=$(ls -1 "$temp_extract" | head -1)
-    mv "${temp_extract}/${extracted_dir}"/* "$INSTALL_DIR/"
+    local extracted_dir
+    extracted_dir=$(find "$temp_extract" -mindepth 1 -maxdepth 1 -type d | head -1)
+    mv "${extracted_dir}"/* "$INSTALL_DIR/"
     rm -rf "$temp_extract"
 
     print_success "Extracted to ${INSTALL_DIR}"
@@ -262,9 +254,6 @@ generate_env() {
     update_env "VITE_API_PORT" "$NOMAD_BACKEND_HOST_PORT"
     update_env "VITE_API_BASE_URL" "http://${NOMAD_SERVER_HOSTNAME}:${NOMAD_BACKEND_HOST_PORT}"
     update_env "NOMAD_SERVER_HOSTNAME" "$NOMAD_SERVER_HOSTNAME"
-
-    # MapBox token
-    update_env "VITE_MAPBOX_TOKEN" "$VITE_MAPBOX_TOKEN"
 
     # FireSTARR image
     detect_architecture
@@ -374,7 +363,8 @@ main() {
 
     check_prerequisites
 
-    local tarball=$(download_nomad)
+    local tarball
+    tarball=$(download_nomad)
     extract_nomad "$tarball"
     rm -f "$tarball"
 
