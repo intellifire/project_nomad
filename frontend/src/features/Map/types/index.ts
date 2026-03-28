@@ -53,20 +53,21 @@ export interface BasemapConfig {
 }
 
 /**
- * Available basemap styles (using free CartoDB and Esri sources)
+ * Available basemap styles (free, no API key required)
+ *
+ * - Streets: OpenFreeMap Liberty (OSM-based vector tiles)
+ * - Satellite: Esri World Imagery + Reference Labels overlay
+ * - Outdoors: Stadia Stamen Terrain (topo with contours and hillshade)
  */
 export const BASEMAP_STYLES: Record<BasemapStyle, BasemapConfig> = {
   streets: {
     id: 'streets',
     name: 'Streets',
-    url: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+    url: 'https://tiles.openfreemap.org/styles/liberty',
   },
   satellite: {
     id: 'satellite',
     name: 'Satellite',
-    // Esri World Imagery — wrapped in a full MapLibre style spec because
-    // map.setStyle() requires a style JSON URL or StyleSpecification object,
-    // not a bare raster-tile template string.
     url: {
       version: 8,
       sources: {
@@ -76,7 +77,15 @@ export const BASEMAP_STYLES: Record<BasemapStyle, BasemapConfig> = {
             'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
           ],
           tileSize: 256,
-          attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+          attribution: 'Tiles &copy; Esri',
+          maxzoom: 19,
+        },
+        'esri-labels': {
+          type: 'raster',
+          tiles: [
+            'https://services.arcgisonline.com/arcgis/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+          ],
+          tileSize: 256,
           maxzoom: 19,
         },
       },
@@ -86,13 +95,18 @@ export const BASEMAP_STYLES: Record<BasemapStyle, BasemapConfig> = {
           type: 'raster',
           source: 'esri-satellite',
         },
+        {
+          id: 'esri-labels-layer',
+          type: 'raster',
+          source: 'esri-labels',
+        },
       ],
     } as StyleSpecification,
   },
   outdoors: {
     id: 'outdoors',
     name: 'Outdoors',
-    url: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
+    url: 'https://tiles.stadiamaps.com/styles/stamen_terrain.json',
   },
 };
 
