@@ -221,16 +221,26 @@ export function DrawProvider({ children }: DrawProviderProps) {
   const addFeatures = useCallback((features: DrawnFeature[]) => {
     if (!terraDrawRef.current) return;
 
-    // TerraDraw requires every feature to have an id
-    const featuresWithIds = features.map(f => ({
-      ...f,
-      id: f.id ?? `td-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-    }));
+    // TerraDraw requires every feature to have an id and a valid mode property
+    const featuresWithIds = features.map(f => {
+      const geomType = f.geometry.type;
+      const mode = geomType === 'Point' ? 'point'
+        : geomType === 'LineString' ? 'linestring'
+        : 'polygon';
+      return {
+        ...f,
+        id: f.id ?? `td-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        properties: {
+          ...(f.properties ?? {}),
+          mode: String((f.properties as Record<string, unknown>)?.mode ?? mode),
+        },
+      };
+    });
 
-    try {
-      terraDrawRef.current.addFeatures(featuresWithIds as GeoJSONStoreFeatures[]);
-    } catch (err) {
-      console.error('[DrawContext] TerraDraw addFeatures failed:', err);
+    const validations = terraDrawRef.current.addFeatures(featuresWithIds as GeoJSONStoreFeatures[]);
+    const failures = validations.filter(v => !v.valid);
+    if (failures.length > 0) {
+      console.error('[DrawContext] TerraDraw rejected features:', failures);
     }
 
     // Always update state and notify — even if TerraDraw rejected the features,

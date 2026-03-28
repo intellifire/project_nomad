@@ -28,7 +28,7 @@ const mockSetMode = vi.fn();
 const mockStart = vi.fn();
 const mockStop = vi.fn();
 const mockOn = vi.fn();
-const mockAddFeatures = vi.fn();
+const mockAddFeatures = vi.fn(() => []);
 
 vi.mock('terra-draw', () => ({
   TerraDraw: vi.fn().mockImplementation(() => ({
