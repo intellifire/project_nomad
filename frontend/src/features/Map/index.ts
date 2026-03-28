@@ -1,7 +1,7 @@
 /**
  * Map Feature Module
  *
- * Provides MapBox GL-based mapping components for fire modeling visualization.
+ * Provides MapLibre GL-based mapping components for fire modeling visualization.
  */
 
 // Components
@@ -23,7 +23,6 @@ export { DrawProvider, useDraw } from './context/DrawContext';
 export { LayerProvider, useLayers } from './context/LayerContext';
 
 // Hooks
-export { useDrawing } from './hooks/useDrawing';
 export { useMeasurement } from './hooks/useMeasurement';
 export { useTerrain } from './hooks/useTerrain';
 
