@@ -103,7 +103,7 @@ export function MapInfoControl() {
 // Styles
 const containerStyle: React.CSSProperties = {
   position: 'absolute',
-  bottom: '30px',
+  bottom: '40px',
   right: '10px',
   backgroundColor: 'rgba(255, 255, 255, 0.95)',
   borderRadius: '4px',
