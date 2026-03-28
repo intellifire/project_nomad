@@ -26,7 +26,7 @@ const MapContextInternal = createContext<MapContextInternal | null>(null);
 /**
  * Provides map context to child components.
  *
- * This provider manages the Mapbox GL map instance and loading state,
+ * This provider manages the MapLibre GL map instance and loading state,
  * making them available to any child component via the useMap hook.
  */
 export function MapProvider({ children }: MapProviderProps) {

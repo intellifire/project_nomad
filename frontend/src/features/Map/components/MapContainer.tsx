@@ -34,7 +34,7 @@ interface MapContainerProps {
 }
 
 /**
- * MapContainer component that initializes and manages a Mapbox GL map.
+ * MapContainer component that initializes and manages a MapLibre GL map.
  *
  * This component must be used within a MapProvider. It handles:
  * - Map initialization with provided options
@@ -114,23 +114,6 @@ export function MapContainer({
         setMap(map);
         setIsLoaded(true);
         setIsLoading(false);
-
-        // Terrain disabled - requires DEM source configuration
-        // Mapbox DEM is not compatible with MapLibre
-        // To enable, configure a compatible DEM source (e.g., MapTiler, self-hosted)
-        // See useTerrain.ts for details
-        // if (mergedOptions.terrain) {
-        //   map.addSource('terrain-dem', {
-        //     type: 'raster-dem',
-        //     url: 'YOUR_DEM_SOURCE_URL',
-        //     tileSize: 512,
-        //     maxzoom: 14,
-        //   });
-        //   map.setTerrain({
-        //     source: 'terrain-dem',
-        //     exaggeration: mergedOptions.terrainExaggeration,
-        //   });
-        // }
 
         // Add navigation controls
         map.addControl(new maplibregl.NavigationControl(), 'top-right');

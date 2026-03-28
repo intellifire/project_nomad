@@ -190,7 +190,6 @@ export function OutputPreviewModal({
           });
 
           if (hasValidCoords && !bounds.isEmpty()) {
-            console.log('[Preview] Fitting bounds:', bounds.toArray());
             // Wait for map to be idle before fitting bounds
             map.once('idle', () => {
               map.fitBounds(bounds, { padding: 50, maxZoom: 14 });

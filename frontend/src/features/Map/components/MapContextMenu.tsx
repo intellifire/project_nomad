@@ -152,22 +152,6 @@ export function MapContextMenu() {
     return `${normalized.toFixed(1)}°`;
   };
 
-  // Placeholder function handlers
-  const handleFunction1 = () => {
-    console.log('Function 1 clicked at:', menu.lat, menu.lng);
-    closeMenu();
-  };
-
-  const handleFunction2 = () => {
-    console.log('Function 2 clicked at:', menu.lat, menu.lng);
-    closeMenu();
-  };
-
-  const handleFunction3 = () => {
-    console.log('Function 3 clicked at:', menu.lat, menu.lng);
-    closeMenu();
-  };
-
   // Position menu (ensure it stays within viewport)
   const menuStyle: React.CSSProperties = {
     ...baseMenuStyle,
@@ -242,21 +226,6 @@ export function MapContextMenu() {
           />
         </div>
 
-        <div style={dividerStyle} />
-
-        {/* Functions section */}
-        <div style={sectionStyle}>
-          <div style={sectionHeaderStyle}>Actions</div>
-          <button style={functionButtonStyle} onClick={handleFunction1}>
-            Function 1
-          </button>
-          <button style={functionButtonStyle} onClick={handleFunction2}>
-            Function 2
-          </button>
-          <button style={functionButtonStyle} onClick={handleFunction3}>
-            Function 3
-          </button>
-        </div>
       </div>
     </>
   );
@@ -326,15 +295,6 @@ const sectionStyle: React.CSSProperties = {
   gap: '6px',
 };
 
-const sectionHeaderStyle: React.CSSProperties = {
-  fontSize: '11px',
-  fontWeight: 600,
-  color: '#666',
-  textTransform: 'uppercase',
-  letterSpacing: '0.5px',
-  marginBottom: '4px',
-};
-
 const dividerStyle: React.CSSProperties = {
   height: '1px',
   backgroundColor: '#e0e0e0',
@@ -369,15 +329,4 @@ const copyButtonStyle: React.CSSProperties = {
   opacity: 0.6,
   borderRadius: '4px',
   transition: 'opacity 0.2s, background-color 0.2s',
-};
-
-const functionButtonStyle: React.CSSProperties = {
-  padding: '8px 12px',
-  fontSize: '13px',
-  backgroundColor: '#f5f5f5',
-  border: '1px solid #e0e0e0',
-  borderRadius: '4px',
-  cursor: 'pointer',
-  textAlign: 'left',
-  transition: 'background-color 0.2s',
 };
