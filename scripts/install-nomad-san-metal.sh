@@ -407,6 +407,12 @@ start_nomad() {
 # ============================================
 
 main() {
+    # Resolve to absolute path so repeated cd $INSTALL_DIR works
+    case "$INSTALL_DIR" in
+        /*) ;; # already absolute
+        *)  INSTALL_DIR="$(pwd)/$INSTALL_DIR" ;;
+    esac
+
     print_header
     check_prerequisites
 
