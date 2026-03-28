@@ -154,23 +154,23 @@ check_prerequisites() {
 
 download_nomad() {
     if [ "$VERSION" = "latest" ]; then
-        print_step "Detecting latest version..."
+        print_step "Detecting latest version..." >&2
         get_latest_version
     fi
 
-    print_step "Downloading Nomad ${VERSION}..."
+    print_step "Downloading Nomad ${VERSION}..." >&2
 
     local tarball_url="https://github.com/${REPO_OWNER}/${REPO_NAME}/archive/refs/tags/${VERSION}.tar.gz"
     local temp_file
     temp_file=$(mktemp)
 
     if ! curl -fsSL "$tarball_url" -o "$temp_file"; then
-        print_error "Failed to download Nomad ${VERSION}"
+        print_error "Failed to download Nomad ${VERSION}" >&2
         rm -f "$temp_file"
         exit 1
     fi
 
-    print_success "Downloaded Nomad ${VERSION}"
+    print_success "Downloaded Nomad ${VERSION}" >&2
     echo "$temp_file"
 }
 
