@@ -457,9 +457,9 @@ run_installer() {
         exit 1
     fi
 
-    # Execute the installer
+    # Execute the installer (no exec — preserve process so trap EXIT fires and temp dir is cleaned up)
     cd "$INSTALL_DIR"
-    exec "$installer_script" "${installer_args[@]}"
+    "$installer_script" "${installer_args[@]}"
 }
 
 # ============================================
