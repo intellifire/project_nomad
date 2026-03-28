@@ -74,7 +74,12 @@ check_prerequisites() {
     # Check Node.js
     if ! command -v node &> /dev/null; then
         print_error "Node.js is required but not installed"
-        echo "Install Node.js >= 20 from: https://nodejs.org/"
+        echo ""
+        echo "    Install Node.js 22.x and re-run this installer:"
+        echo ""
+        echo "      curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -"
+        echo "      sudo apt-get install -y nodejs"
+        echo ""
         exit 1
     fi
 
@@ -82,6 +87,12 @@ check_prerequisites() {
     node_major=$(node -v 2>/dev/null | sed 's/v//' | cut -d. -f1)
     if [ "$node_major" -lt 20 ]; then
         print_error "Node.js version $(node -v) is too old (need >= 20)"
+        echo ""
+        echo "    Upgrade to Node.js 22.x and re-run this installer:"
+        echo ""
+        echo "      curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -"
+        echo "      sudo apt-get install -y nodejs"
+        echo ""
         exit 1
     fi
     print_success "Node.js $(node -v) available"
