@@ -106,7 +106,7 @@ export const BASEMAP_STYLES: Record<BasemapStyle, BasemapConfig> = {
   outdoors: {
     id: 'outdoors',
     name: 'Outdoors',
-    url: 'https://tiles.stadiamaps.com/styles/stamen_terrain.json',
+    url: 'https://tiles.openfreemap.org/styles/bright',
   },
 };
 
