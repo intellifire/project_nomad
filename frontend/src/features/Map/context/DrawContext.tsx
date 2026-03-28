@@ -221,13 +221,18 @@ export function DrawProvider({ children }: DrawProviderProps) {
   const addFeatures = useCallback((features: DrawnFeature[]) => {
     if (!terraDrawRef.current) return;
 
-    const storeFeatures = features as GeoJSONStoreFeatures[];
-    terraDrawRef.current.addFeatures(storeFeatures);
+    // TerraDraw requires every feature to have an id
+    const featuresWithIds = features.map(f => ({
+      ...f,
+      id: f.id ?? crypto.randomUUID(),
+    }));
+
+    terraDrawRef.current.addFeatures(featuresWithIds as GeoJSONStoreFeatures[]);
     setState((prev) => ({
       ...prev,
-      features: [...prev.features, ...features],
+      features: [...prev.features, ...featuresWithIds],
     }));
-    createSubscribers.current.forEach((cb) => cb(features));
+    createSubscribers.current.forEach((cb) => cb(featuresWithIds));
   }, []);
 
   const onCreateSubscribe = useCallback((callback: (features: DrawnFeature[]) => void) => {
