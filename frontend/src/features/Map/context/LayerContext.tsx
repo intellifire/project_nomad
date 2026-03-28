@@ -499,6 +499,22 @@ export function LayerProvider({ children }: { children: ReactNode }) {
       }
 
       if (!map.getLayer(config.id)) {
+        // CFS/reference layers (id starts with 'cfs-') go above basemap
+        // but below any GeoJSON modeling/ignition layers
+        let beforeId: string | undefined;
+        if (config.id.startsWith('cfs-')) {
+          const firstGeoJSON = layersRef.current.find(l => l.type === 'geojson');
+          if (firstGeoJSON) {
+            for (const suffix of ['-fill', '-line', '-point', '']) {
+              const candidate = `${firstGeoJSON.id}${suffix}`;
+              if (map.getLayer(candidate)) {
+                beforeId = candidate;
+                break;
+              }
+            }
+          }
+        }
+
         map.addLayer({
           id: config.id,
           type: 'raster',
@@ -506,7 +522,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           paint: {
             'raster-opacity': config.opacity ?? 1,
           },
-        });
+        }, beforeId);
       }
 
       setState((prev) => ({
