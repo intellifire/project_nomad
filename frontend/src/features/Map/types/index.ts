@@ -53,13 +53,15 @@ export interface BasemapConfig {
 }
 
 /**
- * Available basemap styles (free, no API key required)
- *
- * - Streets: OpenFreeMap Liberty (OSM-based vector tiles)
- * - Satellite: Esri World Imagery + Reference Labels overlay
- * - Outdoors: Stadia Stamen Terrain (topo with contours and hillshade)
+ * Mapbox access token from environment. When present, Mapbox styles are
+ * used for higher-quality basemaps. When absent, free alternatives are used.
  */
-export const BASEMAP_STYLES: Record<BasemapStyle, BasemapConfig> = {
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
+
+/**
+ * Free basemap styles (no API key required)
+ */
+const FREE_BASEMAPS: Record<BasemapStyle, BasemapConfig> = {
   streets: {
     id: 'streets',
     name: 'Streets',
@@ -109,6 +111,36 @@ export const BASEMAP_STYLES: Record<BasemapStyle, BasemapConfig> = {
     url: 'https://tiles.openfreemap.org/styles/bright',
   },
 };
+
+/**
+ * Mapbox basemap styles (requires VITE_MAPBOX_TOKEN in .env)
+ */
+function mapboxBasemaps(token: string): Record<BasemapStyle, BasemapConfig> {
+  return {
+    streets: {
+      id: 'streets',
+      name: 'Streets',
+      url: `https://api.mapbox.com/styles/v1/mapbox/streets-v12?access_token=${token}`,
+    },
+    satellite: {
+      id: 'satellite',
+      name: 'Satellite',
+      url: `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12?access_token=${token}`,
+    },
+    outdoors: {
+      id: 'outdoors',
+      name: 'Outdoors',
+      url: `https://api.mapbox.com/styles/v1/mapbox/outdoors-v12?access_token=${token}`,
+    },
+  };
+}
+
+/**
+ * Available basemap styles.
+ * Uses Mapbox when VITE_MAPBOX_TOKEN is set, free alternatives otherwise.
+ */
+export const BASEMAP_STYLES: Record<BasemapStyle, BasemapConfig> =
+  MAPBOX_TOKEN ? mapboxBasemaps(MAPBOX_TOKEN) : FREE_BASEMAPS;
 
 /**
  * Default map options for fire modeling context (Canada-focused)
