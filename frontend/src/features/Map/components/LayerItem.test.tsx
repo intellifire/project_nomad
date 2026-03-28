@@ -187,8 +187,8 @@ describe('LayerItem', () => {
     it('applies selected background when isSelected is true', () => {
       const { container } = render(<LayerItem {...defaultProps} isSelected={true} />);
 
-      // The container should have selected background color
-      const layerCard = container.querySelector('[draggable="true"]');
+      // The outer container div is the first child; draggable is on the drag handle only
+      const layerCard = container.firstElementChild as HTMLElement;
       expect(layerCard).toHaveStyle({ backgroundColor: 'rgb(227, 242, 253)' });
     });
   });
@@ -197,7 +197,8 @@ describe('LayerItem', () => {
     it('applies dragging styles when isDragging is true', () => {
       const { container } = render(<LayerItem {...defaultProps} isDragging={true} />);
 
-      const layerCard = container.querySelector('[draggable="true"]');
+      // The outer container div holds the opacity style
+      const layerCard = container.firstElementChild as HTMLElement;
       expect(layerCard).toHaveStyle({ opacity: '0.5' });
     });
 
@@ -205,7 +206,7 @@ describe('LayerItem', () => {
       const { container } = render(<LayerItem {...defaultProps} isDragOver={true} />);
 
       // When dragging over, the component still has normal opacity (not dragging itself)
-      const layerCard = container.querySelector('[draggable="true"]');
+      const layerCard = container.firstElementChild as HTMLElement;
       expect(layerCard).toHaveStyle({ opacity: '1' });
     });
   });

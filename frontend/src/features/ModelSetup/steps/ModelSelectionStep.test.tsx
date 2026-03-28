@@ -11,7 +11,7 @@
 
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ModelSelectionStep } from './ModelSelectionStep.js';
 import { WizardProvider } from '../../Wizard/index.js';
@@ -75,12 +75,17 @@ describe('ModelSelectionStep - Model Mode Cards', () => {
       </Wrapper>
     );
 
-    const probabilisticCard = screen.getByRole('radio', { name: /probabilistic/i });
+    // Use getAllByRole and pick the model mode Probabilistic card (has input name="modelMode")
+    const allProbabilistic = screen.getAllByRole('radio', { name: /probabilistic/i });
+    // Filter to the one that contains an input with name="modelMode"
+    const probabilisticCard = allProbabilistic.find(
+      (el) => el.querySelector('input[name="modelMode"]')
+    );
     expect(probabilisticCard).toBeDefined();
-    expect(probabilisticCard.getAttribute('aria-checked')).toBe('true');
+    expect(probabilisticCard!.getAttribute('aria-checked')).toBe('true');
   });
 
-  it('shows Coming Soon badges on Deterministic and Long-Term Risk cards', () => {
+  it('shows Coming Soon badge only on Long-Term Risk card (Deterministic is now available)', () => {
     const Wrapper = createWizardWrapper();
     render(
       <Wrapper>
@@ -88,13 +93,13 @@ describe('ModelSelectionStep - Model Mode Cards', () => {
       </Wrapper>
     );
 
+    // Only Long-Term Risk (and WISE engine) show Coming Soon — Deterministic is available
     const comingSoonBadges = screen.getAllByText('Coming Soon');
-    // At least 2 Coming Soon badges (Deterministic, Long-Term Risk)
-    // WISE engine card also shows one, so total may be 3
-    expect(comingSoonBadges.length).toBeGreaterThanOrEqual(2);
+    // At least 1 (Long-Term Risk), WISE engine card also shows one, so total >= 1
+    expect(comingSoonBadges.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('applies not-allowed cursor to unavailable mode cards', () => {
+  it('Deterministic card is available (no aria-disabled)', () => {
     const Wrapper = createWizardWrapper();
     render(
       <Wrapper>
@@ -103,10 +108,8 @@ describe('ModelSelectionStep - Model Mode Cards', () => {
     );
 
     const deterministicCard = screen.getByRole('radio', { name: /deterministic/i });
-    const style = deterministicCard.getAttribute('style') ?? '';
-    // The card div itself renders with inline styles containing cursor: not-allowed
-    // Check aria-disabled instead since style comparison is fragile
-    expect(deterministicCard.getAttribute('aria-disabled')).toBe('true');
+    // Deterministic IS available — no aria-disabled
+    expect(deterministicCard.getAttribute('aria-disabled')).not.toBe('true');
   });
 
   it('applies not-allowed cursor to Long-Term Risk card', () => {
@@ -129,12 +132,16 @@ describe('ModelSelectionStep - Model Mode Cards', () => {
       </Wrapper>
     );
 
-    const probabilisticCard = screen.getByRole('radio', { name: /probabilistic/i });
+    // Filter to the model mode Probabilistic card specifically
+    const allProbabilistic = screen.getAllByRole('radio', { name: /probabilistic/i });
+    const probabilisticCard = allProbabilistic.find(
+      (el) => el.querySelector('input[name="modelMode"]')
+    )!;
     // Available cards either have no aria-disabled or have it set to false/null - never "true"
     expect(probabilisticCard.getAttribute('aria-disabled')).not.toBe('true');
   });
 
-  it('does not change selection when clicking Deterministic (unavailable) card', async () => {
+  it('changes selection when clicking Deterministic (available) card', async () => {
     const user = userEvent.setup();
     const Wrapper = createWizardWrapper();
     render(
@@ -143,17 +150,20 @@ describe('ModelSelectionStep - Model Mode Cards', () => {
       </Wrapper>
     );
 
-    // Probabilistic starts as selected
-    const probabilisticCard = screen.getByRole('radio', { name: /probabilistic/i });
+    // Get the model mode Probabilistic card specifically
+    const allProbabilistic = screen.getAllByRole('radio', { name: /probabilistic/i });
+    const probabilisticCard = allProbabilistic.find(
+      (el) => el.querySelector('input[name="modelMode"]')
+    )!;
     expect(probabilisticCard.getAttribute('aria-checked')).toBe('true');
 
-    // Click Deterministic (unavailable)
+    // Click Deterministic (available)
     const deterministicCard = screen.getByRole('radio', { name: /deterministic/i });
     await user.click(deterministicCard);
 
-    // Probabilistic should still be selected
-    expect(probabilisticCard.getAttribute('aria-checked')).toBe('true');
-    expect(deterministicCard.getAttribute('aria-checked')).toBe('false');
+    // Deterministic should now be selected
+    expect(deterministicCard.getAttribute('aria-checked')).toBe('true');
+    expect(probabilisticCard.getAttribute('aria-checked')).toBe('false');
   });
 
   it('does not change selection when clicking Long-Term Risk (unavailable) card', async () => {
@@ -165,7 +175,10 @@ describe('ModelSelectionStep - Model Mode Cards', () => {
       </Wrapper>
     );
 
-    const probabilisticCard = screen.getByRole('radio', { name: /probabilistic/i });
+    const allProbabilistic = screen.getAllByRole('radio', { name: /probabilistic/i });
+    const probabilisticCard = allProbabilistic.find(
+      (el) => el.querySelector('input[name="modelMode"]')
+    )!;
     const longTermCard = screen.getByRole('radio', { name: /long-term risk/i });
 
     await user.click(longTermCard);
@@ -198,7 +211,7 @@ describe('ModelSelectionStep - Model Mode Cards', () => {
     // and the info box when probabilistic is selected
     const stochasticMatches = screen.getAllByText(/probabilistic scenarios/i, { exact: false });
     expect(stochasticMatches.length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(/single scenario/i, { exact: false })).toBeDefined();
+    expect(screen.getByText(/single simulation/i, { exact: false })).toBeDefined();
     expect(screen.getByText(/extended season/i, { exact: false })).toBeDefined();
   });
 });

@@ -96,6 +96,10 @@ function renderPanel(
 describe('ModelReviewPanel - mode awareness', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn());
+    // Stub window dimensions to desktop size so Rnd (floating) path is taken.
+    // DESKTOP_BREAKPOINT = 1100; width must be >= 1100 for the Rnd branch.
+    vi.stubGlobal('innerWidth', 1440);
+    vi.stubGlobal('innerHeight', 900);
   });
 
   afterEach(() => {

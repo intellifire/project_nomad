@@ -37,3 +37,9 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
   unobserve: vi.fn(),
   disconnect: vi.fn(),
 }));
+
+// Mock URL.createObjectURL (required by maplibre-gl in jsdom)
+if (typeof window.URL.createObjectURL === 'undefined') {
+  window.URL.createObjectURL = vi.fn(() => 'blob:mock');
+  window.URL.revokeObjectURL = vi.fn();
+}
