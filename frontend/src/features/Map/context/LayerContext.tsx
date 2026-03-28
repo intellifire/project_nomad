@@ -273,96 +273,95 @@ export function LayerProvider({ children }: { children: ReactNode }) {
       console.log(`[LayerContext] Restoring ${layerMetas.length} layers from localStorage`);
 
       // Fetch and restore each layer that has a resultId
-      layerMetas.forEach(async (meta) => {
-        if (meta.resultId && meta.type === 'geojson') {
-          try {
-            const mode = meta.breaksMode || 'dynamic';
-            const previewUrl = api.results.getPreviewUrl(meta.resultId, mode as 'static' | 'dynamic');
-            const res = await api.fetch(previewUrl);
-            if (!res.ok) {
-              console.warn(`[LayerContext] Failed to restore layer ${meta.name}: ${res.status}`);
-              return;
-            }
-            const geojson = await res.json();
-
-            // Add the layer with restored metadata
-            // Note: We call setState directly to avoid infinite loop with addGeoJSONLayer
-            if (map && !map.getSource(meta.id)) {
-              // Determine colors from feature data
-              const hasFeatureColors =
-                geojson.type === 'FeatureCollection' &&
-                geojson.features?.some((f: GeoJSON.Feature) => f.properties?.color);
-
-              map.addSource(meta.id, { type: 'geojson', data: geojson });
-
-              // Add fill layer
-              map.addLayer({
-                id: `${meta.id}-fill`,
-                type: 'fill',
-                source: meta.id,
-                paint: {
-                  'fill-color': hasFeatureColors
-                    ? ['coalesce', ['get', 'color'], '#3388ff']
-                    : '#3388ff',
-                  'fill-opacity': (meta.opacity ?? 1) * 0.5,
-                },
-                filter: ['==', '$type', 'Polygon'],
-                layout: { visibility: meta.visible ? 'visible' : 'none' },
-              });
-
-              // Add line layer
-              map.addLayer({
-                id: `${meta.id}-line`,
-                type: 'line',
-                source: meta.id,
-                paint: {
-                  'line-color': hasFeatureColors
-                    ? ['coalesce', ['get', 'color'], '#3388ff']
-                    : '#3388ff',
-                  'line-width': 2,
-                  'line-opacity': meta.opacity ?? 1,
-                },
-                layout: { visibility: meta.visible ? 'visible' : 'none' },
-              });
-
-              // Add point layer
-              map.addLayer({
-                id: `${meta.id}-point`,
-                type: 'circle',
-                source: meta.id,
-                paint: {
-                  'circle-color': '#3388ff',
-                  'circle-radius': 6,
-                  'circle-opacity': meta.opacity ?? 1,
-                  'circle-stroke-color': '#ffffff',
-                  'circle-stroke-width': 2,
-                },
-                filter: ['==', '$type', 'Point'],
-                layout: { visibility: meta.visible ? 'visible' : 'none' },
-              });
-
-              // Update state
-              setState((prev) => ({
-                ...prev,
-                layers: [
-                  ...prev.layers,
-                  {
-                    ...meta,
-                    type: 'geojson' as const,
-                    data: geojson,
-                    useFeatureColors: hasFeatureColors,
-                    fillOpacity: 0.5,
-                    strokeWidth: 2,
-                  },
-                ],
-              }));
-
-              console.log(`[LayerContext] Restored layer: ${meta.name}`);
-            }
-          } catch (err) {
-            console.warn(`[LayerContext] Error restoring layer ${meta.name}:`, err);
+      const restorePromises = layerMetas
+        .filter((meta) => meta.resultId && meta.type === 'geojson')
+        .map(async (meta) => {
+          const mode = meta.breaksMode || 'dynamic';
+          const previewUrl = api.results.getPreviewUrl(meta.resultId!, mode as 'static' | 'dynamic');
+          const res = await api.fetch(previewUrl);
+          if (!res.ok) {
+            throw new Error(`Failed to restore layer ${meta.name}: HTTP ${res.status}`);
           }
-        }
+          const geojson = await res.json();
+
+          // Add the layer with restored metadata
+          // Note: We call setState directly to avoid infinite loop with addGeoJSONLayer
+          if (map && !map.getSource(meta.id)) {
+            // Determine colors from feature data
+            const hasFeatureColors =
+              geojson.type === 'FeatureCollection' &&
+              geojson.features?.some((f: GeoJSON.Feature) => f.properties?.color);
+
+            map.addSource(meta.id, { type: 'geojson', data: geojson });
+
+            // Add fill layer
+            map.addLayer({
+              id: `${meta.id}-fill`,
+              type: 'fill',
+              source: meta.id,
+              paint: {
+                'fill-color': hasFeatureColors
+                  ? ['coalesce', ['get', 'color'], '#3388ff']
+                  : '#3388ff',
+                'fill-opacity': (meta.opacity ?? 1) * 0.5,
+              },
+              filter: ['==', '$type', 'Polygon'],
+              layout: { visibility: meta.visible ? 'visible' : 'none' },
+            });
+
+            // Add line layer
+            map.addLayer({
+              id: `${meta.id}-line`,
+              type: 'line',
+              source: meta.id,
+              paint: {
+                'line-color': hasFeatureColors
+                  ? ['coalesce', ['get', 'color'], '#3388ff']
+                  : '#3388ff',
+                'line-width': 2,
+                'line-opacity': meta.opacity ?? 1,
+              },
+              layout: { visibility: meta.visible ? 'visible' : 'none' },
+            });
+
+            // Add point layer
+            map.addLayer({
+              id: `${meta.id}-point`,
+              type: 'circle',
+              source: meta.id,
+              paint: {
+                'circle-color': '#3388ff',
+                'circle-radius': 6,
+                'circle-opacity': meta.opacity ?? 1,
+                'circle-stroke-color': '#ffffff',
+                'circle-stroke-width': 2,
+              },
+              filter: ['==', '$type', 'Point'],
+              layout: { visibility: meta.visible ? 'visible' : 'none' },
+            });
+
+            // Update state
+            setState((prev) => ({
+              ...prev,
+              layers: [
+                ...prev.layers,
+                {
+                  ...meta,
+                  type: 'geojson' as const,
+                  data: geojson,
+                  useFeatureColors: hasFeatureColors,
+                  fillOpacity: 0.5,
+                  strokeWidth: 2,
+                },
+              ],
+            }));
+
+            console.log(`[LayerContext] Restored layer: ${meta.name}`);
+          }
+        });
+
+      Promise.all(restorePromises).catch((err) => {
+        console.error('[LayerContext] Layer restore failed:', err);
       });
     } catch (err) {
       console.warn('[LayerContext] Failed to parse stored layers:', err);

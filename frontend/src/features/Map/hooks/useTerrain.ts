@@ -78,7 +78,14 @@ export function useTerrain(): UseTerrainReturn {
   const { map, isLoaded } = useMap();
   const [config, setConfig] = useState<TerrainConfig>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : DEFAULT_CONFIG;
+    if (!stored) return DEFAULT_CONFIG;
+    try {
+      return JSON.parse(stored) as TerrainConfig;
+    } catch {
+      console.error(`[useTerrain] Corrupt config in localStorage key "${STORAGE_KEY}", clearing.`);
+      localStorage.removeItem(STORAGE_KEY);
+      return DEFAULT_CONFIG;
+    }
   });
   // Terrain is disabled by default - requires DEM source configuration
   const [isSupported, setIsSupported] = useState(false);

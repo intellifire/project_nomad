@@ -1,8 +1,22 @@
 import { createContext, useContext, ReactNode, useState, useCallback, useEffect, useRef } from 'react';
 import { TerraDraw, TerraDrawPointMode, TerraDrawLineStringMode, TerraDrawPolygonMode, TerraDrawSelectMode } from 'terra-draw';
+import type { GeoJSONStoreFeatures } from 'terra-draw';
 import { TerraDrawMapLibreGLAdapter } from 'terra-draw-maplibre-gl-adapter';
 import { useMap } from './MapContext';
 import type { DrawingMode, DrawnFeature, DrawingState } from '../types/geometry';
+
+/**
+ * Convert a TerraDraw store feature to our DrawnFeature type.
+ * Both are GeoJSON Features with Point/LineString/Polygon geometry —
+ * the only difference is the properties type constraint.
+ */
+function toDrawnFeature(feature: GeoJSONStoreFeatures): DrawnFeature {
+  return feature as DrawnFeature;
+}
+
+function toDrawnFeatures(features: GeoJSONStoreFeatures[]): DrawnFeature[] {
+  return features as DrawnFeature[];
+}
 
 /**
  * Draw context value
@@ -64,9 +78,6 @@ export function DrawProvider({ children }: DrawProviderProps) {
   // TerraDraw instance ref
   const terraDrawRef = useRef<TerraDraw | null>(null);
 
-  // Per-instance ID counter (avoids issues under React Strict Mode / HMR)
-  const featureIdCounterRef = useRef(0);
-
   // Ref to avoid stale closure in event handlers
   const featuresRef = useRef<DrawnFeature[]>(state.features);
   useEffect(() => {
@@ -100,7 +111,7 @@ export function DrawProvider({ children }: DrawProviderProps) {
     draw.on('finish', (id) => {
       const feature = draw.getSnapshotFeature(id);
       if (feature) {
-        const drawnFeature = feature as unknown as DrawnFeature;
+        const drawnFeature = toDrawnFeature(feature);
         setState((prev) => ({
           ...prev,
           features: [...prev.features, drawnFeature],
@@ -125,7 +136,7 @@ export function DrawProvider({ children }: DrawProviderProps) {
         ids.forEach(id => {
           const feature = draw.getSnapshotFeature(id);
           if (feature) {
-            updatedFeatures.push(feature as unknown as DrawnFeature);
+            updatedFeatures.push(toDrawnFeature(feature));
           }
         });
         if (updatedFeatures.length > 0) {
@@ -178,7 +189,7 @@ export function DrawProvider({ children }: DrawProviderProps) {
 
   const getFeatures = useCallback((): DrawnFeature[] => {
     if (!terraDrawRef.current) return [];
-    return terraDrawRef.current.getSnapshot() as unknown as DrawnFeature[];
+    return toDrawnFeatures(terraDrawRef.current.getSnapshot());
   }, []);
 
   const deleteSelected = useCallback(() => {
@@ -188,6 +199,7 @@ export function DrawProvider({ children }: DrawProviderProps) {
     terraDrawRef.current.removeFeatures(state.selectedIds.map(id => String(id)));
     setState((prev) => ({
       ...prev,
+      features: prev.features.filter(f => !prev.selectedIds.includes(String(f.id))),
       selectedIds: [],
     }));
     deleteSubscribers.current.forEach((cb) => cb(deletedFeatures));
@@ -209,18 +221,13 @@ export function DrawProvider({ children }: DrawProviderProps) {
   const addFeatures = useCallback((features: DrawnFeature[]) => {
     if (!terraDrawRef.current) return;
 
-    // Assign IDs to features if they don't have them
-    const featuresWithIds = features.map(f => ({
-      ...f,
-      id: f.id ?? `feature-${++featureIdCounterRef.current}`,
-    }));
-
-    terraDrawRef.current.addFeatures(featuresWithIds as any[]);
+    const storeFeatures = features as GeoJSONStoreFeatures[];
+    terraDrawRef.current.addFeatures(storeFeatures);
     setState((prev) => ({
       ...prev,
-      features: [...prev.features, ...featuresWithIds],
+      features: [...prev.features, ...features],
     }));
-    createSubscribers.current.forEach((cb) => cb(featuresWithIds));
+    createSubscribers.current.forEach((cb) => cb(features));
   }, []);
 
   const onCreateSubscribe = useCallback((callback: (features: DrawnFeature[]) => void) => {
