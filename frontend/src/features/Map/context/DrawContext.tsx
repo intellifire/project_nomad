@@ -227,7 +227,14 @@ export function DrawProvider({ children }: DrawProviderProps) {
       id: f.id ?? `td-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     }));
 
-    terraDrawRef.current.addFeatures(featuresWithIds as GeoJSONStoreFeatures[]);
+    try {
+      terraDrawRef.current.addFeatures(featuresWithIds as GeoJSONStoreFeatures[]);
+    } catch (err) {
+      console.error('[DrawContext] TerraDraw addFeatures failed:', err);
+    }
+
+    // Always update state and notify — even if TerraDraw rejected the features,
+    // the wizard and other consumers need to know about them
     setState((prev) => ({
       ...prev,
       features: [...prev.features, ...featuresWithIds],
