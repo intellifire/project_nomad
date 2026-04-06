@@ -109,9 +109,10 @@ export function ModelList({
         throw new Error(err.message || `Import failed: ${res.status}`);
       }
       const result = await res.json();
-      setImportStatus(`Imported "${result.name}" — ${result.imported.files} files, ${result.imported.results} results`);
+      const configNote = result.hasConfig ? ' (config preserved — model can be re-run)' : '';
+      setImportStatus(`Imported "${result.name}" — ${result.imported.files} files, ${result.imported.results} results${configNote}`);
       refresh();
-      setTimeout(() => setImportStatus(null), 5000);
+      setTimeout(() => setImportStatus(null), 8000);
     } catch (err) {
       setImportStatus(`Import failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setTimeout(() => setImportStatus(null), 5000);

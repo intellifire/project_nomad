@@ -144,7 +144,7 @@ router.post(
       engineType = modelConfig!.engineType === 'wise' ? EngineType.WISE : EngineType.FireSTARR;
       outputMode = modelConfig!.modelMode === 'deterministic' ? 'deterministic' : 'probabilistic';
       userId = String(req.user || 'import');
-      modelStatus = ModelStatus.Draft; // Draft — ready to review and re-run
+      modelStatus = ModelStatus.Completed; // Completed with results — config available for re-run
     } else {
       // Legacy results-only import from metadata.txt
       const metadata = parseMetadata(metadataEntry!.getData().toString('utf-8'));
