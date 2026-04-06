@@ -155,6 +155,71 @@ describe('DrawContext', () => {
     });
   });
 
+  describe('addFeatures resilience', () => {
+    it('updates state even when TerraDraw addFeatures throws', () => {
+      mockAddFeatures.mockImplementationOnce(() => {
+        throw new Error("Cannot read properties of undefined (reading 'setData')");
+      });
+
+      const { result } = renderHook(() => useDraw(), { wrapper });
+
+      act(() => {
+        result.current.addFeatures([makeFeature('f1'), makeFeature('f2')]);
+      });
+
+      // State must still have the features despite TerraDraw crashing
+      expect(result.current.state.features).toHaveLength(2);
+    });
+
+    it('updates state even when TerraDraw returns validation failures', () => {
+      mockAddFeatures.mockImplementationOnce(() => [
+        { valid: false, reason: 'Feature does not have a valid mode property' },
+      ]);
+
+      const { result } = renderHook(() => useDraw(), { wrapper });
+
+      act(() => {
+        result.current.addFeatures([makeFeature('f1')]);
+      });
+
+      // State must still have the feature
+      expect(result.current.state.features).toHaveLength(1);
+    });
+
+    it('notifies subscribers even when TerraDraw throws', () => {
+      mockAddFeatures.mockImplementationOnce(() => {
+        throw new Error('adapter crash');
+      });
+
+      const { result } = renderHook(() => useDraw(), { wrapper });
+      const createCb = vi.fn();
+
+      act(() => {
+        result.current.onCreateSubscribe(createCb);
+        result.current.addFeatures([makeFeature('f1')]);
+      });
+
+      expect(createCb).toHaveBeenCalledTimes(1);
+    });
+
+    it('injects mode property from geometry type', () => {
+      const { result } = renderHook(() => useDraw(), { wrapper });
+
+      act(() => {
+        result.current.addFeatures([
+          makeFeature('p1', 'Point'),
+          makeFeature('l1', 'LineString'),
+          makeFeature('g1', 'Polygon'),
+        ]);
+      });
+
+      const props = result.current.state.features.map(
+        f => (f.properties as Record<string, unknown>)?.mode
+      );
+      expect(props).toEqual(['point', 'linestring', 'polygon']);
+    });
+  });
+
   describe('deleteAll', () => {
     it('removes all features from state', () => {
       const { result } = renderHook(() => useDraw(), { wrapper });
