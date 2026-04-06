@@ -26,6 +26,8 @@ export interface ModelCardProps {
   onAddToMap?: (model: Model) => void;
   /** Called when delete is clicked */
   onDelete?: (model: Model) => void;
+  /** Called when re-run is clicked */
+  onRerun?: (model: Model) => void;
 }
 
 // =============================================================================
@@ -140,6 +142,7 @@ export function ModelCard({
   onViewResults,
   onAddToMap,
   onDelete,
+  onRerun,
 }: ModelCardProps) {
   const handleCheckboxChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
@@ -164,6 +167,11 @@ export function ModelCard({
       setIsAddingToMap(false);
     }
   }, [model, onAddToMap, isAddingToMap]);
+
+  const handleRerun = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onRerun?.(model);
+  }, [model, onRerun]);
 
   const handleDelete = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -280,6 +288,15 @@ export function ModelCard({
                 aria-label="Add to map"
               >
                 {isAddingToMap ? 'Adding...' : 'Add to Map'}
+              </button>
+            )}
+            {onRerun && (
+              <button
+                onClick={handleRerun}
+                style={secondaryButtonStyle}
+                aria-label="Re-run model"
+              >
+                Re-run
               </button>
             )}
           </>

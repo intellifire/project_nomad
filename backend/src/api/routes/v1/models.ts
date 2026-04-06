@@ -1321,4 +1321,81 @@ router.delete(
   })
 );
 
+/**
+ * GET /models/:id/config
+ *
+ * Returns the stored execution config (model.json or output-config.json)
+ * for a model. Used by the frontend to re-run imported or completed models.
+ */
+router.get(
+  '/models/:id/config',
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const modelRepo = getModelRepository();
+    const model = await modelRepo.findById(createFireModelId(id));
+    if (!model) throw new NotFoundError('Model', id);
+
+    // Find sim directory from results
+    const resultRepo = getResultRepository();
+    const results = await resultRepo.findByModelId(createFireModelId(id));
+
+    let simDir: string | null = null;
+    for (const result of results) {
+      const filePath = (result.metadata.filePath as string) ?? null;
+      if (filePath) {
+        const { resolveResultFilePath } = await import('../../../infrastructure/firestarr/FireSTARRInputGenerator.js');
+        const { dirname } = await import('path');
+        simDir = dirname(resolveResultFilePath(filePath));
+        break;
+      }
+    }
+
+    if (!simDir) {
+      res.json({ hasConfig: false, config: null });
+      return;
+    }
+
+    const { join } = await import('path');
+
+    // Try model.json first (from import), then output-config.json (from local run)
+    for (const configFile of ['model.json', 'output-config.json']) {
+      const configPath = join(simDir, configFile);
+      if (fs.existsSync(configPath)) {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+        res.json({ hasConfig: true, source: configFile, config });
+        return;
+      }
+    }
+
+    // Also try to reconstruct minimal config from ignition.geojson
+    const ignitionPath = join(simDir, 'ignition.geojson');
+    if (fs.existsSync(ignitionPath)) {
+      const ignitionData = JSON.parse(fs.readFileSync(ignitionPath, 'utf-8'));
+      let geom = ignitionData;
+      if (ignitionData.type === 'FeatureCollection' && ignitionData.features?.length > 0) {
+        geom = ignitionData.features[0].geometry;
+      } else if (ignitionData.type === 'Feature') {
+        geom = ignitionData.geometry;
+      }
+
+      res.json({
+        hasConfig: true,
+        source: 'reconstructed',
+        config: {
+          name: model.name,
+          engineType: model.engineType,
+          modelMode: model.outputMode || 'probabilistic',
+          ignition: geom?.coordinates ? {
+            type: geom.type === 'Point' ? 'point' : geom.type === 'LineString' ? 'linestring' : 'polygon',
+            coordinates: geom.coordinates,
+          } : undefined,
+        },
+      });
+      return;
+    }
+
+    res.json({ hasConfig: false, config: null });
+  })
+);
+
 export default router;

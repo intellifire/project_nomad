@@ -153,6 +153,56 @@ export function ModelList({
     await deleteModel(model.id);
   }, [deleteModel]);
 
+  // Handle model re-run
+  const handleRerun = useCallback(async (model: Model) => {
+    setImportStatus(`Fetching config for "${model.name}"...`);
+    try {
+      const configRes = await api.fetch(`/models/${model.id}/config`);
+      if (!configRes.ok) throw new Error('Failed to fetch model config');
+      const { hasConfig, config } = await configRes.json();
+      if (!hasConfig || !config) {
+        setImportStatus('No config available — model cannot be re-run');
+        setTimeout(() => setImportStatus(null), 5000);
+        return;
+      }
+
+      // Build the /models/run request from stored config
+      const runBody = {
+        name: `${model.name.replace(/ \(imported\)$/, '')} (re-run)`,
+        engineType: config.engineType || model.engine || 'firestarr',
+        ignition: config.ignition,
+        timeRange: config.timeRange,
+        weather: config.weather,
+        scenarios: config.scenarios,
+        modelMode: config.modelMode || model.outputMode || 'probabilistic',
+      };
+
+      if (!runBody.ignition || !runBody.timeRange || !runBody.weather) {
+        setImportStatus('Incomplete config — missing ignition, time range, or weather data');
+        setTimeout(() => setImportStatus(null), 5000);
+        return;
+      }
+
+      setImportStatus('Starting model run...');
+      const runRes = await api.fetch('/models/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(runBody),
+      });
+      if (!runRes.ok) {
+        const err = await runRes.json().catch(() => ({ message: runRes.statusText }));
+        throw new Error(err.message || `Run failed: ${runRes.status}`);
+      }
+      const runResult = await runRes.json();
+      setImportStatus(`Model re-run started — new model ID: ${runResult.modelId}`);
+      refresh();
+      setTimeout(() => setImportStatus(null), 8000);
+    } catch (err) {
+      setImportStatus(`Re-run failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setTimeout(() => setImportStatus(null), 5000);
+    }
+  }, [api, refresh]);
+
   // Handle bulk delete
   const handleDeleteSelected = useCallback(async () => {
     if (selectedCount === 0) return;
@@ -377,6 +427,7 @@ export function ModelList({
               onSelect={toggleModelSelection}
               onViewResults={onViewResults}
               onDelete={handleDelete}
+              onRerun={handleRerun}
             />
           ))}
         </div>
