@@ -1,9 +1,12 @@
 /**
  * Import Route
  *
- * POST /import — accepts a Nomad export ZIP, creates model + results,
- * copies sim files to the data directory. Enables field-to-office
- * model transfer without network sync.
+ * POST /import — accepts a Nomad export ZIP, creates a runnable model
+ * with full configuration (ignition, weather, time range) so it can
+ * be re-executed on the target instance.
+ *
+ * ZIP must contain model.json with the full model config.
+ * Falls back to metadata.txt if model.json is absent (results-only import).
  */
 
 import { Router } from 'express';
@@ -82,32 +85,32 @@ function extToFormat(filename: string): OutputFormat {
   if (ext === '.geojson' || ext === '.json') return OutputFormat.GeoJSON;
   if (ext === '.kml') return OutputFormat.KML;
   if (ext === '.shp') return OutputFormat.Shapefile;
-  return OutputFormat.GeoTIFF; // default for rasters
+  return OutputFormat.GeoTIFF;
 }
 
 /**
- * @openapi
- * /import:
- *   post:
- *     summary: Import a Nomad export ZIP
- *     description: Accepts a ZIP produced by Nomad export, creates model and result records
- *     tags: [Import]
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             properties:
- *               file:
- *                 type: string
- *                 format: binary
- *     responses:
- *       201:
- *         description: Model imported successfully
- *       400:
- *         description: Invalid ZIP or missing metadata
+ * Model configuration stored in model.json inside the export ZIP.
+ * Contains everything needed to re-run the model.
  */
+interface ExportedModelConfig {
+  name: string;
+  engineType: string;
+  modelMode: string;
+  ignition: {
+    type: 'point' | 'polygon' | 'linestring';
+    coordinates: unknown;
+  };
+  timeRange: {
+    start: string;
+    end: string;
+  };
+  weather: Record<string, unknown>;
+  scenarios?: number;
+  notes?: string;
+  sourceModelId?: string;
+  exportedAt?: string;
+}
+
 router.post(
   '/import',
   upload.single('file'),
@@ -116,92 +119,112 @@ router.post(
       throw new ValidationError('No file uploaded');
     }
 
-    // Extract ZIP
     const zip = new AdmZip(req.file.buffer);
     const entries = zip.getEntries();
 
-    // Find metadata.txt
+    // Look for model.json first (full config), fall back to metadata.txt
+    const modelJsonEntry = entries.find(e => e.entryName.endsWith('model.json'));
     const metadataEntry = entries.find(e => e.entryName.endsWith('metadata.txt'));
-    if (!metadataEntry) {
-      throw new ValidationError('Invalid export ZIP: missing metadata.txt');
+
+    if (!modelJsonEntry && !metadataEntry) {
+      throw new ValidationError('Invalid export ZIP: must contain model.json or metadata.txt');
     }
 
-    const metadata = parseMetadata(metadataEntry.getData().toString('utf-8'));
+    let modelName: string;
+    let engineType: EngineType;
+    let outputMode: string;
+    let userId: string;
+    let modelStatus: ModelStatus;
+    let modelConfig: ExportedModelConfig | null = null;
 
-    // Extract model info from metadata
-    const sourceName = metadata['model_name'] || metadata['model'] || 'Imported Model';
-    const engineStr = metadata['engine'] || 'firestarr';
-    const outputMode = metadata['output_mode'] || 'probabilistic';
-    const sourceUser = metadata['user'] || req.user || 'import';
+    if (modelJsonEntry) {
+      // Full config import — model can be re-run
+      modelConfig = JSON.parse(modelJsonEntry.getData().toString('utf-8'));
+      modelName = modelConfig!.name;
+      engineType = modelConfig!.engineType === 'wise' ? EngineType.WISE : EngineType.FireSTARR;
+      outputMode = modelConfig!.modelMode === 'deterministic' ? 'deterministic' : 'probabilistic';
+      userId = String(req.user || 'import');
+      modelStatus = ModelStatus.Draft; // Draft — ready to review and re-run
+    } else {
+      // Legacy results-only import from metadata.txt
+      const metadata = parseMetadata(metadataEntry!.getData().toString('utf-8'));
+      modelName = metadata['model_name'] || 'Imported Model';
+      const engineStr = metadata['engine'] || 'firestarr';
+      engineType = engineStr.toLowerCase().includes('firestarr') ? EngineType.FireSTARR : EngineType.FireSTARR;
+      outputMode = metadata['output_mode'] || 'probabilistic';
+      userId = metadata['user'] || String(req.user || 'import');
+      modelStatus = ModelStatus.Completed; // Results only — nothing to re-run
+    }
 
-    // Map engine string to EngineType
-    const engineType = engineStr.toLowerCase().includes('firestarr')
-      ? EngineType.FireSTARR
-      : EngineType.FireSTARR; // default
-
-    // Create new model with fresh ID
+    // Create model with fresh ID
     const newModelId = createFireModelId(randomUUID());
     const model = new FireModel({
       id: newModelId,
-      name: `${sourceName} (imported)`,
+      name: `${modelName} (imported)`,
       engineType,
-      status: ModelStatus.Completed,
-      userId: String(sourceUser),
+      status: modelStatus,
+      userId,
       outputMode,
     });
 
     const modelRepo = getModelRepository();
     await modelRepo.save(model);
 
-    // Determine sim directory
+    // Create sim directory and extract files
     const dataPath = process.env.FIRESTARR_DATASET_PATH || process.env.NOMAD_DATA_DIR || './firestarr_data';
     const simDir = join(dataPath, 'sims', String(newModelId));
     mkdirSync(simDir, { recursive: true });
 
-    // Extract all files (skip metadata.txt — it's informational, not a sim file)
     const importedFiles: string[] = [];
     const resultRecords: string[] = [];
 
     for (const entry of entries) {
       if (entry.isDirectory) continue;
 
-      // Get just the filename (entries may have directory prefixes)
       const parts = entry.entryName.split('/');
       const filename = parts[parts.length - 1];
-      if (!filename || filename === 'metadata.txt') continue;
+      if (!filename) continue;
 
-      // Write file to sim directory
+      // Write all files to sim directory (including model.json for reference)
       const destPath = join(simDir, filename);
       writeFileSync(destPath, entry.getData());
       importedFiles.push(filename);
 
-      // Create result record for recognized output files
-      const outputType = filenameToOutputType(filename);
-      if (outputType) {
-        const format = extToFormat(filename);
-        const resultId = createModelResultId(randomUUID());
-        const relativePath = `sims/${String(newModelId)}/${filename}`;
+      // Create result records for recognized output files
+      if (filename !== 'metadata.txt' && filename !== 'model.json') {
+        const outputType = filenameToOutputType(filename);
+        if (outputType) {
+          const format = extToFormat(filename);
+          const resultId = createModelResultId(randomUUID());
+          const relativePath = `sims/${String(newModelId)}/${filename}`;
 
-        const result = new ModelResult({
-          id: resultId,
-          fireModelId: newModelId,
-          outputType,
-          format,
-          metadata: {
-            filePath: relativePath,
-            importedFrom: metadata['model_id'] || 'unknown',
-          },
-        });
+          const result = new ModelResult({
+            id: resultId,
+            fireModelId: newModelId,
+            outputType,
+            format,
+            metadata: { filePath: relativePath },
+          });
 
-        const resultRepo = getResultRepository();
-        await resultRepo.save(result);
-        resultRecords.push(filename);
+          const resultRepo = getResultRepository();
+          await resultRepo.save(result);
+          resultRecords.push(filename);
+        }
       }
     }
 
     res.status(201).json({
       modelId: String(newModelId),
       name: model.name,
+      status: model.status,
+      hasConfig: !!modelConfig,
+      config: modelConfig ? {
+        ignition: modelConfig.ignition,
+        timeRange: modelConfig.timeRange,
+        weather: modelConfig.weather,
+        scenarios: modelConfig.scenarios,
+        modelMode: modelConfig.modelMode,
+      } : null,
       imported: {
         files: importedFiles.length,
         results: resultRecords.length,
