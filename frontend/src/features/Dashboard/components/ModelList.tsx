@@ -100,7 +100,7 @@ export function ModelList({
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await api.fetch('/import', {
+      const res = await api.fetch('/api/v1/import', {
         method: 'POST',
         body: formData,
       });
@@ -157,7 +157,7 @@ export function ModelList({
   const handleRerun = useCallback(async (model: Model) => {
     setImportStatus(`Fetching config for "${model.name}"...`);
     try {
-      const configRes = await api.fetch(`/models/${model.id}/config`);
+      const configRes = await api.fetch(`/api/v1/models/${model.id}/config`);
       if (!configRes.ok) throw new Error('Failed to fetch model config');
       const { hasConfig, config } = await configRes.json();
       if (!hasConfig || !config) {
@@ -184,7 +184,7 @@ export function ModelList({
       }
 
       setImportStatus('Starting model run...');
-      const runRes = await api.fetch('/models/run', {
+      const runRes = await api.fetch('/api/v1/models/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(runBody),
