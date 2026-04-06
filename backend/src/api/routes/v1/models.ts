@@ -773,27 +773,62 @@ router.get(
         throw result.error;
       }
 
+      // If engine returned no outputs but model is completed (e.g. imported),
+      // fall back to database results
+      if (result.value.outputs.length === 0 && model.status === ModelStatus.Completed) {
+        logger.debug(`Engine returned no outputs for completed model — falling back to DB results`, 'Results');
+        throw new Error('Falling back to DB results for imported/completed model');
+      }
+
       logger.debug(`Returning result.value with status=${result.value.executionSummary.status}`, 'Results');
       res.json(result.value);
     } catch (error) {
-      // Engine not configured - return empty results
+      // Engine not configured or no execution state — fall back to database results
       const message = error instanceof Error ? error.message : String(error);
-      logger.warn(`Error getting results: ${message}`, 'Results');
+      logger.debug(`Falling back to DB results: ${message}`, 'Results');
 
-      res.json({
-        modelId: id,
-        modelName: model.name,
-        engineType: model.engineType,
-        executionSummary: {
-          startedAt: null,
-          completedAt: null,
-          durationSeconds: null,
-          status: 'failed',  // Changed to 'failed' since an error occurred
-          progress: 0,
-          error: message,
-        },
-        outputs: [],
-      });
+      const resultRepo = getResultRepository();
+      const dbResults = await resultRepo.findByModelId(createFireModelId(id));
+
+      if (dbResults.length > 0 && model.status === ModelStatus.Completed) {
+        // Build response from database results (imported or completed models)
+        res.json({
+          modelId: id,
+          modelName: model.name,
+          engineType: model.engineType,
+          userId: model.userId,
+          notes: model.notes,
+          executionSummary: {
+            startedAt: model.createdAt.toISOString(),
+            completedAt: model.updatedAt?.toISOString() ?? model.createdAt.toISOString(),
+            durationSeconds: null,
+            status: 'completed',
+            progress: 100,
+          },
+          outputs: dbResults.map(r => ({
+            id: r.id,
+            type: r.outputType,
+            format: r.format,
+            name: r.getDisplayName(),
+            metadata: r.metadata,
+          })),
+        });
+      } else {
+        res.json({
+          modelId: id,
+          modelName: model.name,
+          engineType: model.engineType,
+          executionSummary: {
+            startedAt: null,
+            completedAt: null,
+            durationSeconds: null,
+            status: model.status === ModelStatus.Completed ? 'completed' : 'failed',
+            progress: 0,
+            error: model.status === ModelStatus.Completed ? undefined : message,
+          },
+          outputs: [],
+        });
+      }
     }
   })
 );
