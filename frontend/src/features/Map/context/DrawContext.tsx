@@ -242,10 +242,14 @@ export function DrawProvider({ children }: DrawProviderProps) {
       };
     });
 
-    const validations = terraDrawRef.current.addFeatures(featuresWithIds as GeoJSONStoreFeatures[]);
-    const failures = validations.filter(v => !v.valid);
-    if (failures.length > 0) {
-      console.error('[DrawContext] TerraDraw rejected features:', failures);
+    try {
+      const validations = terraDrawRef.current.addFeatures(featuresWithIds as GeoJSONStoreFeatures[]);
+      const failures = validations.filter(v => !v.valid);
+      if (failures.length > 0) {
+        console.error('[DrawContext] TerraDraw rejected features:', failures);
+      }
+    } catch (err) {
+      console.error('[DrawContext] TerraDraw addFeatures failed:', err);
     }
 
     // Always update state and notify — even if TerraDraw rejected the features,
