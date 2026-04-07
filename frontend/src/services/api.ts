@@ -77,7 +77,11 @@ async function request<T>(
     );
   }
 
-  return response.json();
+  const data = await response.json();
+  if (endpoint === '/models') {
+    console.log('[api.request] /models raw response keys:', Object.keys(data), 'models count:', data.models?.length);
+  }
+  return data;
 }
 
 // ============================================================================
