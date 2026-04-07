@@ -177,7 +177,7 @@ export function ModelList({
         ignition: config.ignition,
         timeRange: config.timeRange,
         weather: config.weather,
-        scenarios: config.scenarios,
+        scenarios: config.scenarios && config.scenarios > 1 ? config.scenarios : undefined, // let backend default to 100
         modelMode: config.modelMode || model.outputMode || 'probabilistic',
       };
 
