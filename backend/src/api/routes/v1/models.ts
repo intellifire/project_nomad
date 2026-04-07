@@ -1374,23 +1374,19 @@ router.get(
     const resultRepo = getResultRepository();
     const results = await resultRepo.findByModelId(createFireModelId(id));
 
-    console.log(`[config] Model ${id}: found ${results.length} results`);
     let simDir: string | null = null;
     for (const result of results) {
       const filePath = (result.metadata.filePath as string) ?? null;
-      console.log(`[config] Result ${result.id}: filePath=${filePath}`);
       if (filePath) {
         const { resolveResultFilePath } = await import('../../../infrastructure/firestarr/FireSTARRInputGenerator.js');
         const { dirname } = await import('path');
         const resolved = resolveResultFilePath(filePath);
         simDir = dirname(resolved);
-        console.log(`[config] Resolved simDir: ${simDir}`);
         break;
       }
     }
 
     if (!simDir) {
-      console.log(`[config] No simDir found for model ${id}`);
       res.json({ hasConfig: false, config: null });
       return;
     }
@@ -1402,6 +1398,29 @@ router.get(
       const configPath = join(simDir, configFile);
       if (fs.existsSync(configPath)) {
         const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+
+        // Belt-and-suspenders: if config lacks ignition, try to merge from ignition.geojson
+        // This handles output-config.json written before the ignition persistence fix (#229)
+        if (!config.ignition) {
+          const ignitionPath = join(simDir, 'ignition.geojson');
+          if (fs.existsSync(ignitionPath)) {
+            const ignitionData = JSON.parse(fs.readFileSync(ignitionPath, 'utf-8'));
+            let geom = ignitionData;
+            if (ignitionData.type === 'FeatureCollection' && ignitionData.features?.length > 0) {
+              geom = ignitionData.features[0].geometry;
+            } else if (ignitionData.type === 'Feature') {
+              geom = ignitionData.geometry;
+            }
+            if (geom?.coordinates) {
+              config.ignition = {
+                type: geom.type === 'Point' ? 'point' : geom.type === 'LineString' ? 'linestring' : 'polygon',
+                coordinates: geom.coordinates,
+              };
+              logger.debug(`Merged ignition from ignition.geojson into ${configFile}`, 'Config');
+            }
+          }
+        }
+
         res.json({ hasConfig: true, source: configFile, config });
         return;
       }

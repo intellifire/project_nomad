@@ -362,7 +362,6 @@ export function createDefaultAdapter(options?: DefaultAdapterOptions): IOpenNoma
       ): Promise<PaginatedResponse<Model>> {
         // Fetch all models from backend
         const response = await getModels();
-        console.log('[DefaultOpenNomadAPI] getModels returned:', response?.models?.length, 'models');
 
         // Map to openNomad types
         let models = response.models.map(mapModelResponse);
