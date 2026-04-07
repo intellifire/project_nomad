@@ -65,14 +65,17 @@ export function parseMetadata(content: string): Record<string, string> {
 /**
  * Map a filename to an OutputType based on known FireSTARR naming conventions.
  */
+/**
+ * Map a filename to an OutputType for user-facing results only.
+ * Internal sim files (intensity_H/M/L, arrival, raz, ros, source,
+ * dem, fuel, aspect) are NOT imported as results — they're available
+ * via the export manifest but don't clutter the results view.
+ */
 function filenameToOutputType(filename: string): OutputType | null {
-  if (filename.includes('probability') || filename.includes('bp_')) return OutputType.Probability;
-  if (filename.includes('perimeter') || filename.includes('fire_perimeter')) return OutputType.Perimeter;
-  if (filename.includes('intensity') || filename.includes('hfi_')) return OutputType.Intensity;
-  if (filename.includes('ros_') || filename.includes('rate_of_spread')) return OutputType.RateOfSpread;
-  if (filename.includes('arrival') || filename.includes('at_')) return OutputType.ArrivalTime;
-  if (filename.includes('cfb_') || filename.includes('crown_fraction')) return OutputType.CrownFractionBurned;
-  if (filename.includes('flame_length')) return OutputType.FlameLength;
+  // Probability rasters: probability_170_2023-06-19.tif
+  if (filename.startsWith('probability_')) return OutputType.Probability;
+  // Fire perimeter GeoJSON: fire_perimeter_*.geojson
+  if (filename.startsWith('fire_perimeter')) return OutputType.Perimeter;
   return null;
 }
 
