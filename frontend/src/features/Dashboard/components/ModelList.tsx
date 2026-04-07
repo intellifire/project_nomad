@@ -100,9 +100,13 @@ export function ModelList({
     try {
       const formData = new FormData();
       formData.append('file', file);
+      const username = localStorage.getItem('nomad_username') || '';
+      const headers: Record<string, string> = {};
+      if (username) headers['X-Nomad-User'] = username;
       const res = await api.fetch('/api/v1/import', {
         method: 'POST',
         body: formData,
+        headers,
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ message: res.statusText }));
