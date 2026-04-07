@@ -19,7 +19,7 @@ import { TimeRange } from '../../../domain/value-objects/index.js';
 import type { ExecutionOptions } from '../../../application/interfaces/IFireModelingEngine.js';
 import type { IContainerExecutor } from '../../../application/interfaces/IContainerExecutor.js';
 import type { IInputGenerator, InputGenerationResult } from '../../../application/interfaces/IInputGenerator.js';
-import type { IOutputParser } from '../../../application/interfaces/IOutputParser.js';
+import type { IOutputParser, ParsedOutput } from '../../../application/interfaces/IOutputParser.js';
 import type { FireSTARRParams } from '../types.js';
 import { Result } from '../../../application/common/index.js';
 
@@ -31,11 +31,11 @@ function createMockExecutor(): IContainerExecutor {
 }
 
 /** Create a mock output parser */
-function createMockOutputParser(): IOutputParser<unknown[]> {
+function createMockOutputParser(): IOutputParser<ParsedOutput[]> {
   return {
     parse: vi.fn().mockResolvedValue(Result.ok([])),
     parseLog: vi.fn().mockResolvedValue({ success: true, durationSeconds: 1 }),
-  } as unknown as IOutputParser<unknown[]>;
+  } as unknown as IOutputParser<ParsedOutput[]>;
 }
 
 describe('FireSTARREngine — output-config.json for re-run', () => {
@@ -70,8 +70,7 @@ describe('FireSTARREngine — output-config.json for re-run', () => {
       new Date('2026-07-04T12:00:00Z'),
     ),
     weatherConfig: {
-      source: 'csv' as const,
-      stationId: 'test-station',
+      source: 'firestarr_csv' as const,
     },
     weatherData: [{
       datetime: new Date('2026-07-01T12:00:00Z'),
@@ -164,7 +163,7 @@ describe('FireSTARREngine — output-config.json for re-run', () => {
     const config = JSON.parse(await readFile(configPath, 'utf-8'));
 
     expect(config.weather).toBeDefined();
-    expect(config.weather.source).toBe('csv');
+    expect(config.weather.source).toBe('firestarr_csv');
   });
 
   it('should include modelMode in output-config.json', async () => {
