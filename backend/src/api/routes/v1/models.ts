@@ -1374,18 +1374,23 @@ router.get(
     const resultRepo = getResultRepository();
     const results = await resultRepo.findByModelId(createFireModelId(id));
 
+    console.log(`[config] Model ${id}: found ${results.length} results`);
     let simDir: string | null = null;
     for (const result of results) {
       const filePath = (result.metadata.filePath as string) ?? null;
+      console.log(`[config] Result ${result.id}: filePath=${filePath}`);
       if (filePath) {
         const { resolveResultFilePath } = await import('../../../infrastructure/firestarr/FireSTARRInputGenerator.js');
         const { dirname } = await import('path');
-        simDir = dirname(resolveResultFilePath(filePath));
+        const resolved = resolveResultFilePath(filePath);
+        simDir = dirname(resolved);
+        console.log(`[config] Resolved simDir: ${simDir}`);
         break;
       }
     }
 
     if (!simDir) {
+      console.log(`[config] No simDir found for model ${id}`);
       res.json({ hasConfig: false, config: null });
       return;
     }
