@@ -196,7 +196,7 @@ router.post(
         if (outputType) {
           const format = extToFormat(filename);
           const resultId = createModelResultId(randomUUID());
-          const relativePath = `sims/${String(newModelId)}/${filename}`;
+          const relativePath = `${String(newModelId)}/${filename}`;
 
           const result = new ModelResult({
             id: resultId,
