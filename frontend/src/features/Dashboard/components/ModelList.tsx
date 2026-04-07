@@ -188,9 +188,12 @@ export function ModelList({
       }
 
       setImportStatus('Starting model run...');
+      const username = localStorage.getItem('nomad_username') || '';
+      const runHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (username) runHeaders['X-Nomad-User'] = username;
       const runRes = await api.fetch('/api/v1/models/run', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: runHeaders,
         body: JSON.stringify(runBody),
       });
       if (!runRes.ok) {
