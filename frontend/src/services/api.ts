@@ -48,6 +48,7 @@ async function request<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
+  console.log(`[api.request] ${options.method || 'GET'} ${url}`);
   const config: RequestInit = {
     ...options,
     credentials: 'include',
@@ -59,6 +60,7 @@ async function request<T>(
   };
 
   const response = await fetch(url, config);
+  console.log(`[api.request] ${url} → ${response.status}`);
 
   if (!response.ok) {
     let details: unknown;
