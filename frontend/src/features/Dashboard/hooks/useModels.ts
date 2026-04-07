@@ -200,13 +200,16 @@ export function useModels(options: UseModelsOptions = {}): UseModelsReturn {
 
   // Fetch models from API
   const fetchModels = useCallback(async () => {
+    console.log('[useModels] fetchModels called, mounted:', mountedRef.current);
     if (!mountedRef.current) return;
 
     dispatch({ type: 'SET_MODELS_LOADING', loading: { isLoading: true, error: null } });
 
     try {
       const apiFilters = toApiFilters(state.modelFilters);
+      console.log('[useModels] Calling api.models.list with filters:', apiFilters, 'page:', page, 'limit:', limit);
       const result = await api.models.list(apiFilters, { page, limit });
+      console.log('[useModels] Got result:', result.data?.length, 'models, total:', result.total);
 
       if (!mountedRef.current) return;
 
@@ -217,6 +220,7 @@ export function useModels(options: UseModelsOptions = {}): UseModelsReturn {
         loading: { isLoading: false, error: null, lastFetched: Date.now() },
       });
     } catch (err) {
+      console.error('[useModels] fetchModels FAILED:', err);
       if (!mountedRef.current) return;
 
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch models';
