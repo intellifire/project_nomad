@@ -134,7 +134,6 @@ export class FireSTARREngine implements IFireModelingEngine {
         end: options.timeRange.end.toISOString(),
       } : undefined,
       weather: options.weatherConfig,
-      scenarios: options.simulationCount,
       modelMode: options.outputMode === 'deterministic' ? 'deterministic' : 'probabilistic',
     };
     await writeFile(configPath, JSON.stringify(persistedConfig, null, 2));
