@@ -164,23 +164,35 @@ export class ModelResultsService {
         };
         console.log(`[ModelResultsService] Found job in database: ${latestJob.status}`);
       } else {
-        // No job found in database either
-        return Result.ok({
-          modelId,
-          modelName,
-          engineType,
-          userId: userId ?? null,
-          notes: notes ?? null,
-          executionSummary: {
-            startedAt: null,
-            completedAt: null,
-            durationSeconds: null,
-            status: 'queued',
-            progress: 0,
-            error: 'Model has not been executed',
-          },
-          outputs: [],
-        });
+        // No job found — check if this is an imported/completed model with DB results
+        const dbResults = await this.resultRepo.findByModelId(createFireModelId(modelId));
+        if (dbResults.length > 0) {
+          // Imported model with results but no job — treat as completed
+          useDatabase = true;
+          status = {
+            state: 'completed',
+            progress: 100,
+            updatedAt: new Date(),
+          };
+          console.log(`[ModelResultsService] No job but ${dbResults.length} DB results — treating as completed import`);
+        } else {
+          return Result.ok({
+            modelId,
+            modelName,
+            engineType,
+            userId: userId ?? null,
+            notes: notes ?? null,
+            executionSummary: {
+              startedAt: null,
+              completedAt: null,
+              durationSeconds: null,
+              status: 'queued',
+              progress: 0,
+              error: 'Model has not been executed',
+            },
+            outputs: [],
+          });
+        }
       }
     }
 

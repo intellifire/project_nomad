@@ -810,6 +810,9 @@ router.get(
             type: r.outputType,
             format: r.format,
             name: r.getDisplayName(),
+            filePath: (r.metadata.filePath as string) ?? null,
+            previewUrl: `/api/v1/results/${r.id}/preview`,
+            downloadUrl: `/api/v1/results/${r.id}/download`,
             metadata: r.metadata,
           })),
         });
