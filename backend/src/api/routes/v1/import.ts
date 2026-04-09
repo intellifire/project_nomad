@@ -174,6 +174,7 @@ router.post(
       status: modelStatus,
       userId,
       outputMode,
+      notes: modelConfig?.notes,
     });
 
     const modelRepo = getModelRepository();

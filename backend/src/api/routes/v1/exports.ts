@@ -401,6 +401,7 @@ router.post(
       modelMode: outputMode,
       sourceModelId: modelId,
       exportedAt: now,
+      notes: model.notes || undefined,
     };
 
     // Read ignition from sim directory if present
