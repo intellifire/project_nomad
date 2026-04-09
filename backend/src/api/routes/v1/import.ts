@@ -67,15 +67,21 @@ export function parseMetadata(content: string): Record<string, string> {
  */
 /**
  * Map a filename to an OutputType for user-facing results only.
- * Internal sim files (intensity_H/M/L, arrival, raz, ros, source,
- * dem, fuel, aspect) are NOT imported as results — they're available
- * via the export manifest but don't clutter the results view.
+ * Recognizes both probabilistic outputs (probability rasters) and
+ * deterministic outputs (arrival time grids, extracted perimeters).
+ * Internal sim files (intensity_H/M/L, raz, ros, source, dem, fuel,
+ * aspect) are NOT imported as results — they're available via the
+ * export manifest but don't clutter the results view.
  */
-function filenameToOutputType(filename: string): OutputType | null {
+export function filenameToOutputType(filename: string): OutputType | null {
   // Probability rasters: probability_170_2023-06-19.tif
   if (filename.startsWith('probability_')) return OutputType.Probability;
+  // Interim probability: interim_probability_001.tif
+  if (filename.startsWith('interim_probability_')) return OutputType.Probability;
   // Fire perimeter GeoJSON: fire_perimeter_*.geojson
   if (filename.startsWith('fire_perimeter')) return OutputType.Perimeter;
+  // Arrival time grids (deterministic): 000_000001_170_arrival.tif
+  if (/^\d{3}_\d{6}_\d+_arrival\.tif$/.test(filename)) return OutputType.ArrivalTime;
   return null;
 }
 

@@ -203,6 +203,11 @@ export function ModelList({
       const runResult = await runRes.json();
       setImportStatus(`Model re-run started — new model ID: ${runResult.modelId}`);
       refresh();
+      // Poll rapidly for completion — models typically finish in 5-15 seconds
+      const pollDelays = [3000, 5000, 10000, 15000, 20000];
+      for (const delay of pollDelays) {
+        setTimeout(() => refresh(), delay);
+      }
       setTimeout(() => setImportStatus(null), 8000);
     } catch (err) {
       setImportStatus(`Re-run failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
