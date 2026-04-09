@@ -4,10 +4,143 @@ Auto-generated from git history. Do not edit manually.
 
 ---
 
-## v0.4.2
+## v0.6.0
+
+### 2026-04-09
+
+- [`5e3d1cb`](https://github.com/WISE-Developers/project_nomad/commit/5e3d1cb4f44e4a390f993ec66049df4f27c2f4ec) Merge pull request #232 from WISE-Developers/dev — *Franco Nogarin, 10:15*
+- [`d66f436`](https://github.com/WISE-Developers/project_nomad/commit/d66f436aafb169b360822be5ccbe334e8d3d0c1a) chore: dev build 26 [skip ci] — *github-actions[bot], 16:11*
+- [`13dd2d4`](https://github.com/WISE-Developers/project_nomad/commit/13dd2d4b7eb11a96a18705fdab3cdc37cdd0fa4b) chore: bump version to 0.5.0 for Sprint 8 release — *Franco Nogarin, 10:10*
+- [`9a2b0c9`](https://github.com/WISE-Developers/project_nomad/commit/9a2b0c9a52303c08c36fd5bf96506ebfb1a8375f) chore: dev build 25 [skip ci] — *github-actions[bot], 16:09*
+- [`ad7d0c8`](https://github.com/WISE-Developers/project_nomad/commit/ad7d0c80d95b0392eef7b4a664ca918a35870bb1) fix: deterministic perimeters not reprojected to WGS84 (#229) — *Franco Nogarin, 09:43*
+- [`d212796`](https://github.com/WISE-Developers/project_nomad/commit/d212796b0be53a7b4556fa880c3402cd872092a6) fix: export includes all arrival time grids, not just final day (#229) — *Franco Nogarin, 09:19*
+- [`fb05431`](https://github.com/WISE-Developers/project_nomad/commit/fb05431d749f03d369d8d3d2dc7ce5992442be22) fix: import preserves notes, deterministic perimeters render on map (#229) — *Franco Nogarin, 08:22*
+- [`3b2c605`](https://github.com/WISE-Developers/project_nomad/commit/3b2c605e3eb6bdec590f495d3d174cbb9767379a) fix: deterministic imports show as probabilistic, missing perimeters (#229) — *Franco Nogarin, 07:47*
+- [`684c2f3`](https://github.com/WISE-Developers/project_nomad/commit/684c2f30f6551e84dee8fa36767eb18649d231ef) fix: imported models missing inputs/ignition in results view (#229) — *Franco Nogarin, 07:40*
+- [`423004d`](https://github.com/WISE-Developers/project_nomad/commit/423004dc78810ab983ee7f529b276d14fd9d5de5) fix: deterministic import + re-run rapid polling (#229) — *Franco Nogarin, 07:01*
+
+### 2026-04-07
+
+- [`9d6045c`](https://github.com/WISE-Developers/project_nomad/commit/9d6045cb3dc7c5d05b65feb3f1dc5abdd47b226d) fix: re-run missing X-Nomad-User header — model invisible to user — *Franco Nogarin, 08:31*
+- [`cdc05b3`](https://github.com/WISE-Developers/project_nomad/commit/cdc05b3ec246c1d6bc4d7ed44595ef1b631de3de) fix: correct type errors in rerun test (weather source, ParsedOutput type) — *Franco Nogarin, 08:21*
+- [`e54a4a0`](https://github.com/WISE-Developers/project_nomad/commit/e54a4a0e3d60a185385dd3980c6f6a30d601e685) fix: persist ignition in output-config.json for re-run (#229) — *Franco Nogarin, 08:18*
+- [`2b173ea`](https://github.com/WISE-Developers/project_nomad/commit/2b173ea367f811cf91ea5e3d92fd1206fa0d0bc8) fix: remove phantom scenarios field from persisted config — *Franco Nogarin, 06:51*
+- [`0de7d16`](https://github.com/WISE-Developers/project_nomad/commit/0de7d16e8743fbab3dc107f5840df597e722fe92) fix: re-run scenarios defaulting to 1 instead of 100 — *Franco Nogarin, 06:38*
+- [`07b1759`](https://github.com/WISE-Developers/project_nomad/commit/07b175951d98f5d16084ea4b7db43598ea5b6b37) fix: import only creates results for probability and perimeter outputs — *Franco Nogarin, 06:35*
+- [`43c24f6`](https://github.com/WISE-Developers/project_nomad/commit/43c24f6eccc6d4c04b79533d6ff6d2b7cf00b57c) fix: imported result filePath had extra sims/ prefix — double sims/sims/ path — *Franco Nogarin, 06:19*
+- [`779e3cb`](https://github.com/WISE-Developers/project_nomad/commit/779e3cba3e24f5de2d06dc86a94b293c318a5196) debug: add logging to config endpoint for sim dir resolution — *Franco Nogarin, 06:16*
+- [`5e6f6f7`](https://github.com/WISE-Developers/project_nomad/commit/5e6f6f7aa1e915c0f3fd68ba1c3d7f487da87053) fix: import uses current user identity — was hardcoded as 'import' — *Franco Nogarin, 06:05*
+- [`9ef2c0a`](https://github.com/WISE-Developers/project_nomad/commit/9ef2c0ad5af8b2a9ac7f6ffc24a0fc1eb4871176) debug: log raw response from /models endpoint — *Franco Nogarin, 06:01*
+- [`424650b`](https://github.com/WISE-Developers/project_nomad/commit/424650b272e69c52b2b7a1f30a9c08c6834656ab) debug: add logging to request() and DefaultOpenNomadAPI.list() — *Franco Nogarin, 05:52*
+- [`ce5897c`](https://github.com/WISE-Developers/project_nomad/commit/ce5897cc8773d1cf18f010b1a18e5f37fd8a8ce6) debug: add console.log to useModels fetchModels for dashboard investigation — *Franco Nogarin, 05:45*
+
+### 2026-04-06
+
+- [`049ae2a`](https://github.com/WISE-Developers/project_nomad/commit/049ae2a6fe7f977468206e297dbe1a978526e475) fix: imported models show results — fall back to DB when engine has no execution state — *Franco Nogarin, 08:53*
+- [`0427cbb`](https://github.com/WISE-Developers/project_nomad/commit/0427cbb687ddb89f3c0c9b79178fc9b87b592d0c) fix: API calls need /api/v1 prefix — api.fetch is a plain passthrough — *Franco Nogarin, 08:34*
+- [`2cd5527`](https://github.com/WISE-Developers/project_nomad/commit/2cd552714a111bfe8f108ca975a4e27d6333da6b) test: add addFeatures resilience tests — catches try/catch removal regression — *Franco Nogarin, 08:23*
+- [`0e6a412`](https://github.com/WISE-Developers/project_nomad/commit/0e6a4122fab09f4cbbfe96788ee38cbaf93e4602) fix: restore try/catch around TerraDraw addFeatures — setData crash on upload — *Franco Nogarin, 08:22*
+- [`712a2df`](https://github.com/WISE-Developers/project_nomad/commit/712a2dfc219780497b4034befb1ccf7f3b126b17) feat: re-run imported models — GET /models/:id/config + Re-run button — *Franco Nogarin, 08:08*
+- [`2999a10`](https://github.com/WISE-Developers/project_nomad/commit/2999a10a04d9b8fdc44791d3cefc63786411e2d6) fix: import creates Completed model (not Draft — drafts tab disabled) — *Franco Nogarin, 07:31*
+- [`21c3636`](https://github.com/WISE-Developers/project_nomad/commit/21c36361bbb58e1db22437966b3f426a5b11faeb) feat: export includes model.json for re-runnable import — *Franco Nogarin, 07:26*
+- [`5f27608`](https://github.com/WISE-Developers/project_nomad/commit/5f27608b9d73e3383843fa5d8005de6d21a2898a) feat: #229 — model import from ZIP (backend + frontend) — *Franco Nogarin, 07:13*
+
+### 2026-03-28
+
+- [`ca5f2c3`](https://github.com/WISE-Developers/project_nomad/commit/ca5f2c314b4694d577bf7106570c7a292709c675) chore: dev build 24 [skip ci] — *github-actions[bot], 16:18*
+- [`8000c8a`](https://github.com/WISE-Developers/project_nomad/commit/8000c8a3f35d131b3e803ba7250e9ce844e0ee48) fix: docker installer same relative path bug + better prereq messages — *Franco Nogarin, 10:18*
+- [`a130f3c`](https://github.com/WISE-Developers/project_nomad/commit/a130f3cbc1ecc68ac11bd8c691e69c98874ca82f) chore: dev build 23 [skip ci] — *github-actions[bot], 16:13*
+- [`4d4af42`](https://github.com/WISE-Developers/project_nomad/commit/4d4af4270595d09410eefab3af75ce1a04315a20) fix: docker installer gives apt commands instead of useless URL — *Franco Nogarin, 10:13*
+- [`45d1981`](https://github.com/WISE-Developers/project_nomad/commit/45d19813f0a9baab04830bbd746e7dd01b4f0ed4) chore: dev build 22 [skip ci] — *github-actions[bot], 16:08*
+- [`a238fab`](https://github.com/WISE-Developers/project_nomad/commit/a238fab0072afcc78a8f0d56c1c0a48eb4f7cad9) fix: clean /root/./project_nomad path display — strip ./ prefix before join — *Franco Nogarin, 10:08*
+- [`0ea1032`](https://github.com/WISE-Developers/project_nomad/commit/0ea1032f938f898ce9a98a4779f6eae214b703ea) chore: dev build 21 [skip ci] — *github-actions[bot], 16:01*
+- [`3529d63`](https://github.com/WISE-Developers/project_nomad/commit/3529d63a0e2a67f77d59fa18b9631318dc81b396) fix: resolve INSTALL_DIR to absolute path — cd fails after build changes cwd — *Franco Nogarin, 10:01*
+- [`cd3c789`](https://github.com/WISE-Developers/project_nomad/commit/cd3c789ff2ea7c8aaab6b30ac72c3787f40a90cd) chore: dev build 20 [skip ci] — *github-actions[bot], 15:48*
+- [`6d08887`](https://github.com/WISE-Developers/project_nomad/commit/6d088870607890c9ac5e096f1d5b46678b9381f9) fix: download_nomad stdout pollution — print messages go to stderr — *Franco Nogarin, 09:48*
+- [`89a6e18`](https://github.com/WISE-Developers/project_nomad/commit/89a6e1879ac80ce132e93febcddd5eae8ab24af6) chore: dev build 19 [skip ci] — *github-actions[bot], 15:41*
+- [`2d5ee93`](https://github.com/WISE-Developers/project_nomad/commit/2d5ee937fe505e162289e5d8c6d402668136fe8a) fix: metal installer gives apt commands for Node.js instead of useless URL — *Franco Nogarin, 09:40*
+- [`7ef65a2`](https://github.com/WISE-Developers/project_nomad/commit/7ef65a2ed14a0000ec6c8637c8201c4ced505f76) chore: dev build 18 [skip ci] — *github-actions[bot], 15:12*
+- [`d5ca7c7`](https://github.com/WISE-Developers/project_nomad/commit/d5ca7c787a835f0f9f7444dff3c40f058034a583) feat: optional Mapbox token support — use Mapbox styles when VITE_MAPBOX_TOKEN is set — *Franco Nogarin, 09:12*
+- [`e85a07c`](https://github.com/WISE-Developers/project_nomad/commit/e85a07c009b8cec76b8f08bb26c7769631bdf4a6) chore: dev build 17 [skip ci] — *github-actions[bot], 14:35*
+- [`24e83b2`](https://github.com/WISE-Developers/project_nomad/commit/24e83b293bee7aede8dea172101154743b3ee70a) fix: restore install-nomad-headless.sh for deterministic unattended installs — *Franco Nogarin, 08:34*
+- [`3850254`](https://github.com/WISE-Developers/project_nomad/commit/385025484cdace0750127ec06d5adbc317eda2a9) chore: dev build 16 [skip ci] — *github-actions[bot], 14:18*
+- [`1ee6a88`](https://github.com/WISE-Developers/project_nomad/commit/1ee6a8863498e0ac2005721e1162bffeb04fcd2b) fix: CFS layers (CBMT, FireSTARR) render below modeling/ignition layers — *Franco Nogarin, 08:18*
+- [`1b1cd6e`](https://github.com/WISE-Developers/project_nomad/commit/1b1cd6eb9c1fed7c05ddc3ba04b1ad2257eecf5e) chore: dev build 15 [skip ci] — *github-actions[bot], 14:04*
+- [`749e231`](https://github.com/WISE-Developers/project_nomad/commit/749e231dc8ae475ebeedb8aa88b486dfbd726517) fix: move coordinate display from 30px to 40px from bottom — *Franco Nogarin, 08:03*
+- [`455b206`](https://github.com/WISE-Developers/project_nomad/commit/455b206697a79a4c916890284b7c8a2928fc46c4) chore: dev build 14 [skip ci] — *github-actions[bot], 13:58*
+- [`f1a866b`](https://github.com/WISE-Developers/project_nomad/commit/f1a866b61ead6fb99fbee71c08411fc86c793bd5) fix: replace Stamen Terrain with OpenFreeMap Bright — Stadia DEM tiles require auth — *Franco Nogarin, 07:57*
+- [`299702c`](https://github.com/WISE-Developers/project_nomad/commit/299702c4bdad88de1fbbc2ba791eca5ac8097522) chore: dev build 13 [skip ci] — *github-actions[bot], 13:51*
+- [`e3ce581`](https://github.com/WISE-Developers/project_nomad/commit/e3ce5818b26b6b1f13505f1ed451c98cf120e21c) feat: upgrade basemaps — OpenFreeMap streets, Esri labeled satellite, Stamen terrain — *Franco Nogarin, 07:51*
+- [`9120111`](https://github.com/WISE-Developers/project_nomad/commit/91201112da9a3e8e584b043556dec96a411625bf) chore: dev build 12 [skip ci] — *github-actions[bot], 13:31*
+- [`885e03f`](https://github.com/WISE-Developers/project_nomad/commit/885e03fc9253ea3d2d0ba8506a10a0140f7efeb1) fix: TerraDraw UUID4 ID validation rejecting uploaded features — *Franco Nogarin, 07:31*
+- [`8f54288`](https://github.com/WISE-Developers/project_nomad/commit/8f542887bcc7943c933f9a974df252468c2414d7) chore: dev build 11 [skip ci] — *github-actions[bot], 13:19*
+- [`19a6bf5`](https://github.com/WISE-Developers/project_nomad/commit/19a6bf5843352f77ad3e472e762b0c9b54b1a141) fix: uploaded GeoJSON not rendering — TerraDraw requires mode property — *Franco Nogarin, 07:19*
+- [`8966e96`](https://github.com/WISE-Developers/project_nomad/commit/8966e966cad225074497aff06489d5a04e524f19) chore: dev build 10 [skip ci] — *github-actions[bot], 13:10*
+- [`ba95e72`](https://github.com/WISE-Developers/project_nomad/commit/ba95e72468b93a1f76d126571ba703f31b802047) fix: wizard ignition upload not syncing to wizard data — *Franco Nogarin, 07:10*
+- [`521048f`](https://github.com/WISE-Developers/project_nomad/commit/521048fdfa7179a08fc6788f05dbca371f647a8a) chore: dev build 9 [skip ci] — *github-actions[bot], 13:02*
+- [`16fb92d`](https://github.com/WISE-Developers/project_nomad/commit/16fb92d0346b562db5db9f2c13a8ca7f7bf5d823) fix: all 189 tests passing — fix stale tests and jsdom maplibre-gl mock — *Franco Nogarin, 07:02*
+- [`6c500c0`](https://github.com/WISE-Developers/project_nomad/commit/6c500c0b40dbc106fc0d935db50431fd7336c294) chore: dev build 8 [skip ci] — *github-actions[bot], 12:43*
+- [`ad53ae6`](https://github.com/WISE-Developers/project_nomad/commit/ad53ae698c3b16e4b00df6bb4da158cd0e662603) fix: replace crypto.randomUUID with portable ID generator — *Franco Nogarin, 06:43*
+- [`3ee2828`](https://github.com/WISE-Developers/project_nomad/commit/3ee2828d8d98308988c0595e867c9b547863fb4f) chore: dev build 7 [skip ci] — *github-actions[bot], 12:37*
+- [`f33eb4c`](https://github.com/WISE-Developers/project_nomad/commit/f33eb4c77390c231182ff1fd507d301ec1f59ddd) fix: restore feature ID assignment in addFeatures for TerraDraw — *Franco Nogarin, 06:37*
+- [`e389dd8`](https://github.com/WISE-Developers/project_nomad/commit/e389dd8ae5c14e7c8fa9b782d8a4002bd8855658) chore: dev build 6 [skip ci] — *github-actions[bot], 12:15*
+- [`372eb9c`](https://github.com/WISE-Developers/project_nomad/commit/372eb9c977468ba2927e551fda2f16261925ce9b) fix: bootstrap exec bypassing trap EXIT, leaking temp directory — *Franco Nogarin, 06:13*
+- [`2637f74`](https://github.com/WISE-Developers/project_nomad/commit/2637f74c0930d4cd28843c8f43668f096154dd09) chore: remove dead code, stale Mapbox references, placeholder handlers — *Franco Nogarin, 06:13*
+- [`abd2a17`](https://github.com/WISE-Developers/project_nomad/commit/abd2a172f2aad92dbafc3e1818c3c3bc10489d58) refactor: consolidate useDrawing into DrawContext, update useMeasurement — *Franco Nogarin, 06:13*
+- [`eb6288b`](https://github.com/WISE-Developers/project_nomad/commit/eb6288bac95dbd0e91e87b2cf3633412ede59bf0) fix: deleteSelected stale state, forEach(async) error swallowing, JSON.parse crash — *Franco Nogarin, 06:12*
+- [`5697730`](https://github.com/WISE-Developers/project_nomad/commit/5697730a0f703a3bd9527aa4b29f1bf6f8f1558c) fix: remove stale VITE_MAPBOX_TOKEN requirement and duplicate installer — *Franco Nogarin, 06:12*
+
+### 2026-03-25
+
+- [`1dd3927`](https://github.com/WISE-Developers/project_nomad/commit/1dd3927780d3cf1ee439fc61946c34abd6f7af72) chore: dev build 5 [skip ci] — *github-actions[bot], 16:07*
+- [`5ff01ef`](https://github.com/WISE-Developers/project_nomad/commit/5ff01ef70214dbff9ed36f80d0d0c66fff1e0b10) docs: Remove Mapbox references, update for MapLibre migration — *Franco Nogarin, 10:07*
+- [`220ec2e`](https://github.com/WISE-Developers/project_nomad/commit/220ec2ef7de2e89f3153d0686ddee43e7ad1794a) chore: dev build 4 [skip ci] — *github-actions[bot], 15:13*
+- [`bf445a9`](https://github.com/WISE-Developers/project_nomad/commit/bf445a99dd9e140a827393a046ca3f1e5345595b) Merge pull request #223 from WISE-Developers/MapLibre — *Franco Nogarin, 09:12*
+- [`d656282`](https://github.com/WISE-Developers/project_nomad/commit/d656282ea5b88abad6d57499d99fc68ad4ec8c5b) Merge pull request #224 from WISE-Developers/copilot/sub-pr-223 — *Franco Nogarin, 09:11*
+- [`4409e14`](https://github.com/WISE-Developers/project_nomad/commit/4409e14526a15e61f4e5adc976425b4c8ee39b18) fix: Address PR review comments - MapLibre/TerraDraw cleanup — *copilot-swe-agent[bot], 14:47*
+- [`b2ec053`](https://github.com/WISE-Developers/project_nomad/commit/b2ec0535c4a743d6f92415f0e7af6306c0a45af3) Initial plan — *copilot-swe-agent[bot], 14:38*
+- [`e67850b`](https://github.com/WISE-Developers/project_nomad/commit/e67850bd60a2d2d0e5660f248d2d6d3ac182e984) fix: Address #222 critical issues from code review — *Franco Nogarin, 07:58*
+- [`96535df`](https://github.com/WISE-Developers/project_nomad/commit/96535df528eda6312022b244abb0aa686ffaa002) migrate: Implement drawing with TerraDraw for MapLibre — *Franco Nogarin, 06:40*
+
+### 2026-03-24
+
+- [`138f6a4`](https://github.com/WISE-Developers/project_nomad/commit/138f6a42ae842e2e4b382187a3fd42661eb7f706) migrate: Replace Mapbox GL with MapLibre GL — *Franco Nogarin, 16:09*
+
+### 2026-03-25
+
+- [`10866fc`](https://github.com/WISE-Developers/project_nomad/commit/10866fc0323796f32d497a68b1362374fa111af9) chore: dev build 3 [skip ci] — *github-actions[bot], 13:42*
+- [`834b0b7`](https://github.com/WISE-Developers/project_nomad/commit/834b0b745ce95d74e160b194b6de72116a10e105) Merge branch 'curl-installer' into dev — *Franco Nogarin, 07:42*
+- [`eca1220`](https://github.com/WISE-Developers/project_nomad/commit/eca122069c7fb5fecacf9316e6cb4b4b7dfe5e03) fix: Address remaining review comments on issue #221 — *Franco Nogarin, 07:37*
+- [`04e67c3`](https://github.com/WISE-Developers/project_nomad/commit/04e67c371e621e4265b444ac81cec6663ecad0f5) fix: Critical issues blocking merge (Issue #221) — *Franco Nogarin, 07:17*
+
+### 2026-03-24
+
+- [`745d5c2`](https://github.com/WISE-Developers/project_nomad/commit/745d5c2c34d9ab7b9cb1a73e77249590e6c57424) docs: Add deterministic installers documentation — *Franco Nogarin, 17:44*
+- [`a3f10b1`](https://github.com/WISE-Developers/project_nomad/commit/a3f10b1bb023968b95df33fc2bab38609340389c) docs: Update QUICKSTART.md with deterministic installers — *Franco Nogarin, 16:00*
+- [`25f82ca`](https://github.com/WISE-Developers/project_nomad/commit/25f82ca6331d96838835b8e88a529fee806afd6b) feat: Add Windows PowerShell installer for SAN+Docker — *Franco Nogarin, 15:54*
+- [`7b3cc76`](https://github.com/WISE-Developers/project_nomad/commit/7b3cc76e91d827eadff4e0d25f878112073462b4) feat: Add deterministic SAN+Metal installer script — *Franco Nogarin, 15:47*
+- [`f0b4296`](https://github.com/WISE-Developers/project_nomad/commit/f0b42967a1387286c187924ef3239e99e80e905d) feat: Add deterministic SAN+Docker installer script — *Franco Nogarin, 15:12*
+- [`e2cf16b`](https://github.com/WISE-Developers/project_nomad/commit/e2cf16b1b708aa4110371b22ba66e9dd2bf511c7) fix: Detect non-interactive stdin and provide helpful error message — *Franco Nogarin, 14:55*
+- [`1b9c6c9`](https://github.com/WISE-Developers/project_nomad/commit/1b9c6c9cacb8a9dc70b5e9e3b44f67a86664eb1e) fix: Restore terminal input (/dev/tty) when running via curl | bash — *Franco Nogarin, 14:52*
+- [`7b8afc0`](https://github.com/WISE-Developers/project_nomad/commit/7b8afc0e695bf985f177b9fc0bca8a3861012195) fix: Add comment about stderr redirect for get_latest_version — *Franco Nogarin, 14:48*
+- [`07ac34d`](https://github.com/WISE-Developers/project_nomad/commit/07ac34d745a29567c8c05f8403d9fe299d6b8163) fix: Redirect progress message to stderr in get_latest_version — *Franco Nogarin, 14:46*
+- [`a4555d9`](https://github.com/WISE-Developers/project_nomad/commit/a4555d95a90b401a042a1a967a775b6f27d22257) fix: Redirect download info messages to stderr to avoid stdout pollution — *Franco Nogarin, 14:40*
+- [`8f658db`](https://github.com/WISE-Developers/project_nomad/commit/8f658db34b003fe369cabee9b94285647d65f80e) fix: Remove stdout pollution from download_bootstrap function — *Franco Nogarin, 14:37*
+- [`67362a1`](https://github.com/WISE-Developers/project_nomad/commit/67362a1147759514075f37d6b367586a0d27344c) chore: Force cache refresh for bootstrap URL — *Franco Nogarin, 14:34*
+- [`deb6ddd`](https://github.com/WISE-Developers/project_nomad/commit/deb6ddd3f54864de418be333cc75ecbd62ccdc28) fix: Simplify install-nomad.sh to use temp file approach — *Franco Nogarin, 14:31*
+- [`373c3da`](https://github.com/WISE-Developers/project_nomad/commit/373c3daed5dbe3fbe4806adf2e220f29f2fcfb03) feat: Add curl/wget-installable bootstrap scripts — *Franco Nogarin, 14:28*
+
+### 2026-03-21
+
+- [`90a3ebb`](https://github.com/WISE-Developers/project_nomad/commit/90a3ebb07c1dda3c62d953d65bc9f26b2d661933) chore: dev build 2 [skip ci] — *github-actions[bot], 11:58*
+- [`82b1746`](https://github.com/WISE-Developers/project_nomad/commit/82b1746e92a9305d0132ffff811400b410b90d93) Rename Upload File tab to Upload Ignition in spatial step — *Franco Nogarin, 05:58*
+- [`6155a6c`](https://github.com/WISE-Developers/project_nomad/commit/6155a6cc3218a1753c1dd64dd894e78219d46864) chore: dev build 1 [skip ci] — *github-actions[bot], 11:35*
+- [`cfc787c`](https://github.com/WISE-Developers/project_nomad/commit/cfc787ceeefb3d8fc11334894ee6ed2db5c2dbd6) Fix #189: Default duration to 3 days, warn on sub-3-day selections — *Franco Nogarin, 05:35*
 
 ### 2026-03-18
 
+- [`0cae033`](https://github.com/WISE-Developers/project_nomad/commit/0cae03387f80d1293b5cedf142fa92165d6451b3) chore: reset dev build counter after v0.4.2 [skip ci] — *github-actions[bot], 22:42*
+- [`e64c854`](https://github.com/WISE-Developers/project_nomad/commit/e64c854083518aeff063fcdbf6e98e9c8d915bba) chore: release v0.4.2 [skip ci] — *github-actions[bot], 22:41*
 - [`cd94b10`](https://github.com/WISE-Developers/project_nomad/commit/cd94b102cb945b627e2851d9957a7982f940c5fe) Merge pull request #217 from WISE-Developers/dev — *Franco Nogarin, 16:41*
 - [`6293bd4`](https://github.com/WISE-Developers/project_nomad/commit/6293bd400123c5c31d797919160c8f6ce69ae913) chore: dev build 1 [skip ci] — *github-actions[bot], 21:13*
 - [`46e8d73`](https://github.com/WISE-Developers/project_nomad/commit/46e8d73748e8d0fb9449a11c1bf53642360c8ca8) Fix outputMode and userId not persisted on execute endpoint — *Franco Nogarin, 15:12*
