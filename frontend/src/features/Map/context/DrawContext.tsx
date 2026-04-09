@@ -1,8 +1,22 @@
 import { createContext, useContext, ReactNode, useState, useCallback, useEffect, useRef } from 'react';
-import MapboxDraw from '@mapbox/mapbox-gl-draw';
-import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
+import { TerraDraw, TerraDrawPointMode, TerraDrawLineStringMode, TerraDrawPolygonMode, TerraDrawSelectMode } from 'terra-draw';
+import type { GeoJSONStoreFeatures } from 'terra-draw';
+import { TerraDrawMapLibreGLAdapter } from 'terra-draw-maplibre-gl-adapter';
 import { useMap } from './MapContext';
 import type { DrawingMode, DrawnFeature, DrawingState } from '../types/geometry';
+
+/**
+ * Convert a TerraDraw store feature to our DrawnFeature type.
+ * Both are GeoJSON Features with Point/LineString/Polygon geometry —
+ * the only difference is the properties type constraint.
+ */
+function toDrawnFeature(feature: GeoJSONStoreFeatures): DrawnFeature {
+  return feature as DrawnFeature;
+}
+
+function toDrawnFeatures(features: GeoJSONStoreFeatures[]): DrawnFeature[] {
+  return features as DrawnFeature[];
+}
 
 /**
  * Draw context value
@@ -33,37 +47,27 @@ interface DrawContextValue {
 const DrawContext = createContext<DrawContextValue | null>(null);
 
 /**
- * Map drawing mode to MapboxDraw mode
- */
-function toDrawMode(mode: DrawingMode): string {
-  switch (mode) {
-    case 'point':
-      return 'draw_point';
-    case 'line':
-      return 'draw_line_string';
-    case 'polygon':
-      return 'draw_polygon';
-    default:
-      return 'simple_select';
-  }
-}
-
-/**
  * Props for DrawProvider
  */
 interface DrawProviderProps {
   children: ReactNode;
 }
 
+// Mode name mapping
+const MODE_MAP: Record<DrawingMode, string> = {
+  point: 'point',
+  line: 'linestring',
+  polygon: 'polygon',
+  none: 'select',
+};
+
 /**
- * Provides a shared MapboxDraw instance to all child components.
+ * Provides drawing functionality to child components using TerraDraw.
  *
- * This solves the conflict between DrawingToolbar and MeasurementTool
- * by ensuring only one Draw control exists on the map.
+ * Uses terra-draw with the MapLibre GL adapter for cross-platform compatibility.
  */
 export function DrawProvider({ children }: DrawProviderProps) {
   const { map, isLoaded } = useMap();
-  const drawRef = useRef<MapboxDraw | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [state, setState] = useState<DrawingState>({
     mode: 'none',
@@ -71,186 +75,190 @@ export function DrawProvider({ children }: DrawProviderProps) {
     features: [],
   });
 
+  // TerraDraw instance ref
+  const terraDrawRef = useRef<TerraDraw | null>(null);
+
+  // Ref to avoid stale closure in event handlers
+  const featuresRef = useRef<DrawnFeature[]>(state.features);
+  useEffect(() => {
+    featuresRef.current = state.features;
+  }, [state.features]);
+
   // Subscriber refs
   const createSubscribers = useRef<Set<(features: DrawnFeature[]) => void>>(new Set());
   const updateSubscribers = useRef<Set<(features: DrawnFeature[]) => void>>(new Set());
   const deleteSubscribers = useRef<Set<(features: DrawnFeature[]) => void>>(new Set());
 
-  // Initialize MapboxDraw once
+  // Initialize TerraDraw when map is loaded
   useEffect(() => {
-    if (!map || !isLoaded || drawRef.current) return;
+    if (!map || !isLoaded) return;
 
-    const draw = new MapboxDraw({
-      displayControlsDefault: false,
-      controls: {},
-      defaultMode: 'simple_select',
-      styles: [
-        // Polygon fill - transparent yellow
-        {
-          id: 'gl-draw-polygon-fill',
-          type: 'fill',
-          filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
-          paint: {
-            'fill-color': '#FFD700',
-            'fill-opacity': 0.2,
-          },
-        },
-        // Polygon outline - solid yellow
-        {
-          id: 'gl-draw-polygon-stroke',
-          type: 'line',
-          filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
-          paint: {
-            'line-color': '#FFD700',
-            'line-width': 4,
-          },
-        },
-        // Line - solid yellow
-        {
-          id: 'gl-draw-line',
-          type: 'line',
-          filter: ['all', ['==', '$type', 'LineString'], ['!=', 'mode', 'static']],
-          paint: {
-            'line-color': '#FFD700',
-            'line-width': 4,
-          },
-        },
-        // Point (outer circle) - solid yellow
-        {
-          id: 'gl-draw-point-outer',
-          type: 'circle',
-          filter: ['all', ['==', '$type', 'Point'], ['!=', 'mode', 'static']],
-          paint: {
-            'circle-radius': 10,
-            'circle-color': '#FFD700',
-          },
-        },
-        // Point (inner circle for selection)
-        {
-          id: 'gl-draw-point-inner',
-          type: 'circle',
-          filter: ['all', ['==', '$type', 'Point'], ['!=', 'mode', 'static']],
-          paint: {
-            'circle-radius': 5,
-            'circle-color': '#FFFFFF',
-          },
-        },
-        // Vertex points (for editing)
-        {
-          id: 'gl-draw-vertex',
-          type: 'circle',
-          filter: ['all', ['==', 'meta', 'vertex'], ['!=', 'mode', 'static']],
-          paint: {
-            'circle-radius': 6,
-            'circle-color': '#FFFFFF',
-            'circle-stroke-color': '#FFD700',
-            'circle-stroke-width': 2,
-          },
-        },
-        // Midpoint vertices
-        {
-          id: 'gl-draw-midpoint',
-          type: 'circle',
-          filter: ['all', ['==', 'meta', 'midpoint']],
-          paint: {
-            'circle-radius': 4,
-            'circle-color': '#FFD700',
-          },
-        },
-      ],
+    const adapter = new TerraDrawMapLibreGLAdapter({
+      map,
     });
 
-    map.addControl(draw as unknown as mapboxgl.IControl);
-    drawRef.current = draw;
+    let idCounter = 0;
+    const draw = new TerraDraw({
+      adapter,
+      modes: [
+        new TerraDrawPointMode(),
+        new TerraDrawLineStringMode(),
+        new TerraDrawPolygonMode(),
+        new TerraDrawSelectMode(),
+      ],
+      idStrategy: {
+        isValidId: (id: string | number) => id !== undefined && id !== null,
+        getId: () => `td-${Date.now()}-${++idCounter}`,
+      },
+    });
+
+    // Set up event listeners
+    draw.on('finish', (id) => {
+      const feature = draw.getSnapshotFeature(id);
+      if (feature) {
+        const drawnFeature = toDrawnFeature(feature);
+        setState((prev) => ({
+          ...prev,
+          features: [...prev.features, drawnFeature],
+        }));
+        createSubscribers.current.forEach((cb) => cb([drawnFeature]));
+      }
+    });
+
+    draw.on('change', (ids, type) => {
+      if (type === 'delete') {
+        const deletedFeatures = featuresRef.current.filter(f => ids.includes(String(f.id)));
+        if (deletedFeatures.length > 0) {
+          setState((prev) => ({
+            ...prev,
+            features: prev.features.filter(f => !ids.includes(String(f.id))),
+            selectedIds: prev.selectedIds.filter(id => !ids.includes(String(id))),
+          }));
+          deleteSubscribers.current.forEach((cb) => cb(deletedFeatures));
+        }
+      } else if (type === 'update') {
+        const updatedFeatures: DrawnFeature[] = [];
+        ids.forEach(id => {
+          const feature = draw.getSnapshotFeature(id);
+          if (feature) {
+            updatedFeatures.push(toDrawnFeature(feature));
+          }
+        });
+        if (updatedFeatures.length > 0) {
+          setState((prev) => ({
+            ...prev,
+            features: prev.features.map(f =>
+              ids.includes(String(f.id))
+                ? updatedFeatures.find(uf => String(uf.id) === String(f.id)) ?? f
+                : f
+            ),
+          }));
+          updateSubscribers.current.forEach((cb) => cb(updatedFeatures));
+        }
+      }
+    });
+
+    draw.on('select', (id) => {
+      setState((prev) => {
+        const idStr = String(id);
+        if (prev.selectedIds.includes(idStr)) return prev;
+        return { ...prev, selectedIds: [...prev.selectedIds, idStr] };
+      });
+    });
+
+    draw.on('deselect', (id) => {
+      setState((prev) => ({
+        ...prev,
+        selectedIds: prev.selectedIds.filter(sid => sid !== String(id)),
+      }));
+    });
+
+    // Start TerraDraw
+    draw.start();
+    terraDrawRef.current = draw;
     setIsReady(true);
 
-    // Event handlers
-    const handleCreate = (e: { features: DrawnFeature[] }) => {
-      setState((prev) => ({
-        ...prev,
-        features: [...prev.features, ...e.features],
-      }));
-      createSubscribers.current.forEach((cb) => cb(e.features));
-    };
-
-    const handleUpdate = (e: { features: DrawnFeature[] }) => {
-      setState((prev) => ({
-        ...prev,
-        features: prev.features.map((f) => {
-          const updated = e.features.find((u) => u.id === f.id);
-          return updated || f;
-        }),
-      }));
-      updateSubscribers.current.forEach((cb) => cb(e.features));
-    };
-
-    const handleDelete = (e: { features: DrawnFeature[] }) => {
-      const deletedIds = new Set(e.features.map((f) => f.id));
-      setState((prev) => ({
-        ...prev,
-        features: prev.features.filter((f) => !deletedIds.has(f.id)),
-        selectedIds: prev.selectedIds.filter((id) => !deletedIds.has(id)),
-      }));
-      deleteSubscribers.current.forEach((cb) => cb(e.features));
-    };
-
-    const handleSelectionChange = (e: { features: DrawnFeature[] }) => {
-      setState((prev) => ({
-        ...prev,
-        selectedIds: e.features.map((f) => String(f.id)),
-      }));
-    };
-
-    map.on('draw.create', handleCreate);
-    map.on('draw.update', handleUpdate);
-    map.on('draw.delete', handleDelete);
-    map.on('draw.selectionchange', handleSelectionChange);
-
     return () => {
-      map.off('draw.create', handleCreate);
-      map.off('draw.update', handleUpdate);
-      map.off('draw.delete', handleDelete);
-      map.off('draw.selectionchange', handleSelectionChange);
-
-      if (drawRef.current) {
-        map.removeControl(drawRef.current as unknown as mapboxgl.IControl);
-        drawRef.current = null;
-        setIsReady(false);
-      }
+      draw.stop();
+      terraDrawRef.current = null;
+      setIsReady(false);
     };
   }, [map, isLoaded]);
 
   const setMode = useCallback((mode: DrawingMode) => {
-    if (!drawRef.current) return;
-    drawRef.current.changeMode(toDrawMode(mode));
     setState((prev) => ({ ...prev, mode }));
-  }, []);
-
-  const getFeatures = useCallback((): DrawnFeature[] => {
-    if (!drawRef.current) return [];
-    return drawRef.current.getAll().features as DrawnFeature[];
-  }, []);
-
-  const deleteSelected = useCallback(() => {
-    if (!drawRef.current) return;
-    const selected = drawRef.current.getSelectedIds();
-    if (selected.length > 0) {
-      drawRef.current.delete(selected);
+    if (terraDrawRef.current) {
+      terraDrawRef.current.setMode(MODE_MAP[mode]);
     }
   }, []);
 
-  const deleteAll = useCallback(() => {
-    if (!drawRef.current) return;
-    drawRef.current.deleteAll();
-    setState((prev) => ({ ...prev, features: [], selectedIds: [] }));
+  const getFeatures = useCallback((): DrawnFeature[] => {
+    if (!terraDrawRef.current) return [];
+    return toDrawnFeatures(terraDrawRef.current.getSnapshot());
   }, []);
 
+  const deleteSelected = useCallback(() => {
+    if (!terraDrawRef.current || state.selectedIds.length === 0) return;
+
+    const deletedFeatures = state.features.filter(f => state.selectedIds.includes(String(f.id)));
+    terraDrawRef.current.removeFeatures(state.selectedIds.map(id => String(id)));
+    setState((prev) => ({
+      ...prev,
+      features: prev.features.filter(f => !prev.selectedIds.includes(String(f.id))),
+      selectedIds: [],
+    }));
+    deleteSubscribers.current.forEach((cb) => cb(deletedFeatures));
+  }, [state.selectedIds, state.features]);
+
+  const deleteAll = useCallback(() => {
+    if (!terraDrawRef.current) return;
+
+    const deletedFeatures = [...state.features];
+    terraDrawRef.current.clear();
+    setState((prev) => ({
+      ...prev,
+      features: [],
+      selectedIds: [],
+    }));
+    deleteSubscribers.current.forEach((cb) => cb(deletedFeatures));
+  }, [state.features]);
+
   const addFeatures = useCallback((features: DrawnFeature[]) => {
-    if (!drawRef.current) return;
-    features.forEach((f) => drawRef.current!.add(f));
-    setState((prev) => ({ ...prev, features: [...prev.features, ...features] }));
-    // Notify create subscribers so useGeometrySync picks up the change
-    createSubscribers.current.forEach((cb) => cb(features));
+    if (!terraDrawRef.current) return;
+
+    // TerraDraw requires every feature to have an id and a valid mode property
+    const featuresWithIds = features.map(f => {
+      const geomType = f.geometry.type;
+      const mode = geomType === 'Point' ? 'point'
+        : geomType === 'LineString' ? 'linestring'
+        : 'polygon';
+      return {
+        ...f,
+        id: f.id ?? `td-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        properties: {
+          ...(f.properties ?? {}),
+          mode: String((f.properties as Record<string, unknown>)?.mode ?? mode),
+        },
+      };
+    });
+
+    try {
+      const validations = terraDrawRef.current.addFeatures(featuresWithIds as GeoJSONStoreFeatures[]);
+      const failures = validations.filter(v => !v.valid);
+      if (failures.length > 0) {
+        console.error('[DrawContext] TerraDraw rejected features:', failures);
+      }
+    } catch (err) {
+      console.error('[DrawContext] TerraDraw addFeatures failed:', err);
+    }
+
+    // Always update state and notify — even if TerraDraw rejected the features,
+    // the wizard and other consumers need to know about them
+    setState((prev) => ({
+      ...prev,
+      features: [...prev.features, ...featuresWithIds],
+    }));
+    createSubscribers.current.forEach((cb) => cb(featuresWithIds));
   }, []);
 
   const onCreateSubscribe = useCallback((callback: (features: DrawnFeature[]) => void) => {
@@ -304,7 +312,7 @@ export function useDraw(): DrawContextValue {
 /**
  * Optional version of useDraw that returns null if no provider.
  *
- * Use this when the component may be rendered outside of a DrawProvider,
+ * Use this when the component may be rendered outside of DrawProvider,
  * such as when embedded in a host application that provides its own map.
  */
 export function useDrawOptional(): DrawContextValue | null {

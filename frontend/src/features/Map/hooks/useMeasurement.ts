@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { useDrawing } from './useDrawing';
+import { useCallback, useState, useEffect } from 'react';
+import { useDrawOptional } from '../context/DrawContext';
 import {
   calculateLineLength,
   calculatePolygonArea,
@@ -74,6 +74,8 @@ export function useMeasurement(): UseMeasurementReturn {
   const [mode, setMode] = useState<MeasurementMode>('none');
   const [result, setResult] = useState<MeasurementResult | null>(null);
 
+  const draw = useDrawOptional();
+
   const handleCreate = useCallback((features: DrawnFeature[]) => {
     if (features.length === 0) return;
 
@@ -100,30 +102,32 @@ export function useMeasurement(): UseMeasurementReturn {
     }
   }, []);
 
-  const { setMode: setDrawMode, deleteAll } = useDrawing({
-    onCreate: handleCreate,
-  });
+  // Subscribe to draw create events for measurement
+  useEffect(() => {
+    if (!draw) return;
+    return draw.onCreateSubscribe(handleCreate);
+  }, [draw, handleCreate]);
 
   const measureDistance = useCallback(() => {
     setMode('distance');
     setResult(null);
-    deleteAll();
-    setDrawMode('line');
-  }, [setDrawMode, deleteAll]);
+    draw?.deleteAll();
+    draw?.setMode('line');
+  }, [draw]);
 
   const measureArea = useCallback(() => {
     setMode('area');
     setResult(null);
-    deleteAll();
-    setDrawMode('polygon');
-  }, [setDrawMode, deleteAll]);
+    draw?.deleteAll();
+    draw?.setMode('polygon');
+  }, [draw]);
 
   const clear = useCallback(() => {
     setMode('none');
     setResult(null);
-    deleteAll();
-    setDrawMode('none');
-  }, [setDrawMode, deleteAll]);
+    draw?.deleteAll();
+    draw?.setMode('none');
+  }, [draw]);
 
   return {
     mode,

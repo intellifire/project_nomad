@@ -1,8 +1,9 @@
 /**
  * Tests for useRasterHover hook — colorToPercentage function
  *
- * Verifies the FireSTARR color ramp mapping from RGB values to burn probability
- * percentages, including exact anchor points, interpolation, and edge cases.
+ * Verifies the FireSTARR 10-class discrete colour ramp mapping from RGB values
+ * to burn-probability band label strings. The function returns a string like
+ * '81-90%' or null — never a number.
  *
  * @module features/Map/hooks/__tests__
  */
@@ -11,74 +12,86 @@ import { describe, it, expect } from 'vitest';
 import { colorToPercentage } from './useRasterHover.js';
 
 // =============================================================================
-// FireSTARR Color Ramp Anchor Points
+// FireSTARR 10-class discrete colour ramp anchor points (midpoints)
 // =============================================================================
-// 90% = red        (255, 0,   0)
-// 75% = orange     (255, 165, 0)
-// 50% = yellow     (255, 255, 0)
-// 25% = yellow-green (173, 255, 47)
-// 10% = green      (0,   255, 0)
+// [95,  230,  21,  31]  → '91-100%'
+// [85,  235,  51,  38]  → '81-90%'
+// [75,  238,  79,  44]  → '71-80%'
+// [65,  240, 108,  51]  → '61-70%'
+// [55,  242, 137,  56]  → '51-60%'
+// [45,  245, 162,  61]  → '41-50%'
+// [35,  250, 192,  68]  → '31-40%'
+// [25,  252, 223,  75]  → '21-30%'
+// [15,  250, 246, 142]  → '11-20%'
+// [5,    76, 175,  80]  → '1-10%'
 
 describe('colorToPercentage', () => {
   describe('exact anchor points', () => {
-    it('maps red (255, 0, 0) to 90%', () => {
-      expect(colorToPercentage(255, 0, 0)).toBe(90);
+    it("maps crimson (230, 21, 31) to '91-100%'", () => {
+      expect(colorToPercentage(230, 21, 31)).toBe('91-100%');
     });
 
-    it('maps orange (255, 165, 0) to 75%', () => {
-      expect(colorToPercentage(255, 165, 0)).toBe(75);
+    it("maps dark red (235, 51, 38) to '81-90%'", () => {
+      expect(colorToPercentage(235, 51, 38)).toBe('81-90%');
     });
 
-    it('maps yellow (255, 255, 0) to 50%', () => {
-      expect(colorToPercentage(255, 255, 0)).toBe(50);
+    it("maps red (238, 79, 44) to '71-80%'", () => {
+      expect(colorToPercentage(238, 79, 44)).toBe('71-80%');
     });
 
-    it('maps yellow-green (173, 255, 47) to 25%', () => {
-      expect(colorToPercentage(173, 255, 47)).toBe(25);
+    it("maps red-orange (240, 108, 51) to '61-70%'", () => {
+      expect(colorToPercentage(240, 108, 51)).toBe('61-70%');
     });
 
-    it('maps green (0, 255, 0) to 10%', () => {
-      expect(colorToPercentage(0, 255, 0)).toBe(10);
+    it("maps dark orange (242, 137, 56) to '51-60%'", () => {
+      expect(colorToPercentage(242, 137, 56)).toBe('51-60%');
+    });
+
+    it("maps orange (245, 162, 61) to '41-50%'", () => {
+      expect(colorToPercentage(245, 162, 61)).toBe('41-50%');
+    });
+
+    it("maps light orange (250, 192, 68) to '31-40%'", () => {
+      expect(colorToPercentage(250, 192, 68)).toBe('31-40%');
+    });
+
+    it("maps yellow (252, 223, 75) to '21-30%'", () => {
+      expect(colorToPercentage(252, 223, 75)).toBe('21-30%');
+    });
+
+    it("maps light yellow (250, 246, 142) to '11-20%'", () => {
+      expect(colorToPercentage(250, 246, 142)).toBe('11-20%');
+    });
+
+    it("maps green (76, 175, 80) to '1-10%'", () => {
+      expect(colorToPercentage(76, 175, 80)).toBe('1-10%');
     });
   });
 
-  describe('interpolation between anchors', () => {
-    it('returns a value between 75 and 90 for colors between red and orange', () => {
-      // midpoint between red (255,0,0) and orange (255,165,0) => (255,82,0)
-      const result = colorToPercentage(255, 82, 0);
-      expect(result).toBeGreaterThan(75);
-      expect(result).toBeLessThan(90);
+  describe('nearest-band matching (discrete classes)', () => {
+    it('maps a colour close to the 91-100% anchor to that band', () => {
+      // Slight deviation from anchor (230, 21, 31) → still closest to it
+      expect(colorToPercentage(228, 25, 33)).toBe('91-100%');
     });
 
-    it('returns a value between 50 and 75 for colors between orange and yellow', () => {
-      // midpoint between orange (255,165,0) and yellow (255,255,0) => (255,210,0)
-      const result = colorToPercentage(255, 210, 0);
-      expect(result).toBeGreaterThan(50);
-      expect(result).toBeLessThan(75);
+    it('maps a colour close to the 81-90% anchor to that band', () => {
+      // Slight deviation from anchor (235, 51, 38)
+      expect(colorToPercentage(233, 55, 40)).toBe('81-90%');
     });
 
-    it('returns a value between 25 and 50 for colors between yellow and yellow-green', () => {
-      // midpoint between yellow (255,255,0) and yellow-green (173,255,47) => (214,255,23)
-      const result = colorToPercentage(214, 255, 23);
-      expect(result).toBeGreaterThan(25);
-      expect(result).toBeLessThan(50);
-    });
-
-    it('returns a value between 10 and 25 for colors between yellow-green and green', () => {
-      // midpoint between yellow-green (173,255,47) and green (0,255,0) => (86,255,23)
-      const result = colorToPercentage(86, 255, 23);
-      expect(result).toBeGreaterThan(10);
-      expect(result).toBeLessThan(25);
+    it('maps a colour close to the 1-10% green anchor to that band', () => {
+      // Slight deviation from anchor (76, 175, 80)
+      expect(colorToPercentage(78, 172, 82)).toBe('1-10%');
     });
   });
 
   describe('alpha channel handling', () => {
     it('accepts an optional alpha parameter and returns same result as without it', () => {
-      expect(colorToPercentage(255, 0, 0, 255)).toBe(colorToPercentage(255, 0, 0));
+      expect(colorToPercentage(230, 21, 31, 255)).toBe(colorToPercentage(230, 21, 31));
     });
 
     it('returns null for fully transparent pixels (alpha = 0)', () => {
-      expect(colorToPercentage(255, 0, 0, 0)).toBeNull();
+      expect(colorToPercentage(230, 21, 31, 0)).toBeNull();
     });
   });
 
@@ -97,15 +110,14 @@ describe('colorToPercentage', () => {
   });
 
   describe('return value format', () => {
-    it('returns an integer percentage for exact anchor colors', () => {
-      const result = colorToPercentage(255, 0, 0);
-      expect(result).toBe(Math.round(result as number));
+    it('returns a string for a valid ramp colour', () => {
+      const result = colorToPercentage(230, 21, 31);
+      expect(typeof result).toBe('string');
     });
 
-    it('returns a number in the range 10-90 for valid ramp colors', () => {
-      const result = colorToPercentage(255, 165, 0);
-      expect(result).toBeGreaterThanOrEqual(10);
-      expect(result).toBeLessThanOrEqual(90);
+    it('returns a string matching the band label pattern (e.g. "N-NN%")', () => {
+      const result = colorToPercentage(245, 162, 61);
+      expect(result).toMatch(/^\d+-\d+%$/);
     });
   });
 });

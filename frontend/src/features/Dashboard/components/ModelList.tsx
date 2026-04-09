@@ -6,10 +6,11 @@
  * @module features/Dashboard/components
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useRef } from 'react';
 import { useModels } from '../hooks/useModels.js';
 import { useModelSelection } from '../context/DashboardContext.js';
 import { ModelCard } from './ModelCard.js';
+import { useOpenNomad } from '../../../openNomad/index.js';
 import type { Model, ModelStatus, EngineType } from '../../../openNomad/api.js';
 import type { ModelSortOption } from '../context/DashboardContext.js';
 
@@ -27,6 +28,17 @@ export interface ModelListProps {
   /** CSS class */
   className?: string;
 }
+
+const importButtonStyle: React.CSSProperties = {
+  padding: '6px 12px',
+  backgroundColor: '#2196f3',
+  color: 'white',
+  border: 'none',
+  borderRadius: '4px',
+  cursor: 'pointer',
+  fontSize: '13px',
+  fontWeight: 500,
+};
 
 // =============================================================================
 // Component
@@ -71,6 +83,47 @@ export function ModelList({
   } = useModelSelection();
 
   const [showFilters, setShowFilters] = useState(false);
+  const [importStatus, setImportStatus] = useState<string | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const api = useOpenNomad();
+
+  // Handle model import from ZIP
+  const handleImportClick = useCallback(() => {
+    importInputRef.current?.click();
+  }, []);
+
+  const handleImportFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportStatus('Importing...');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const username = localStorage.getItem('nomad_username') || '';
+      const headers: Record<string, string> = {};
+      if (username) headers['X-Nomad-User'] = username;
+      const res = await api.fetch('/api/v1/import', {
+        method: 'POST',
+        body: formData,
+        headers,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(err.message || `Import failed: ${res.status}`);
+      }
+      const result = await res.json();
+      const configNote = result.hasConfig ? ' (config preserved — model can be re-run)' : '';
+      setImportStatus(`Imported "${result.name}" — ${result.imported.files} files, ${result.imported.results} results${configNote}`);
+      refresh();
+      setTimeout(() => setImportStatus(null), 8000);
+    } catch (err) {
+      setImportStatus(`Import failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setTimeout(() => setImportStatus(null), 5000);
+    }
+    // Reset input so same file can be re-imported
+    if (importInputRef.current) importInputRef.current.value = '';
+  }, [api, refresh]);
 
   // Handle filter changes
   const handleStatusFilter = useCallback((status: ModelStatus | '') => {
@@ -103,6 +156,64 @@ export function ModelList({
   const handleDelete = useCallback(async (model: Model) => {
     await deleteModel(model.id);
   }, [deleteModel]);
+
+  // Handle model re-run
+  const handleRerun = useCallback(async (model: Model) => {
+    setImportStatus(`Fetching config for "${model.name}"...`);
+    try {
+      const configRes = await api.fetch(`/api/v1/models/${model.id}/config`);
+      if (!configRes.ok) throw new Error('Failed to fetch model config');
+      const { hasConfig, config } = await configRes.json();
+      if (!hasConfig || !config) {
+        setImportStatus('No config available — model cannot be re-run');
+        setTimeout(() => setImportStatus(null), 5000);
+        return;
+      }
+
+      // Build the /models/run request from stored config
+      const runBody = {
+        name: `${model.name.replace(/ \(imported\)$/, '')} (re-run)`,
+        engineType: config.engineType || model.engine || 'firestarr',
+        ignition: config.ignition,
+        timeRange: config.timeRange,
+        weather: config.weather,
+        scenarios: config.scenarios,
+        modelMode: config.modelMode || model.outputMode || 'probabilistic',
+      };
+
+      if (!runBody.ignition || !runBody.timeRange || !runBody.weather) {
+        setImportStatus('Incomplete config — missing ignition, time range, or weather data');
+        setTimeout(() => setImportStatus(null), 5000);
+        return;
+      }
+
+      setImportStatus('Starting model run...');
+      const username = localStorage.getItem('nomad_username') || '';
+      const runHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (username) runHeaders['X-Nomad-User'] = username;
+      const runRes = await api.fetch('/api/v1/models/run', {
+        method: 'POST',
+        headers: runHeaders,
+        body: JSON.stringify(runBody),
+      });
+      if (!runRes.ok) {
+        const err = await runRes.json().catch(() => ({ message: runRes.statusText }));
+        throw new Error(err.message || `Run failed: ${runRes.status}`);
+      }
+      const runResult = await runRes.json();
+      setImportStatus(`Model re-run started — new model ID: ${runResult.modelId}`);
+      refresh();
+      // Poll rapidly for completion — models typically finish in 5-15 seconds
+      const pollDelays = [3000, 5000, 10000, 15000, 20000];
+      for (const delay of pollDelays) {
+        setTimeout(() => refresh(), delay);
+      }
+      setTimeout(() => setImportStatus(null), 8000);
+    } catch (err) {
+      setImportStatus(`Re-run failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setTimeout(() => setImportStatus(null), 5000);
+    }
+  }, [api, refresh]);
 
   // Handle bulk delete
   const handleDeleteSelected = useCallback(async () => {
@@ -193,6 +304,16 @@ export function ModelList({
           <button onClick={refresh} style={iconButtonStyle} title="Refresh">
             Refresh
           </button>
+          <button onClick={handleImportClick} style={importButtonStyle}>
+            Import
+          </button>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept=".zip"
+            onChange={handleImportFile}
+            style={{ display: 'none' }}
+          />
           {onCreateNew && (
             <button onClick={onCreateNew} style={createButtonStyle}>
               + New Model
@@ -200,6 +321,20 @@ export function ModelList({
           )}
         </div>
       </div>
+
+      {/* Import status */}
+      {importStatus && (
+        <div style={{
+          padding: '8px 12px',
+          margin: '0 12px 8px',
+          borderRadius: '4px',
+          fontSize: '13px',
+          backgroundColor: importStatus.startsWith('Import failed') ? '#ffebee' : '#e8f5e9',
+          color: importStatus.startsWith('Import failed') ? '#c62828' : '#2e7d32',
+        }}>
+          {importStatus}
+        </div>
+      )}
 
       {/* Filters */}
       {showFilters && (
@@ -280,11 +415,16 @@ export function ModelList({
           <p style={emptyTextStyle}>
             Your fire models will appear here after you run them.
           </p>
-          {onCreateNew && (
-            <button onClick={onCreateNew} style={createButtonStyle}>
-              + Create New Model
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+            {onCreateNew && (
+              <button onClick={onCreateNew} style={createButtonStyle}>
+                + Create New Model
+              </button>
+            )}
+            <button onClick={handleImportClick} style={importButtonStyle}>
+              Import from ZIP
             </button>
-          )}
+          </div>
         </div>
       )}
 
@@ -299,6 +439,7 @@ export function ModelList({
               onSelect={toggleModelSelection}
               onViewResults={onViewResults}
               onDelete={handleDelete}
+              onRerun={handleRerun}
             />
           ))}
         </div>

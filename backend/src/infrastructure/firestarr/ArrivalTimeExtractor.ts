@@ -158,10 +158,24 @@ export async function extractDeterministicPerimeters(
         { stdio: 'pipe', timeout: 30000 }
       );
 
-      // Step 3: Reproject to WGS84 and dissolve
+      // Step 3: Get source CRS from the arrival raster (gdal_polygonize doesn't embed it in GeoJSON)
+      let sourceSrs = '';
+      try {
+        const srsInfo = execSync(
+          `gdalsrsinfo "${inputPath}" -o proj4`,
+          { stdio: 'pipe', timeout: 10000 }
+        ).toString().trim();
+        if (srsInfo && srsInfo.includes('+proj')) {
+          sourceSrs = `-s_srs "${srsInfo}"`;
+        }
+      } catch {
+        console.warn(`[ArrivalTimeExtractor] Could not read CRS from ${filename}, reprojection may fail`);
+      }
+
+      // Step 4: Reproject to WGS84 and dissolve
       const outputPath = join(tmpDir, 'perimeter_4326.geojson');
       execSync(
-        `ogr2ogr -f GeoJSON "${outputPath}" "${vectorPath}" -t_srs EPSG:4326 -dialect sqlite -sql "SELECT ST_Union(geometry) as geometry FROM perimeter WHERE DN=1"`,
+        `ogr2ogr -f GeoJSON "${outputPath}" "${vectorPath}" ${sourceSrs} -t_srs EPSG:4326 -dialect sqlite -sql "SELECT ST_Union(geometry) as geometry FROM perimeter WHERE DN=1"`,
         { stdio: 'pipe', timeout: 30000 }
       );
 

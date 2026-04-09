@@ -1,6 +1,6 @@
 import { useEffect, useRef, ReactNode } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import { useMapInternal } from '../context/MapContext';
 import { DrawProvider } from '../context/DrawContext';
 import { MapOptions, DEFAULT_MAP_OPTIONS, BASEMAP_STYLES, BasemapStyle } from '../types';
@@ -34,7 +34,7 @@ interface MapContainerProps {
 }
 
 /**
- * MapContainer component that initializes and manages a Mapbox GL map.
+ * MapContainer component that initializes and manages a MapLibre GL map.
  *
  * This component must be used within a MapProvider. It handles:
  * - Map initialization with provided options
@@ -59,21 +59,11 @@ export function MapContainer({
   style,
 }: MapContainerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
   const { setMap, setIsLoaded, setIsLoading, setError } = useMapInternal();
 
   useEffect(() => {
     if (!containerRef.current) return;
-
-    // Get access token from environment
-    const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
-    if (!accessToken) {
-      setError(new Error('VITE_MAPBOX_TOKEN environment variable is not set'));
-      setIsLoading(false);
-      return;
-    }
-
-    mapboxgl.accessToken = accessToken;
 
     // Merge options with defaults
     const mergedOptions = { ...DEFAULT_MAP_OPTIONS, ...options };
@@ -107,15 +97,15 @@ export function MapContainer({
       setIsLoading(true);
       setError(null);
 
-      const map = new mapboxgl.Map({
+      const map = new maplibregl.Map({
         container: containerRef.current,
         style: initialStyle,
         center: initialCenter,
         zoom: initialZoom,
         pitch: initialPitch,
         bearing: initialBearing,
-        attributionControl: true,
-        preserveDrawingBuffer: true, // Needed for export/screenshots
+        attributionControl: { compact: true },
+        canvasContextAttributes: { preserveDrawingBuffer: true }, // Required for useRasterHover (gl.readPixels)
       });
 
       mapRef.current = map;
@@ -125,23 +115,9 @@ export function MapContainer({
         setIsLoaded(true);
         setIsLoading(false);
 
-        // Add terrain if enabled
-        if (mergedOptions.terrain) {
-          map.addSource('mapbox-dem', {
-            type: 'raster-dem',
-            url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
-            tileSize: 512,
-            maxzoom: 14,
-          });
-          map.setTerrain({
-            source: 'mapbox-dem',
-            exaggeration: mergedOptions.terrainExaggeration,
-          });
-        }
-
         // Add navigation controls
-        map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-        map.addControl(new mapboxgl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+        map.addControl(new maplibregl.NavigationControl(), 'top-right');
+        map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
       });
 
       // Save map view position on move end

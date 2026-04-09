@@ -69,10 +69,11 @@ Container mode is the simplest path. The installer handles everything else.
 
 | Service | Purpose | Required |
 |---------|---------|----------|
-| MapBox API | Map tiles and rendering | Yes (free token) |
+| MapLibre GL | Map rendering | No (open source, self-hosted) |
+| CartoDB | Basemap tiles | No (free, no API key required) |
 | SpotWX API | Weather forecast data | Yes (paid subscription) |
 
-A [MapBox](https://account.mapbox.com/access-tokens/) access token is required (free). A [SpotWX API](https://spotwx.com/api/) subscription is required for weather data (paid).
+Maps use MapLibre GL with CartoDB basemaps (no API key required). A [SpotWX API](https://spotwx.com/api/) subscription is required for weather data (paid).
 
 ## Ports
 
@@ -89,7 +90,6 @@ See `.env.example` in the project root for the full list. Nomad-specific variabl
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `VITE_MAPBOX_TOKEN` | MapBox API access token | Yes |
 | `NOMAD_DEPLOYMENT_MODE` | `SAN` (default) or `ACN` | No |
 | `PORT` | Backend port (bare metal) | No |
 

@@ -121,34 +121,39 @@ describe('RasterLegend', () => {
       });
     });
 
-    it('shows all 5 probability labels', () => {
+    it('shows all 10 probability labels', () => {
       render(<RasterLegend />);
-      expect(screen.getByText('90%')).toBeInTheDocument();
-      expect(screen.getByText('75%')).toBeInTheDocument();
-      expect(screen.getByText('50%')).toBeInTheDocument();
-      expect(screen.getByText('25%')).toBeInTheDocument();
-      expect(screen.getByText('10%')).toBeInTheDocument();
+      expect(screen.getByText('91-100%')).toBeInTheDocument();
+      expect(screen.getByText('81-90%')).toBeInTheDocument();
+      expect(screen.getByText('71-80%')).toBeInTheDocument();
+      expect(screen.getByText('61-70%')).toBeInTheDocument();
+      expect(screen.getByText('51-60%')).toBeInTheDocument();
+      expect(screen.getByText('41-50%')).toBeInTheDocument();
+      expect(screen.getByText('31-40%')).toBeInTheDocument();
+      expect(screen.getByText('21-30%')).toBeInTheDocument();
+      expect(screen.getByText('11-20%')).toBeInTheDocument();
+      expect(screen.getByText('1-10%')).toBeInTheDocument();
     });
 
-    it('renders 5 color swatches', () => {
+    it('renders 10 color swatches', () => {
       const { container } = render(<RasterLegend />);
       // Each swatch has a data-testid
       const swatches = container.querySelectorAll('[data-testid="legend-swatch"]');
-      expect(swatches).toHaveLength(5);
+      expect(swatches).toHaveLength(10);
     });
 
-    it('renders red swatch for 90% entry', () => {
+    it('renders dark red swatch for 91-100% entry', () => {
       const { container } = render(<RasterLegend />);
       const swatches = container.querySelectorAll('[data-testid="legend-swatch"]');
-      // First swatch corresponds to 90%
-      expect(swatches[0]).toHaveStyle({ backgroundColor: 'rgb(255, 0, 0)' });
+      // First swatch corresponds to 91-100%
+      expect(swatches[0]).toHaveStyle({ backgroundColor: 'rgb(230, 21, 31)' });
     });
 
-    it('renders green swatch for 10% entry', () => {
+    it('renders green swatch for 1-10% entry', () => {
       const { container } = render(<RasterLegend />);
       const swatches = container.querySelectorAll('[data-testid="legend-swatch"]');
-      // Last swatch corresponds to 10%
-      expect(swatches[4]).toHaveStyle({ backgroundColor: 'rgb(0, 255, 0)' });
+      // Last swatch corresponds to 1-10%
+      expect(swatches[9]).toHaveStyle({ backgroundColor: 'rgb(76, 175, 80)' });
     });
   });
 

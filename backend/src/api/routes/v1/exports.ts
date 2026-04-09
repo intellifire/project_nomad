@@ -394,6 +394,52 @@ router.post(
     // Add metadata file (always first)
     archive.append(metadata, { name: 'metadata.txt' });
 
+    // Build model.json with full config for re-runnable import
+    const modelConfig: Record<string, unknown> = {
+      name: modelName || model.name,
+      engineType: model.engineType,
+      modelMode: outputMode,
+      sourceModelId: modelId,
+      exportedAt: now,
+      notes: model.notes || undefined,
+    };
+
+    // Read ignition from sim directory if present
+    const ignitionPath = join(simDir, 'ignition.geojson');
+    if (existsSync(ignitionPath)) {
+      try {
+        const { readFileSync } = await import('fs');
+        const ignitionData = JSON.parse(readFileSync(ignitionPath, 'utf-8'));
+        // Extract geometry from Feature or FeatureCollection
+        let geom = ignitionData;
+        if (ignitionData.type === 'FeatureCollection' && ignitionData.features?.length > 0) {
+          geom = ignitionData.features[0].geometry;
+        } else if (ignitionData.type === 'Feature') {
+          geom = ignitionData.geometry;
+        }
+        if (geom?.type && geom?.coordinates) {
+          modelConfig.ignition = {
+            type: geom.type === 'Point' ? 'point' : geom.type === 'LineString' ? 'linestring' : 'polygon',
+            coordinates: geom.coordinates,
+          };
+        }
+      } catch { /* ignition reconstruction failed — skip */ }
+    }
+
+    // Read output-config.json for execution parameters if present
+    if (existsSync(configPath)) {
+      try {
+        const { readFileSync } = await import('fs');
+        const outputConfig = JSON.parse(readFileSync(configPath, 'utf-8'));
+        if (outputConfig.timeRange) modelConfig.timeRange = outputConfig.timeRange;
+        if (outputConfig.weather) modelConfig.weather = outputConfig.weather;
+        if (outputConfig.scenarios) modelConfig.scenarios = outputConfig.scenarios;
+        if (outputConfig.notes) modelConfig.notes = outputConfig.notes;
+      } catch { /* config reconstruction failed — skip */ }
+    }
+
+    archive.append(JSON.stringify(modelConfig, null, 2), { name: 'model.json' });
+
     for (const filename of validFiles) {
       const fullPath = join(simDir, filename);
       archive.file(fullPath, { name: filename });

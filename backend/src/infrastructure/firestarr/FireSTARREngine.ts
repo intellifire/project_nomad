@@ -123,10 +123,32 @@ export class FireSTARREngine implements IFireModelingEngine {
       smoothPerimeter: false,
     };
 
-    // Save output config to working directory for persistence
+    // Save output config + execution params to working directory for persistence and export
     const configPath = join(inputResult.value.workingDir, 'output-config.json');
     const { writeFile } = await import('fs/promises');
-    await writeFile(configPath, JSON.stringify(outputConfig, null, 2));
+    // Serialize ignition geometry in API format (lowercase type) for re-run compatibility
+    const geojson = options.ignitionGeometry.toGeoJSON();
+    const ignitionTypeMap: Record<string, string> = {
+      [GeometryType.Point]: 'point',
+      [GeometryType.LineString]: 'linestring',
+      [GeometryType.Polygon]: 'polygon',
+    };
+
+    const persistedConfig = {
+      ...outputConfig,
+      // Execution params — needed for re-runnable export/import
+      ignition: {
+        type: ignitionTypeMap[geojson.type] ?? geojson.type.toLowerCase(),
+        coordinates: geojson.coordinates,
+      },
+      timeRange: options.timeRange ? {
+        start: options.timeRange.start.toISOString(),
+        end: options.timeRange.end.toISOString(),
+      } : undefined,
+      weather: options.weatherConfig,
+      modelMode: options.outputMode === 'deterministic' ? 'deterministic' : 'probabilistic',
+    };
+    await writeFile(configPath, JSON.stringify(persistedConfig, null, 2));
     logger.engine(`Saved output config to ${configPath}`, 'FireSTARR', model.id);
 
     // Store execution state

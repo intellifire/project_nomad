@@ -16,7 +16,7 @@ Democratizing fire modeling to save lives through accessible, modern interfaces.
 
 ## Overview
 
-Project Nomad is a TypeScript React GUI for fire modeling. It provides a MapBox GL-based map interface for fire behavior analysis and prediction modeling in wildfire management operations.
+Project Nomad is a TypeScript React GUI for fire modeling. It provides a MapLibre GL-based map interface for fire behavior analysis and prediction modeling in wildfire management operations.
 
 **Current Status**: Phase 1 MVP Complete. Working SAN deployment with FireSTARR integration, full visualization pipeline, and installer for easy deployment.
 
@@ -55,7 +55,7 @@ Open-source probabilistic fire modeling:
 - Weather data integration (SpotWX)
 
 **Model Review**
-- Fire perimeter visualization on MapBox GL
+- Fire perimeter visualization on MapLibre GL
 - Burn probability maps
 - Time-stepped animation
 - Export to multiple formats
@@ -71,7 +71,7 @@ Open-source probabilistic fire modeling:
 | Component | Technology |
 |-----------|------------|
 | Frontend | TypeScript, React |
-| Map | MapBox GL JS |
+| Map | MapLibre GL JS |
 | Backend | Node.js, Express, TypeScript |
 | Database | SQLite |
 | Model Engine | FireSTARR |

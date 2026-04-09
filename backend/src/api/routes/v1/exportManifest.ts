@@ -82,20 +82,21 @@ function categorizeFile(filename: string, lastJulianDay: number | null): ExportF
     return { filename, category: 'inputs', label: 'FireSTARR Log', format: 'log', path: filename };
   }
 
-  // Final outputs — scenario 1, last day only
-  if (lastJulianDay !== null) {
-    const finalMatch = filename.match(/^000_000001_(\d+)_(arrival|intensity|raz|ros|source)\.tif$/);
-    if (finalMatch && parseInt(finalMatch[1], 10) === lastJulianDay) {
-      const typeLabels: Record<string, string> = {
-        arrival: 'Arrival Time',
-        intensity: 'Fire Intensity',
-        raz: 'Rate of Spread Azimuth',
-        ros: 'Rate of Spread',
-        source: 'Ignition Source',
-      };
-      const label = `${typeLabels[finalMatch[2]] || finalMatch[2]} - Final Day`;
-      return { filename, category: 'final', label, format: 'geotiff', path: filename };
-    }
+  // Scenario outputs — scenario 1, all days
+  // Arrival time grids are needed for each day to reconstruct deterministic perimeters on import
+  const scenarioMatch = filename.match(/^000_000001_(\d+)_(arrival|intensity|raz|ros|source)\.tif$/);
+  if (scenarioMatch) {
+    const day = parseInt(scenarioMatch[1], 10);
+    const typeLabels: Record<string, string> = {
+      arrival: 'Arrival Time',
+      intensity: 'Fire Intensity',
+      raz: 'Rate of Spread Azimuth',
+      ros: 'Rate of Spread',
+      source: 'Ignition Source',
+    };
+    const isFinal = lastJulianDay !== null && day === lastJulianDay;
+    const label = `${typeLabels[scenarioMatch[2]] || scenarioMatch[2]} - Day ${day}${isFinal ? ' (Final)' : ''}`;
+    return { filename, category: 'final', label, format: 'geotiff', path: filename };
   }
 
   return null;

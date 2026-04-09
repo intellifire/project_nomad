@@ -94,12 +94,9 @@ export function useGeometrySync(options: UseGeometrySyncOptions = {}): UseGeomet
   const isEmbeddedMode = !drawCtx;
 
   // Extract draw context values (use no-ops for embedded mode)
-  const getFeatures = drawCtx?.getFeatures ?? (() => []);
   const isReady = drawCtx?.isReady ?? false;
-  const onCreateSubscribe = drawCtx?.onCreateSubscribe ?? (() => () => {});
-  const onUpdateSubscribe = drawCtx?.onUpdateSubscribe ?? (() => () => {});
-  const onDeleteSubscribe = drawCtx?.onDeleteSubscribe ?? (() => () => {});
   const deleteAll = drawCtx?.deleteAll ?? (() => {});
+  const drawFeatures = drawCtx?.state.features ?? [];
 
   const features = data.geometry?.features ?? [];
 
@@ -135,27 +132,14 @@ export function useGeometrySync(options: UseGeometrySyncOptions = {}): UseGeomet
   }, [isEmbeddedMode, deleteAll, updateGeometry]);
 
   /**
-   * Subscribe to draw events and sync with wizard
+   * Sync DrawContext features → wizard data.
+   * Watches drawCtx.state.features directly via React effect
+   * instead of subscriber callbacks, avoiding stale-snapshot issues.
    */
   useEffect(() => {
-    // Skip subscriptions in embedded mode
     if (isEmbeddedMode || !isReady) return;
-
-    const syncFromDraw = () => {
-      const currentFeatures = getFeatures();
-      updateGeometry(currentFeatures);
-    };
-
-    const unsubCreate = onCreateSubscribe(syncFromDraw);
-    const unsubUpdate = onUpdateSubscribe(syncFromDraw);
-    const unsubDelete = onDeleteSubscribe(syncFromDraw);
-
-    return () => {
-      unsubCreate();
-      unsubUpdate();
-      unsubDelete();
-    };
-  }, [isEmbeddedMode, isReady, getFeatures, updateGeometry, onCreateSubscribe, onUpdateSubscribe, onDeleteSubscribe]);
+    updateGeometry(drawFeatures);
+  }, [isEmbeddedMode, isReady, drawFeatures, updateGeometry]);
 
   return {
     features,

@@ -115,19 +115,25 @@ export function ModelReviewPanel({
           previewUrl = api.results.transformPreviewUrl(previewUrl);
         }
 
-        // Fetch the GeoJSON preview
-        const response = await api.fetch(previewUrl);
-        if (!response.ok) {
-          let detail = `HTTP ${response.status}`;
-          try {
-            const body = await response.json();
-            if (body?.error?.message) {
-              detail = body.error.message;
-            }
-          } catch { /* response wasn't JSON */ }
-          throw new Error(detail);
+        // For deterministic perimeters, GeoJSON is embedded in metadata — use directly
+        let geoJson: GeoJSON.GeoJSON;
+        if (output.metadata?.geojson) {
+          geoJson = output.metadata.geojson as GeoJSON.GeoJSON;
+        } else {
+          // Fetch the GeoJSON preview from backend
+          const response = await api.fetch(previewUrl);
+          if (!response.ok) {
+            let detail = `HTTP ${response.status}`;
+            try {
+              const body = await response.json();
+              if (body?.error?.message) {
+                detail = body.error.message;
+              }
+            } catch { /* response wasn't JSON */ }
+            throw new Error(detail);
+          }
+          geoJson = await response.json();
         }
-        const geoJson = await response.json();
         // Pass model info for better layer naming
         const modelInfo = results ? {
           modelId: results.modelId,

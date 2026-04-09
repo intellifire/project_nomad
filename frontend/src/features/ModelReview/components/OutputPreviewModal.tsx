@@ -5,8 +5,8 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import { useOpenNomad } from '../../../openNomad/context';
 import type { OutputItem } from '../types';
 
@@ -51,7 +51,7 @@ export function OutputPreviewModal({
 }: OutputPreviewModalProps) {
   const api = useOpenNomad();
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [geoJsonData, setGeoJsonData] = useState<ContourFeatureCollection | null>(null);
@@ -104,21 +104,13 @@ export function OutputPreviewModal({
   useEffect(() => {
     if (!mapContainerRef.current || !geoJsonData || mapRef.current) return;
 
-    const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
-    if (!accessToken) {
-      setError('VITE_MAPBOX_TOKEN not configured');
-      return;
-    }
-
-    mapboxgl.accessToken = accessToken;
-
     try {
-      const map = new mapboxgl.Map({
+      const map = new maplibregl.Map({
         container: mapContainerRef.current,
-        style: 'mapbox://styles/mapbox/light-v11',
+        style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
         center: [-115, 55], // Default Alberta center
         zoom: 8,
-        attributionControl: true,
+        attributionControl: { compact: true },
       });
 
       mapRef.current = map;
@@ -168,7 +160,7 @@ export function OutputPreviewModal({
 
         // Fit map to data bounds after source is added
         if (geoJsonData.features && geoJsonData.features.length > 0) {
-          const bounds = new mapboxgl.LngLatBounds();
+          const bounds = new maplibregl.LngLatBounds();
           let hasValidCoords = false;
 
           geoJsonData.features.forEach((feature) => {
@@ -198,7 +190,6 @@ export function OutputPreviewModal({
           });
 
           if (hasValidCoords && !bounds.isEmpty()) {
-            console.log('[Preview] Fitting bounds:', bounds.toArray());
             // Wait for map to be idle before fitting bounds
             map.once('idle', () => {
               map.fitBounds(bounds, { padding: 50, maxZoom: 14 });
@@ -209,7 +200,7 @@ export function OutputPreviewModal({
         }
 
         // Add navigation controls
-        map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        map.addControl(new maplibregl.NavigationControl(), 'top-right');
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Map initialization failed';

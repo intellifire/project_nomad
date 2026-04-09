@@ -48,7 +48,7 @@ The Docker Compose stack contains three services:
 - **Host port**: `${NOMAD_FRONTEND_HOST_PORT}` (default: 3901)
 - React 18 / TypeScript / Vite build
 - Served by Nginx inside the container
-- MapBox GL JS for map rendering
+- MapLibre GL JS for map rendering (open-source, no API key required)
 
 ### firestarr-app
 - Template service — **not started by `docker compose up`**
@@ -160,7 +160,7 @@ project_nomad/
 | Layer              | Technology                                      |
 |--------------------|-------------------------------------------------|
 | Frontend           | TypeScript, React 18, Vite                      |
-| Map                | MapBox GL JS                                    |
+| Map                | MapLibre GL JS (open-source)                   |
 | Backend            | Node.js 20+, Express 4.21, TypeScript           |
 | Database (SAN)     | SQLite via better-sqlite3 + Knex                |
 | Database (ACN)     | PostgreSQL + PostGIS via Knex                   |

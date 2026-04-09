@@ -1,4 +1,4 @@
-import type { Map as MapboxMap, LngLatLike, StyleSpecification } from 'mapbox-gl';
+import type { Map as MapLibreMap, LngLatLike, StyleSpecification } from 'maplibre-gl';
 
 // Re-export layer types
 export type { BreaksMode } from './layer';
@@ -27,8 +27,8 @@ export interface MapOptions {
  * Map context value exposed to child components
  */
 export interface MapContextValue {
-  /** The Mapbox GL map instance */
-  map: MapboxMap | null;
+  /** The MapLibre GL map instance */
+  map: MapLibreMap | null;
   /** Whether the map has loaded */
   isLoaded: boolean;
   /** Whether the map is currently loading */
@@ -48,30 +48,99 @@ export type BasemapStyle = 'streets' | 'satellite' | 'outdoors';
 export interface BasemapConfig {
   id: BasemapStyle;
   name: string;
-  url: string;
+  url: string | StyleSpecification;
   thumbnail?: string;
 }
 
 /**
- * Available basemap styles
+ * Mapbox access token from environment. When present, Mapbox styles are
+ * used for higher-quality basemaps. When absent, free alternatives are used.
  */
-export const BASEMAP_STYLES: Record<BasemapStyle, BasemapConfig> = {
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
+
+/**
+ * Free basemap styles (no API key required)
+ */
+const FREE_BASEMAPS: Record<BasemapStyle, BasemapConfig> = {
   streets: {
     id: 'streets',
     name: 'Streets',
-    url: 'mapbox://styles/mapbox/streets-v11',
+    url: 'https://tiles.openfreemap.org/styles/liberty',
   },
   satellite: {
     id: 'satellite',
     name: 'Satellite',
-    url: 'mapbox://styles/mapbox/satellite-streets-v12',
+    url: {
+      version: 8,
+      sources: {
+        'esri-satellite': {
+          type: 'raster',
+          tiles: [
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+          ],
+          tileSize: 256,
+          attribution: 'Tiles &copy; Esri',
+          maxzoom: 19,
+        },
+        'esri-labels': {
+          type: 'raster',
+          tiles: [
+            'https://services.arcgisonline.com/arcgis/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+          ],
+          tileSize: 256,
+          maxzoom: 19,
+        },
+      },
+      layers: [
+        {
+          id: 'esri-satellite-layer',
+          type: 'raster',
+          source: 'esri-satellite',
+        },
+        {
+          id: 'esri-labels-layer',
+          type: 'raster',
+          source: 'esri-labels',
+        },
+      ],
+    } as StyleSpecification,
   },
   outdoors: {
     id: 'outdoors',
     name: 'Outdoors',
-    url: 'mapbox://styles/mapbox/outdoors-v12',
+    url: 'https://tiles.openfreemap.org/styles/bright',
   },
 };
+
+/**
+ * Mapbox basemap styles (requires VITE_MAPBOX_TOKEN in .env)
+ */
+function mapboxBasemaps(token: string): Record<BasemapStyle, BasemapConfig> {
+  return {
+    streets: {
+      id: 'streets',
+      name: 'Streets',
+      url: `https://api.mapbox.com/styles/v1/mapbox/streets-v12?access_token=${token}`,
+    },
+    satellite: {
+      id: 'satellite',
+      name: 'Satellite',
+      url: `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12?access_token=${token}`,
+    },
+    outdoors: {
+      id: 'outdoors',
+      name: 'Outdoors',
+      url: `https://api.mapbox.com/styles/v1/mapbox/outdoors-v12?access_token=${token}`,
+    },
+  };
+}
+
+/**
+ * Available basemap styles.
+ * Uses Mapbox when VITE_MAPBOX_TOKEN is set, free alternatives otherwise.
+ */
+export const BASEMAP_STYLES: Record<BasemapStyle, BasemapConfig> =
+  MAPBOX_TOKEN ? mapboxBasemaps(MAPBOX_TOKEN) : FREE_BASEMAPS;
 
 /**
  * Default map options for fire modeling context (Canada-focused)

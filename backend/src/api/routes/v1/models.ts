@@ -773,27 +773,65 @@ router.get(
         throw result.error;
       }
 
+      // If engine returned no outputs but model is completed (e.g. imported),
+      // fall back to database results
+      if (result.value.outputs.length === 0 && model.status === ModelStatus.Completed) {
+        logger.debug(`Engine returned no outputs for completed model — falling back to DB results`, 'Results');
+        throw new Error('Falling back to DB results for imported/completed model');
+      }
+
       logger.debug(`Returning result.value with status=${result.value.executionSummary.status}`, 'Results');
       res.json(result.value);
     } catch (error) {
-      // Engine not configured - return empty results
+      // Engine not configured or no execution state — fall back to database results
       const message = error instanceof Error ? error.message : String(error);
-      logger.warn(`Error getting results: ${message}`, 'Results');
+      logger.debug(`Falling back to DB results: ${message}`, 'Results');
 
-      res.json({
-        modelId: id,
-        modelName: model.name,
-        engineType: model.engineType,
-        executionSummary: {
-          startedAt: null,
-          completedAt: null,
-          durationSeconds: null,
-          status: 'failed',  // Changed to 'failed' since an error occurred
-          progress: 0,
-          error: message,
-        },
-        outputs: [],
-      });
+      const resultRepo = getResultRepository();
+      const dbResults = await resultRepo.findByModelId(createFireModelId(id));
+
+      if (dbResults.length > 0 && model.status === ModelStatus.Completed) {
+        // Build response from database results (imported or completed models)
+        res.json({
+          modelId: id,
+          modelName: model.name,
+          engineType: model.engineType,
+          userId: model.userId,
+          notes: model.notes,
+          executionSummary: {
+            startedAt: model.createdAt.toISOString(),
+            completedAt: model.updatedAt?.toISOString() ?? model.createdAt.toISOString(),
+            durationSeconds: null,
+            status: 'completed',
+            progress: 100,
+          },
+          outputs: dbResults.map(r => ({
+            id: r.id,
+            type: r.outputType,
+            format: r.format,
+            name: r.getDisplayName(),
+            filePath: (r.metadata.filePath as string) ?? null,
+            previewUrl: `/api/v1/results/${r.id}/preview`,
+            downloadUrl: `/api/v1/results/${r.id}/download`,
+            metadata: r.metadata,
+          })),
+        });
+      } else {
+        res.json({
+          modelId: id,
+          modelName: model.name,
+          engineType: model.engineType,
+          executionSummary: {
+            startedAt: null,
+            completedAt: null,
+            durationSeconds: null,
+            status: model.status === ModelStatus.Completed ? 'completed' : 'failed',
+            progress: 0,
+            error: model.status === ModelStatus.Completed ? undefined : message,
+          },
+          outputs: [],
+        });
+      }
     }
   })
 );
@@ -1318,6 +1356,107 @@ router.delete(
       deletedResults,
       deletedJobs,
     });
+  })
+);
+
+/**
+ * GET /models/:id/config
+ *
+ * Returns the stored execution config (model.json or output-config.json)
+ * for a model. Used by the frontend to re-run imported or completed models.
+ */
+router.get(
+  '/models/:id/config',
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const modelRepo = getModelRepository();
+    const model = await modelRepo.findById(createFireModelId(id));
+    if (!model) throw new NotFoundError('Model', id);
+
+    // Find sim directory from results
+    const resultRepo = getResultRepository();
+    const results = await resultRepo.findByModelId(createFireModelId(id));
+
+    let simDir: string | null = null;
+    for (const result of results) {
+      const filePath = (result.metadata.filePath as string) ?? null;
+      if (filePath) {
+        const { resolveResultFilePath } = await import('../../../infrastructure/firestarr/FireSTARRInputGenerator.js');
+        const { dirname } = await import('path');
+        const resolved = resolveResultFilePath(filePath);
+        simDir = dirname(resolved);
+        break;
+      }
+    }
+
+    if (!simDir) {
+      res.json({ hasConfig: false, config: null });
+      return;
+    }
+
+    const { join } = await import('path');
+
+    // Try model.json first (from import), then output-config.json (from local run)
+    for (const configFile of ['model.json', 'output-config.json']) {
+      const configPath = join(simDir, configFile);
+      if (fs.existsSync(configPath)) {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+
+        // Belt-and-suspenders: if config lacks ignition, try to merge from ignition.geojson
+        // This handles output-config.json written before the ignition persistence fix (#229)
+        if (!config.ignition) {
+          const ignitionPath = join(simDir, 'ignition.geojson');
+          if (fs.existsSync(ignitionPath)) {
+            const ignitionData = JSON.parse(fs.readFileSync(ignitionPath, 'utf-8'));
+            let geom = ignitionData;
+            if (ignitionData.type === 'FeatureCollection' && ignitionData.features?.length > 0) {
+              geom = ignitionData.features[0].geometry;
+            } else if (ignitionData.type === 'Feature') {
+              geom = ignitionData.geometry;
+            }
+            if (geom?.coordinates) {
+              config.ignition = {
+                type: geom.type === 'Point' ? 'point' : geom.type === 'LineString' ? 'linestring' : 'polygon',
+                coordinates: geom.coordinates,
+              };
+              logger.debug(`Merged ignition from ignition.geojson into ${configFile}`, 'Config');
+            }
+          }
+        }
+
+        res.json({ hasConfig: true, source: configFile, config });
+        return;
+      }
+    }
+
+    // Also try to reconstruct minimal config from ignition.geojson
+    const ignitionPath = join(simDir, 'ignition.geojson');
+    if (fs.existsSync(ignitionPath)) {
+      const ignitionData = JSON.parse(fs.readFileSync(ignitionPath, 'utf-8'));
+      let geom = ignitionData;
+      if (ignitionData.type === 'FeatureCollection' && ignitionData.features?.length > 0) {
+        geom = ignitionData.features[0].geometry;
+      } else if (ignitionData.type === 'Feature') {
+        geom = ignitionData.geometry;
+      }
+
+      res.json({
+        hasConfig: true,
+        source: 'reconstructed',
+        config: {
+          name: model.name,
+          engineType: model.engineType,
+          modelMode: model.outputMode || 'probabilistic',
+          ignition: geom?.coordinates ? {
+            type: geom.type === 'Point' ? 'point' : geom.type === 'LineString' ? 'linestring' : 'polygon',
+            coordinates: geom.coordinates,
+          } : undefined,
+        },
+      });
+      return;
+    }
+
+    res.json({ hasConfig: false, config: null });
   })
 );
 

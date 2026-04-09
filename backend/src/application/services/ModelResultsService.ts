@@ -164,23 +164,35 @@ export class ModelResultsService {
         };
         console.log(`[ModelResultsService] Found job in database: ${latestJob.status}`);
       } else {
-        // No job found in database either
-        return Result.ok({
-          modelId,
-          modelName,
-          engineType,
-          userId: userId ?? null,
-          notes: notes ?? null,
-          executionSummary: {
-            startedAt: null,
-            completedAt: null,
-            durationSeconds: null,
-            status: 'queued',
-            progress: 0,
-            error: 'Model has not been executed',
-          },
-          outputs: [],
-        });
+        // No job found — check if this is an imported/completed model with DB results
+        const dbResults = await this.resultRepo.findByModelId(createFireModelId(modelId));
+        if (dbResults.length > 0) {
+          // Imported model with results but no job — treat as completed
+          useDatabase = true;
+          status = {
+            state: 'completed',
+            progress: 100,
+            updatedAt: new Date(),
+          };
+          console.log(`[ModelResultsService] No job but ${dbResults.length} DB results — treating as completed import`);
+        } else {
+          return Result.ok({
+            modelId,
+            modelName,
+            engineType,
+            userId: userId ?? null,
+            notes: notes ?? null,
+            executionSummary: {
+              startedAt: null,
+              completedAt: null,
+              durationSeconds: null,
+              status: 'queued',
+              progress: 0,
+              error: 'Model has not been executed',
+            },
+            outputs: [],
+          });
+        }
       }
     }
 
@@ -350,12 +362,25 @@ export class ModelResultsService {
           inputs = undefined;
         }
 
-        // Check for output-config.json and auto-generate perimeters if needed
+        // Check for output-config.json (local runs) or model.json (imports) for mode detection
         const configPath = path.join(simDir, 'output-config.json');
+        const modelJsonPath = path.join(simDir, 'model.json');
         try {
           if (fs.existsSync(configPath)) {
             const configContent = fs.readFileSync(configPath, 'utf-8');
             loadedOutputConfig = JSON.parse(configContent) as OutputConfig;
+          } else if (fs.existsSync(modelJsonPath)) {
+            // Imported models have model.json instead of output-config.json
+            const modelJsonContent = fs.readFileSync(modelJsonPath, 'utf-8');
+            const modelJson = JSON.parse(modelJsonContent);
+            loadedOutputConfig = {
+              outputMode: modelJson.modelMode === 'deterministic' ? 'deterministic' : 'probabilistic',
+              confidenceInterval: 1,
+              smoothPerimeter: false,
+            };
+            console.log(`[ModelResultsService] Loaded mode from model.json: ${loadedOutputConfig.outputMode}`);
+          }
+          if (loadedOutputConfig) {
 
             if (loadedOutputConfig.outputMode === 'deterministic') {
               console.log(`[ModelResultsService] Deterministic mode — extracting perimeters from arrival-time grids for ${modelId}`);

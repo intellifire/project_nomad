@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import type { MapMouseEvent } from 'maplibre-gl';
 import { useMap } from '../context/MapContext';
 
 /**
@@ -28,7 +29,7 @@ export function MapInfoControl() {
     setPitch(map.getPitch());
 
     // Track cursor position
-    const handleMouseMove = (e: mapboxgl.MapMouseEvent) => {
+    const handleMouseMove = (e: MapMouseEvent) => {
       setCursorLat(e.lngLat.lat);
       setCursorLng(e.lngLat.lng);
     };
@@ -102,7 +103,7 @@ export function MapInfoControl() {
 // Styles
 const containerStyle: React.CSSProperties = {
   position: 'absolute',
-  bottom: '30px',
+  bottom: '40px',
   right: '10px',
   backgroundColor: 'rgba(255, 255, 255, 0.95)',
   borderRadius: '4px',

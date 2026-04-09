@@ -111,7 +111,7 @@ const drawButtonStyle: React.CSSProperties = {
 const tabs: { id: SpatialInputMethod; label: string; icon: string }[] = [
   { id: 'draw', label: 'Draw on Map', icon: 'pen' },
   { id: 'coordinates', label: 'Enter Coordinates', icon: 'location-dot' },
-  { id: 'upload', label: 'Upload File', icon: 'folder' },
+  { id: 'upload', label: 'Upload Ignition', icon: 'folder' },
 ];
 
 /**

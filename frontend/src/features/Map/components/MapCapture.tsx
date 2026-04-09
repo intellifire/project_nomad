@@ -64,15 +64,15 @@ export function MapCapture() {
     const mapCanvas = map.getCanvas();
     const mapContainer = map.getContainer();
 
-    // Step 1: Capture MapBox canvas
-    const mapboxImgData = mapCanvas.toDataURL('image/png');
+    // Step 1: Capture map canvas
+    const mapImgData = mapCanvas.toDataURL('image/png');
 
     // Step 2: Capture DOM overlays
     const domOverlayCanvas = await html2canvas(mapContainer, {
       backgroundColor: null,
       ignoreElements: (el) => {
         if (el.tagName === 'CANVAS') return true;
-        if (el.classList?.contains('mapboxgl-ctrl')) return true;
+        if (el.classList?.contains('maplibregl-ctrl')) return true;
         if (el.classList?.contains('drawing-toolbar')) return true;
         if (el.classList?.contains('layer-panel')) return true;
         if (el.classList?.contains('layer-panel-toggle')) return true;
@@ -90,7 +90,7 @@ export function MapCapture() {
     const compCtx = compositeCanvas.getContext('2d')!;
 
     const mapImg = new Image();
-    mapImg.src = mapboxImgData;
+    mapImg.src = mapImgData;
     await new Promise((r) => { mapImg.onload = r; });
     compCtx.drawImage(mapImg, 0, 0);
     compCtx.drawImage(domOverlayCanvas, 0, 0, domOverlayCanvas.width, domOverlayCanvas.height, 0, 0, mapCanvas.width, mapCanvas.height);

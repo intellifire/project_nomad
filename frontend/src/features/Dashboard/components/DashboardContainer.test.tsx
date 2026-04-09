@@ -36,13 +36,16 @@ describe('DashboardContainer', () => {
     mockApi = createMockOpenNomadAPI();
   });
 
+  // Features config that enables all tabs so TabNavigation renders (requires >= 2 visible tabs)
+  const allTabsFeatures = { drafts: true, jobs: true };
+
   describe('common functionality', () => {
     it('renders with default tab (models)', async () => {
       const Wrapper = createWrapper(mockApi);
 
       render(
         <Wrapper>
-          <DashboardContainer mode="embedded" />
+          <DashboardContainer mode="embedded" features={allTabsFeatures} />
         </Wrapper>
       );
 
@@ -56,7 +59,7 @@ describe('DashboardContainer', () => {
 
       render(
         <Wrapper>
-          <DashboardContainer mode="embedded" initialTab="drafts" />
+          <DashboardContainer mode="embedded" initialTab="drafts" features={allTabsFeatures} />
         </Wrapper>
       );
 
@@ -71,7 +74,7 @@ describe('DashboardContainer', () => {
 
       render(
         <Wrapper>
-          <DashboardContainer mode="embedded" />
+          <DashboardContainer mode="embedded" features={allTabsFeatures} />
         </Wrapper>
       );
 
@@ -195,6 +198,11 @@ describe('DashboardContainer', () => {
     });
 
     it('has drag hint text', () => {
+      // jsdom default window.innerWidth is 1024 (tablet), which hides the drag hint.
+      // Override to desktop width (>= 1100) so the Rnd/desktop path renders.
+      const originalInnerWidth = window.innerWidth;
+      Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 1200 });
+
       const Wrapper = createWrapper(mockApi);
 
       render(
@@ -204,6 +212,9 @@ describe('DashboardContainer', () => {
       );
 
       expect(screen.getByText(/drag to move/i)).toBeInTheDocument();
+
+      // Restore
+      Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: originalInnerWidth });
     });
 
     it('applies floating panel class', () => {
