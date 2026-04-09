@@ -362,12 +362,25 @@ export class ModelResultsService {
           inputs = undefined;
         }
 
-        // Check for output-config.json and auto-generate perimeters if needed
+        // Check for output-config.json (local runs) or model.json (imports) for mode detection
         const configPath = path.join(simDir, 'output-config.json');
+        const modelJsonPath = path.join(simDir, 'model.json');
         try {
           if (fs.existsSync(configPath)) {
             const configContent = fs.readFileSync(configPath, 'utf-8');
             loadedOutputConfig = JSON.parse(configContent) as OutputConfig;
+          } else if (fs.existsSync(modelJsonPath)) {
+            // Imported models have model.json instead of output-config.json
+            const modelJsonContent = fs.readFileSync(modelJsonPath, 'utf-8');
+            const modelJson = JSON.parse(modelJsonContent);
+            loadedOutputConfig = {
+              outputMode: modelJson.modelMode === 'deterministic' ? 'deterministic' : 'probabilistic',
+              confidenceInterval: 1,
+              smoothPerimeter: false,
+            };
+            console.log(`[ModelResultsService] Loaded mode from model.json: ${loadedOutputConfig.outputMode}`);
+          }
+          if (loadedOutputConfig) {
 
             if (loadedOutputConfig.outputMode === 'deterministic') {
               console.log(`[ModelResultsService] Deterministic mode — extracting perimeters from arrival-time grids for ${modelId}`);
