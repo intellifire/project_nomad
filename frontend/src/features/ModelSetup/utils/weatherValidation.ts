@@ -43,7 +43,7 @@ export function validateColumns(headers: string[]): { valid: boolean; missing: s
  */
 export function dateStringHasTime(dateStr: string): boolean {
   // Must have at least HH:MM after the date portion
-  return /\d{4}-\d{2}-\d{2}[\sT]\d{2}:\d{2}/.test(dateStr.trim());
+  return /\d{4}-\d{2}-\d{2}[\sT]\d{1,2}:\d{2}/.test(dateStr.trim());
 }
 
 /**

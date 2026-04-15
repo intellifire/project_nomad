@@ -286,7 +286,7 @@ export class WeatherService {
         // Build datetime: combine Date + Hour columns if Hour exists and Date has no time
         let datetime: Date;
         const dateStr = parts[dateIdx];
-        const dateHasTime = /\d{4}-\d{2}-\d{2}[\sT]\d{2}:\d{2}/.test(dateStr);
+        const dateHasTime = /\d{4}-\d{2}-\d{2}[\sT]\d{1,2}:\d{2}/.test(dateStr);
 
         if (dateHasTime) {
           datetime = new Date(dateStr);

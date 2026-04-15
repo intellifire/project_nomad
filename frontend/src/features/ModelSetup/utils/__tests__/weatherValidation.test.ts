@@ -25,6 +25,10 @@ describe('dateStringHasTime', () => {
     expect(dateStringHasTime('2024-06-21 15:00')).toBe(true);
   });
 
+  it('returns true for single-digit hour (Samuel format)', () => {
+    expect(dateStringHasTime('2025-05-12 1:00')).toBe(true);
+  });
+
   it('returns false for date-only string', () => {
     expect(dateStringHasTime('2024-06-21')).toBe(false);
   });
