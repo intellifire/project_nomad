@@ -204,27 +204,41 @@ export class WeatherService {
     console.log(`[WeatherService] Processing ${rawRecords.length} raw weather records with cffdrs`);
 
     // Progressive FWI calculation
+    // FFMC updates every hour (it's an hourly code).
+    // DMC/DC are DAILY codes — they must only update once per calendar day.
+    // Applying daily formulas to every hourly row compounds errors (#234).
     let prevFFMC = startingCodes.ffmc;
     let prevDMC = startingCodes.dmc;
     let prevDC = startingCodes.dc;
+    let lastDMCUpdateDay = -1; // Track which calendar day we last updated DMC/DC
 
     return rawRecords.map((record) => {
-      const month = record.datetime.getMonth() + 1; // JavaScript months are 0-indexed
+      const month = record.datetime.getMonth() + 1;
+      const dayOfYear = Math.floor(
+        (record.datetime.getTime() - new Date(record.datetime.getFullYear(), 0, 0).getTime())
+        / (1000 * 60 * 60 * 24)
+      );
 
-      // Calculate new moisture codes using cffdrs
+      // FFMC updates every hour
       const newFFMC = ffmc(prevFFMC, record.temp, record.rh, record.ws, record.prec);
-      const newDMC = dmc(prevDMC, record.temp, record.rh, record.prec, latitude, month);
-      const newDC = dc(prevDC, record.temp, record.rh, record.prec, latitude, month);
+
+      // DMC/DC update once per calendar day only
+      let newDMC = prevDMC;
+      let newDC = prevDC;
+      if (dayOfYear !== lastDMCUpdateDay) {
+        newDMC = dmc(prevDMC, record.temp, record.rh, record.prec, latitude, month);
+        newDC = dc(prevDC, record.temp, record.rh, record.prec, latitude, month);
+        lastDMCUpdateDay = dayOfYear;
+        prevDMC = newDMC;
+        prevDC = newDC;
+      }
 
       // Calculate derived indices
       const newISI = isi(newFFMC, record.ws);
       const newBUI = bui(newDMC, newDC);
       const newFWI = fwi(newISI, newBUI);
 
-      // Update previous values for next iteration
       prevFFMC = newFFMC;
-      prevDMC = newDMC;
-      prevDC = newDC;
 
       return {
         datetime: record.datetime,
@@ -259,6 +273,7 @@ export class WeatherService {
     const hasScenario = header.includes('scenario');
     const scenarioIdx = hasScenario ? getIndex('scenario') : -1;
     const dateIdx = getIndex('date');
+    const hourIdx = header.indexOf('hour');
     const precIdx = getIndex('prec');
     const tempIdx = getIndex('temp');
     const rhIdx = getIndex('rh');
@@ -268,9 +283,23 @@ export class WeatherService {
     return lines.map((line, lineNum) => {
       const parts = line.split(',').map((p) => p.trim());
       try {
+        // Build datetime: combine Date + Hour columns if Hour exists and Date has no time
+        let datetime: Date;
+        const dateStr = parts[dateIdx];
+        const dateHasTime = /\d{4}-\d{2}-\d{2}[\sT]\d{1,2}:\d{2}/.test(dateStr);
+
+        if (dateHasTime) {
+          datetime = new Date(dateStr);
+        } else if (hourIdx !== -1) {
+          const hour = parseInt(parts[hourIdx], 10);
+          datetime = new Date(`${dateStr}T${String(hour).padStart(2, '0')}:00:00`);
+        } else {
+          datetime = new Date(dateStr);
+        }
+
         return {
           scenario: hasScenario ? parseInt(parts[scenarioIdx], 10) : 0,
-          datetime: new Date(parts[dateIdx]),
+          datetime,
           prec: parseFloat(parts[precIdx]),
           temp: parseFloat(parts[tempIdx]),
           rh: parseFloat(parts[rhIdx]),
@@ -425,27 +454,38 @@ export class WeatherService {
     startingCodes: FWIStartingCodes,
     latitude: number
   ): WeatherDataPoint[] {
+    // Same daily-code logic as processRawWeather — DMC/DC update once per day only (#234)
     let prevFFMC = startingCodes.ffmc;
     let prevDMC = startingCodes.dmc;
     let prevDC = startingCodes.dc;
+    let lastDMCUpdateDay = -1;
 
     return records.map(record => {
       const month = record.datetime.getMonth() + 1;
+      const dayOfYear = Math.floor(
+        (record.datetime.getTime() - new Date(record.datetime.getFullYear(), 0, 0).getTime())
+        / (1000 * 60 * 60 * 24)
+      );
 
-      // Calculate new moisture codes using cffdrs
+      // FFMC updates every hour
       const newFFMC = ffmc(prevFFMC, record.temp, record.rh, record.ws, record.prec);
-      const newDMC = dmc(prevDMC, record.temp, record.rh, record.prec, latitude, month);
-      const newDC = dc(prevDC, record.temp, record.rh, record.prec, latitude, month);
 
-      // Calculate derived indices
+      // DMC/DC update once per calendar day only
+      let newDMC = prevDMC;
+      let newDC = prevDC;
+      if (dayOfYear !== lastDMCUpdateDay) {
+        newDMC = dmc(prevDMC, record.temp, record.rh, record.prec, latitude, month);
+        newDC = dc(prevDC, record.temp, record.rh, record.prec, latitude, month);
+        lastDMCUpdateDay = dayOfYear;
+        prevDMC = newDMC;
+        prevDC = newDC;
+      }
+
       const newISI = isi(newFFMC, record.ws);
       const newBUI = bui(newDMC, newDC);
       const newFWI = fwi(newISI, newBUI);
 
-      // Update previous values for next iteration
       prevFFMC = newFFMC;
-      prevDMC = newDMC;
-      prevDC = newDC;
 
       return {
         datetime: record.datetime,
