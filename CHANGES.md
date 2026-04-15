@@ -4,10 +4,22 @@ Auto-generated from git history. Do not edit manually.
 
 ---
 
-## v0.6.0
+## v0.6.1
+
+### 2026-04-15
+
+- [`d83aee1`](https://github.com/WISE-Developers/project_nomad/commit/d83aee19a6a5caa70fca062a9724bc49ed8c68bd) Merge pull request #235 from WISE-Developers/dev — *Franco Nogarin, 11:01*
+- [`fbe89db`](https://github.com/WISE-Developers/project_nomad/commit/fbe89db25e605e0aad0cc0c4a6566bc7f0a9d9e4) chore: dev build 1 [skip ci] — *github-actions[bot], 16:58*
+- [`293abc6`](https://github.com/WISE-Developers/project_nomad/commit/293abc67d4a3a7189844ed27d1fbaf10b212f0c0) test: add CSV that should be rejected (no timestamps, no Hour column) — *Franco Nogarin, 10:54*
+- [`3a104c0`](https://github.com/WISE-Developers/project_nomad/commit/3a104c04ffb8732cad1204e08678eaf60472b36b) fix: accept single-digit hours in Date column (e.g. '2025-05-12 1:00') — *Franco Nogarin, 10:33*
+- [`e782e2b`](https://github.com/WISE-Developers/project_nomad/commit/e782e2b2f0c5a64e803f9a987072c749f398464d) test: add weather CSV test files for #233/#234 validation — *Franco Nogarin, 10:26*
+- [`02b2dee`](https://github.com/WISE-Developers/project_nomad/commit/02b2deed275f7db6a78aeb713d2dead0d6203498) fix: Date+Hour column parsing (#233) and daily-only DMC/DC update (#234) — *Franco Nogarin, 10:20*
+- [`b2f1ce5`](https://github.com/WISE-Developers/project_nomad/commit/b2f1ce5ffe2bf737ef6aa7bf0ae3dc2b6689a2b6) fix: validate weather CSV datetimes at upload time (#233) — *Franco Nogarin, 10:17*
 
 ### 2026-04-09
 
+- [`19fff15`](https://github.com/WISE-Developers/project_nomad/commit/19fff1534958eec9497ee6cda1e162bb4e5fc860) chore: reset dev build counter after v0.6.0 [skip ci] — *github-actions[bot], 16:16*
+- [`448073b`](https://github.com/WISE-Developers/project_nomad/commit/448073b473d3abd474872e1c92e3cc3d15394a57) chore: release v0.6.0 [skip ci] — *github-actions[bot], 16:15*
 - [`5e3d1cb`](https://github.com/WISE-Developers/project_nomad/commit/5e3d1cb4f44e4a390f993ec66049df4f27c2f4ec) Merge pull request #232 from WISE-Developers/dev — *Franco Nogarin, 10:15*
 - [`d66f436`](https://github.com/WISE-Developers/project_nomad/commit/d66f436aafb169b360822be5ccbe334e8d3d0c1a) chore: dev build 26 [skip ci] — *github-actions[bot], 16:11*
 - [`13dd2d4`](https://github.com/WISE-Developers/project_nomad/commit/13dd2d4b7eb11a96a18705fdab3cdc37cdd0fa4b) chore: bump version to 0.5.0 for Sprint 8 release — *Franco Nogarin, 10:10*
