@@ -14,6 +14,12 @@
 import React, { useCallback, useRef, useState } from 'react';
 import type { ParsedWeatherCSV, FWIStartingCodes } from '../types';
 import { StartingCodesInput } from './StartingCodesInput';
+import {
+  parseCSV,
+  validateColumns,
+  validateDatetimes,
+  FWI_COLUMNS,
+} from '../utils/weatherValidation.js';
 
 export interface RawWeatherUploadProps {
   /** Called when a valid file is uploaded */
@@ -144,33 +150,7 @@ const infoStyle: React.CSSProperties = {
   fontSize: '14px',
 };
 
-// Required columns for raw weather file
-const REQUIRED_COLUMNS = ['Date', 'PREC', 'TEMP', 'RH', 'WS', 'WD'];
-const FWI_COLUMNS = ['FFMC', 'DMC', 'DC', 'ISI', 'BUI', 'FWI'];
-
-/**
- * Parse a CSV file and extract header and data
- */
-function parseCSV(content: string): { headers: string[]; rows: string[][] } {
-  const lines = content.trim().split('\n');
-  if (lines.length === 0) {
-    return { headers: [], rows: [] };
-  }
-
-  const headers = lines[0].split(',').map((h) => h.trim());
-  const rows = lines.slice(1).map((line) => line.split(',').map((cell) => cell.trim()));
-
-  return { headers, rows };
-}
-
-/**
- * Validate that all required columns are present
- */
-function validateColumns(headers: string[]): { valid: boolean; missing: string[] } {
-  const headerSet = new Set(headers.map((h) => h.toUpperCase()));
-  const missing = REQUIRED_COLUMNS.filter((col) => !headerSet.has(col.toUpperCase()));
-  return { valid: missing.length === 0, missing };
-}
+// parseCSV, validateColumns, validateDatetimes, FWI_COLUMNS imported from utils/weatherValidation
 
 /**
  * Raw Weather Upload component
@@ -211,6 +191,13 @@ export function RawWeatherUpload({
         const validation = validateColumns(headers);
         if (!validation.valid) {
           setParseError(`Missing required columns: ${validation.missing.join(', ')}`);
+          return;
+        }
+
+        // Validate datetime format — catches #233 (Date without timestamps)
+        const dtValidation = validateDatetimes(headers, rows);
+        if (!dtValidation.valid) {
+          setParseError(dtValidation.error!);
           return;
         }
 
