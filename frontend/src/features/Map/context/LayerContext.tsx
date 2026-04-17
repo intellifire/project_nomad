@@ -36,6 +36,15 @@ const LayerContext = createContext<LayerContextValue | null>(null);
 const LAYERS_STORAGE_KEY = 'nomad-layers';
 
 /**
+ * Swap the `?t=<timestep>` query param on an arrival-tile URL template (#226).
+ * Server re-renders with the new classification; client just re-fetches.
+ */
+function withTimestep(urlTemplate: string, timestep: 'daily' | 'hourly'): string {
+  const [base] = urlTemplate.split('?');
+  return `${base}?t=${timestep}`;
+}
+
+/**
  * Layer metadata for persistence (excludes large GeoJSON data)
  */
 interface PersistedLayerMeta {
@@ -560,12 +569,35 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     (layerId: string, updates: Partial<Omit<LayerConfig, 'type'>>) => {
       setState((prev) => ({
         ...prev,
-        layers: prev.layers.map((l) =>
-          l.id === layerId ? { ...l, ...updates } as LayerConfig : l
-        ),
+        layers: prev.layers.map((l) => {
+          if (l.id !== layerId) return l;
+          const next = { ...l, ...updates } as LayerConfig;
+
+          // Arrival-time layer (#226) — if the timestep changed, swap the
+          // source tile URLs to re-fetch server-rendered tiles classified at
+          // the new timestep.
+          if (
+            map &&
+            next.type === 'raster' &&
+            next.legendType === 'arrival' &&
+            next.arrivalMeta
+          ) {
+            const prevTimestep = (l as RasterLayerConfig).arrivalMeta?.timestep;
+            if (prevTimestep !== next.arrivalMeta.timestep) {
+              const source = map.getSource(next.id) as maplibregl.RasterTileSource | undefined;
+              if (source && typeof source.setTiles === 'function') {
+                const url = Array.isArray(next.url) ? next.url[0] : next.url;
+                const newUrl = withTimestep(url, next.arrivalMeta.timestep);
+                source.setTiles([newUrl]);
+                next.url = newUrl;
+              }
+            }
+          }
+          return next;
+        }),
       }));
     },
-    []
+    [map]
   );
 
   const setOpacity = useCallback(
@@ -659,9 +691,15 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     state.layers.forEach((layer) => removeLayer(layer.id));
   }, [state.layers, removeLayer]);
 
-  // Raster hover tooltip — only active when a layer has hoverEnabled (100% opacity)
+  // Raster hover tooltip — probability only. Arrival-time layers (#226) decode
+  // pixel values server-side into RGB-encoded PNGs, so color-distance matching
+  // against the probability ramp would produce false labels.
   const hasVisibleRasterLayer = state.layers.some(
-    (layer) => layer.type === 'raster' && layer.visible && layer.hoverEnabled,
+    (layer) =>
+      layer.type === 'raster' &&
+      layer.visible &&
+      layer.hoverEnabled &&
+      layer.legendType !== 'arrival',
   );
   useRasterHover({ map, hasVisibleRasterLayer });
 

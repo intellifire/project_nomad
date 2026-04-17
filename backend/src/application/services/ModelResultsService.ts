@@ -388,6 +388,40 @@ export class ModelResultsService {
               // Check if perimeter outputs already exist
               const hasPerimeters = outputs.some(o => o.type === 'perimeter');
 
+              // Arrival raster output (#226) — emit one OutputItem pointing at
+              // the RGB-encoded tile endpoint. Client applies dynamic daily/hourly
+              // symbolization via MapLibre raster-color paint.
+              try {
+                const { findArrivalTifs } = await import('../../infrastructure/firestarr/index.js');
+                const arrival = findArrivalTifs(simDir);
+                if (arrival) {
+                  const startDate = new Date(Date.UTC(new Date().getFullYear(), 0, arrival.offsetDay)).toISOString();
+                  outputs.push({
+                    id: `arrival-time-${modelId}`,
+                    type: 'arrival_time' as OutputType,
+                    format: 'geotiff' as OutputFormat,
+                    name: 'Fire Arrival Time',
+                    timeOffsetHours: null,
+                    filePath: null,
+                    previewUrl: `/api/v1/models/${modelId}/arrival-tile/{z}/{x}/{y}.png`,
+                    downloadUrl: `/api/v1/models/${modelId}/arrival-tile/{z}/{x}/{y}.png`,
+                    metadata: {
+                      isRaster: true,
+                      tileUrlTemplate: `/api/v1/models/${modelId}/arrival-tile/{z}/{x}/{y}.png`,
+                      boundsUrl: `/api/v1/models/${modelId}/arrival-bounds`,
+                      offsetDay: arrival.offsetDay,
+                      startJulian: arrival.offsetDay,
+                      endJulian: arrival.endJulian,
+                      startDate,
+                      julianDays: arrival.julianDays,
+                      deterministic: true,
+                    },
+                  });
+                }
+              } catch (e) {
+                console.warn(`[ModelResultsService] Arrival raster metadata unavailable:`, e);
+              }
+
               if (!hasPerimeters) {
                 // Extract perimeters from arrival-time rasters
                 const { extractDeterministicPerimeters } = await import('../../infrastructure/firestarr/index.js');
@@ -431,9 +465,10 @@ export class ModelResultsService {
         }
       }
 
-      // In deterministic mode, only show perimeter outputs (not probability rasters)
+      // In deterministic mode, surface perimeters and the arrival-time raster;
+      // probability rasters are hidden because they aren't produced in this mode.
       const filteredOutputs = loadedOutputConfig?.outputMode === 'deterministic'
-        ? outputs.filter(o => o.type === 'perimeter')
+        ? outputs.filter(o => o.type === 'perimeter' || o.type === 'arrival_time')
         : outputs;
 
       return Result.ok({

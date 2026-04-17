@@ -1,20 +1,26 @@
 /**
- * RasterLegend — burn probability colour-ramp legend overlay
+ * RasterLegend — legend overlay for visible raster layers.
  *
- * Renders a semi-transparent legend in the bottom-left corner of the map
- * whenever at least one raster layer is visible.  Uses the same FireSTARR
- * colour ramp as useRasterHover so the two are always in sync.
- *
- * Inline styles only — no external CSS classes.
+ * Renders a semi-transparent legend in the bottom-right area of the map.
+ * Supports two legend modes:
+ *   - probability (default): hard-coded FireSTARR 10-class burn-probability ramp
+ *   - arrival: dynamic ramp driven by ArrivalRasterMeta (#226) with a user
+ *     timestep toggle (daily / hourly) that re-symbolizes the layer in place.
  *
  * @module features/Map/components/RasterLegend
  */
 
 import React from 'react';
 import { useLayers } from '../context/LayerContext.js';
+import type {
+  ArrivalTimestep,
+  ArrivalRasterMeta,
+  RasterLayerConfig,
+} from '../types/layer.js';
+import { generateArrivalLegend } from '../utils/arrivalTimeSymbolization.js';
 
 // =============================================================================
-// Colour Ramp Definition
+// Probability Ramp (existing behaviour)
 // =============================================================================
 
 interface LegendEntry {
@@ -22,12 +28,7 @@ interface LegendEntry {
   color: string;
 }
 
-/**
- * FireSTARR probability colour ramp — matches the discrete 10-class
- * symbology from the tile server (ContourGenerator.ts color table).
- * Source: FireSTARR QML probability_processing_7pct.qml
- */
-const LEGEND_ENTRIES: LegendEntry[] = [
+const PROBABILITY_LEGEND: LegendEntry[] = [
   { label: '91-100%', color: 'rgb(230, 21, 31)' },
   { label: '81-90%',  color: 'rgb(235, 51, 38)' },
   { label: '71-80%',  color: 'rgb(238, 79, 44)' },
@@ -54,7 +55,8 @@ const containerStyle: React.CSSProperties = {
   boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
   zIndex: 10,
   minWidth: '140px',
-  pointerEvents: 'none',
+  maxHeight: '60vh',
+  overflowY: 'auto',
 };
 
 const titleStyle: React.CSSProperties = {
@@ -86,36 +88,136 @@ const labelStyle: React.CSSProperties = {
   color: '#444',
 };
 
+const toggleRowStyle: React.CSSProperties = {
+  display: 'flex',
+  gap: '4px',
+  marginBottom: '6px',
+};
+
+const toggleButtonStyle = (active: boolean): React.CSSProperties => ({
+  flex: 1,
+  fontSize: '11px',
+  padding: '3px 6px',
+  border: `1px solid ${active ? '#555' : '#ccc'}`,
+  backgroundColor: active ? '#333' : '#fff',
+  color: active ? '#fff' : '#333',
+  borderRadius: '3px',
+  cursor: 'pointer',
+  fontWeight: active ? 600 : 400,
+});
+
 // =============================================================================
-// Component
+// Probability Legend Block
 // =============================================================================
 
-/**
- * Map legend showing the FireSTARR burn probability colour ramp.
- *
- * Reads visible raster layers from LayerContext and renders only when at least
- * one is visible.  Position is bottom-left to stay clear of navigation
- * controls (top-right) and the layer panel (right).
- */
-export function RasterLegend() {
-  const { state } = useLayers();
-
-  const hasVisibleRaster = state.layers.some(
-    (layer) => layer.type === 'raster' && layer.visible,
-  );
-
-  if (!hasVisibleRaster) return null;
-
+function ProbabilityLegendBlock() {
   return (
-    <aside role="complementary" style={containerStyle}>
+    <>
       <div style={titleStyle}>Burn Probability</div>
-      {LEGEND_ENTRIES.map(({ label, color }) => (
+      {PROBABILITY_LEGEND.map(({ label, color }) => (
         <div key={label} style={rowStyle}>
           <div
             data-testid="legend-swatch"
             style={{ ...swatchStyle, backgroundColor: color }}
           />
           <span style={labelStyle}>{label}</span>
+        </div>
+      ))}
+    </>
+  );
+}
+
+// =============================================================================
+// Arrival Legend Block (#226)
+// =============================================================================
+
+interface ArrivalLegendBlockProps {
+  layerId: string;
+  meta: ArrivalRasterMeta;
+  onTimestepChange: (layerId: string, next: ArrivalTimestep) => void;
+}
+
+function ArrivalLegendBlock({
+  layerId,
+  meta,
+  onTimestepChange,
+}: ArrivalLegendBlockProps) {
+  const entries = generateArrivalLegend({
+    startJulian: meta.startJulian,
+    endJulian: meta.endJulian,
+    timestep: meta.timestep,
+    startDate: new Date(meta.startDate),
+  });
+  return (
+    <>
+      <div style={titleStyle}>Fire Arrival Time</div>
+      <div style={toggleRowStyle}>
+        <button
+          type="button"
+          data-testid="arrival-timestep-daily"
+          style={toggleButtonStyle(meta.timestep === 'daily')}
+          onClick={() => onTimestepChange(layerId, 'daily')}
+        >
+          Daily
+        </button>
+        <button
+          type="button"
+          data-testid="arrival-timestep-hourly"
+          style={toggleButtonStyle(meta.timestep === 'hourly')}
+          onClick={() => onTimestepChange(layerId, 'hourly')}
+        >
+          Hourly
+        </button>
+      </div>
+      {entries.map((entry) => (
+        <div key={entry.bucket} style={rowStyle}>
+          <div
+            data-testid="legend-swatch"
+            style={{ ...swatchStyle, backgroundColor: entry.color }}
+          />
+          <span style={labelStyle}>{entry.label}</span>
+        </div>
+      ))}
+    </>
+  );
+}
+
+// =============================================================================
+// Top-level Component
+// =============================================================================
+
+export function RasterLegend() {
+  const { state, updateLayer } = useLayers();
+
+  const visibleRasters = state.layers.filter(
+    (layer) => layer.type === 'raster' && layer.visible,
+  ) as RasterLayerConfig[];
+
+  if (visibleRasters.length === 0) return null;
+
+  const handleTimestepChange = (layerId: string, next: ArrivalTimestep) => {
+    const target = state.layers.find((l) => l.id === layerId) as RasterLayerConfig | undefined;
+    if (!target?.arrivalMeta) return;
+    updateLayer(layerId, {
+      arrivalMeta: { ...target.arrivalMeta, timestep: next },
+    } as Partial<RasterLayerConfig>);
+  };
+
+  const arrivalLayers = visibleRasters.filter(
+    (l) => l.legendType === 'arrival' && l.arrivalMeta,
+  );
+  const hasProbability = visibleRasters.some((l) => l.legendType !== 'arrival');
+
+  return (
+    <aside role="complementary" style={containerStyle}>
+      {hasProbability && <ProbabilityLegendBlock />}
+      {arrivalLayers.map((layer) => (
+        <div key={layer.id} style={{ marginTop: hasProbability ? '12px' : 0 }}>
+          <ArrivalLegendBlock
+            layerId={layer.id}
+            meta={layer.arrivalMeta!}
+            onTimestepChange={handleTimestepChange}
+          />
         </div>
       ))}
     </aside>

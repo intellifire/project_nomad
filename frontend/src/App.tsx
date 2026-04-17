@@ -417,18 +417,37 @@ function AppContent() {
       }
     );
 
+    // Arrival-time raster (#226) — server-side classified tiles. Default to
+    // daily; user can toggle to hourly via the legend, which re-fetches tiles.
+    const isArrival = output.type === 'arrival_time';
+    const initialTimestep: 'daily' | 'hourly' = 'daily';
+    const effectiveUrl = isArrival
+      ? `${tileUrl}${tileUrl.includes('?') ? '&' : '?'}t=${initialTimestep}`
+      : tileUrl;
+    const arrivalMeta = isArrival
+      ? {
+          offsetDay: Number(output.metadata?.offsetDay ?? 0),
+          startJulian: Number(output.metadata?.startJulian ?? 0),
+          endJulian: Number(output.metadata?.endJulian ?? 0),
+          startDate: String(output.metadata?.startDate ?? new Date().toISOString()),
+          timestep: initialTimestep,
+        }
+      : undefined;
+
     // Add the raster layer and wait for tiles to load
     await addRasterLayer({
       id: layerId,
       name: layerName,
-      url: tileUrl,
+      url: effectiveUrl,
       bounds,
       tileSize: 256,
-      opacity: 0.8,
+      opacity: isArrival ? 0.85 : 0.8,
       visible: true,
       zIndex: layerCounter.current,
       resultId: modelInfo?.modelId,
       outputType: output.type,
+      legendType: isArrival ? 'arrival' : 'probability',
+      arrivalMeta,
     });
 
     console.log(`Added raster layer ${layerId} for output ${layerName}`);
