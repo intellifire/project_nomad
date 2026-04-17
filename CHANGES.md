@@ -4,10 +4,27 @@ Auto-generated from git history. Do not edit manually.
 
 ---
 
-## v0.6.1
+## v0.7.0
+
+### 2026-04-17
+
+- [`0c4cbe9`](https://github.com/WISE-Developers/project_nomad/commit/0c4cbe9c3cebbe322b0f28bc7cab093df92db158) Merge pull request #237 from WISE-Developers/dev — *Franco Nogarin, 11:41*
+- [`08c9a62`](https://github.com/WISE-Developers/project_nomad/commit/08c9a62cd93743ed8de4952ae983e6698bc2ce3a) chore: dev build 2 [skip ci] — *github-actions[bot], 16:38*
+- [`be4e267`](https://github.com/WISE-Developers/project_nomad/commit/be4e267442f2c377ccc5bd3eb4e0e2832f4ea7aa) fix: ArrivalTimeExtractor crashes on empty polygon from gdal_polygonize — *Franco Nogarin, 10:37*
+- [`3624580`](https://github.com/WISE-Developers/project_nomad/commit/36245807a93eba26a5b886ed996cf1f65a55e043) chore: dev build 1 [skip ci] — *github-actions[bot], 16:23*
+- [`b10c731`](https://github.com/WISE-Developers/project_nomad/commit/b10c7311c94ae368ef65ef79a7df8bbfb46fd7c4) Merge feature/226-arrival-timestep-classification into dev — *Franco Nogarin, 10:22*
+- [`08a3bf5`](https://github.com/WISE-Developers/project_nomad/commit/08a3bf51f607082b12fea7630c6aad82b36c5b25) fix: installer reports success after failed Docker build (#227) — *Franco Nogarin, 09:46*
+- [`cbb977f`](https://github.com/WISE-Developers/project_nomad/commit/cbb977f65d5139f9e50f6edb983da6c8f06ea117) fix: move multer and adm-zip deps to backend/package.json for Docker build — *Franco Nogarin, 08:25*
+- [`523e9f1`](https://github.com/WISE-Developers/project_nomad/commit/523e9f1917d2e43f18b03db40bfd52e501408784) fix: remove unused variable from timeRange derivation — *Franco Nogarin, 08:04*
+- [`a3f9eb4`](https://github.com/WISE-Developers/project_nomad/commit/a3f9eb4ede648b148485acaf3050fb7ad9b327f1) fix: derive arrival classification window from model timeRange, not file count — *Franco Nogarin, 07:59*
+- [`3db43b8`](https://github.com/WISE-Developers/project_nomad/commit/3db43b8277bb2f3a27075c8deeb54cb1dec18b09) fix: derive arrival legend year from weather.csv, show year in labels — *Franco Nogarin, 07:34*
+- [`4c71104`](https://github.com/WISE-Developers/project_nomad/commit/4c71104722c51ebe04bcb8c294da2af9f0bf84e6) fix: stabilize updateLayer callback to prevent TerraDraw setData regression — *Franco Nogarin, 06:40*
+- [`d111f13`](https://github.com/WISE-Developers/project_nomad/commit/d111f13424469548a25fe80ab9ef41f9a02a3969) feat: #226 arrival-time raster with configurable timestep classification — *Franco Nogarin, 05:27*
 
 ### 2026-04-15
 
+- [`a61c079`](https://github.com/WISE-Developers/project_nomad/commit/a61c0792cc7025a67c4411321824e5ab3adfee2f) chore: reset dev build counter after v0.6.1 [skip ci] — *github-actions[bot], 17:02*
+- [`45321e5`](https://github.com/WISE-Developers/project_nomad/commit/45321e54b4c1f9b01fb02bf70eda95bbf9dc7566) chore: release v0.6.1 [skip ci] — *github-actions[bot], 17:01*
 - [`d83aee1`](https://github.com/WISE-Developers/project_nomad/commit/d83aee19a6a5caa70fca062a9724bc49ed8c68bd) Merge pull request #235 from WISE-Developers/dev — *Franco Nogarin, 11:01*
 - [`fbe89db`](https://github.com/WISE-Developers/project_nomad/commit/fbe89db25e605e0aad0cc0c4a6566bc7f0a9d9e4) chore: dev build 1 [skip ci] — *github-actions[bot], 16:58*
 - [`293abc6`](https://github.com/WISE-Developers/project_nomad/commit/293abc67d4a3a7189844ed27d1fbaf10b212f0c0) test: add CSV that should be rejected (no timestamps, no Hour column) — *Franco Nogarin, 10:54*
