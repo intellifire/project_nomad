@@ -413,7 +413,6 @@ export class ModelResultsService {
                     const startDt = new Date(timeRange.start);
                     const endDt = new Date(timeRange.end);
                     startDate = startDt.toISOString();
-                    const year = startDt.getUTCFullYear();
                     const dayOfYear = (d: Date) => {
                       const jan1 = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
                       return Math.floor((d.getTime() - jan1.getTime()) / 86_400_000) + 1;
