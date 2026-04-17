@@ -83,6 +83,12 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     layersRef.current = state.layers;
   }, [state.layers]);
 
+  // Stable map ref so callbacks don't need [map] in their dependency arrays
+  const mapRef = useRef(map);
+  useEffect(() => {
+    mapRef.current = map;
+  }, [map]);
+
   // Initialize popup
   useEffect(() => {
     if (!popupRef.current) {
@@ -575,16 +581,17 @@ export function LayerProvider({ children }: { children: ReactNode }) {
 
           // Arrival-time layer (#226) — if the timestep changed, swap the
           // source tile URLs to re-fetch server-rendered tiles classified at
-          // the new timestep.
+          // the new timestep. Uses mapRef to avoid destabilizing this callback.
+          const m = mapRef.current;
           if (
-            map &&
+            m &&
             next.type === 'raster' &&
             next.legendType === 'arrival' &&
             next.arrivalMeta
           ) {
             const prevTimestep = (l as RasterLayerConfig).arrivalMeta?.timestep;
             if (prevTimestep !== next.arrivalMeta.timestep) {
-              const source = map.getSource(next.id) as maplibregl.RasterTileSource | undefined;
+              const source = m.getSource(next.id) as maplibregl.RasterTileSource | undefined;
               if (source && typeof source.setTiles === 'function') {
                 const url = Array.isArray(next.url) ? next.url[0] : next.url;
                 const newUrl = withTimestep(url, next.arrivalMeta.timestep);
@@ -597,7 +604,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         }),
       }));
     },
-    [map]
+    []
   );
 
   const setOpacity = useCallback(
