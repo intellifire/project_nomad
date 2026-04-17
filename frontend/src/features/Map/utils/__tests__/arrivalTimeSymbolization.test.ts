@@ -66,27 +66,26 @@ describe('arrivalTimeSymbolization', () => {
       expect(legend[71].bucket).toBe(71);
     });
 
-    it('renders daily labels with the actual calendar date', () => {
+    it('renders daily labels with year and calendar date', () => {
       const legend = generateArrivalLegend({
         startJulian: 170,
         endJulian: 172,
         timestep: 'daily',
         startDate: new Date(Date.UTC(2026, 5, 19)),
       });
-      // Exact format is design-choice, but must include date info.
-      expect(legend[0].label).toMatch(/jun.*19|2026-06-19|06-19/i);
-      expect(legend[1].label).toMatch(/jun.*20|2026-06-20|06-20/i);
+      expect(legend[0].label).toMatch(/jun.*19.*2026|2026.*jun.*19/i);
+      expect(legend[1].label).toMatch(/jun.*20.*2026|2026.*jun.*20/i);
     });
 
-    it('renders hourly labels showing the hour of day', () => {
+    it('renders hourly labels with date and time', () => {
       const legend = generateArrivalLegend({
         startJulian: 170,
         endJulian: 171,
         timestep: 'hourly',
         startDate: new Date(Date.UTC(2026, 5, 19)),
       });
-      expect(legend[0].label).toMatch(/00:00|0h|12\s*am/i);
-      expect(legend[12].label).toMatch(/12:00|12h|12\s*pm|noon/i);
+      expect(legend[0].label).toMatch(/jun.*19.*00:00/i);
+      expect(legend[12].label).toMatch(/jun.*19.*12:00/i);
     });
 
     it('assigns colors across a ramp (first and last differ)', () => {

@@ -76,15 +76,17 @@ export function generateArrivalLegend(
 function formatDailyLabel(date: Date): string {
   return date.toLocaleDateString('en-US', {
     timeZone: 'UTC',
+    year: 'numeric',
     month: 'short',
     day: 'numeric',
   });
 }
 
 function formatHourlyLabel(date: Date): string {
+  const month = date.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' });
   const hh = String(date.getUTCHours()).padStart(2, '0');
   const mm = String(date.getUTCMinutes()).padStart(2, '0');
-  return `${hh}:${mm}`;
+  return `${month} ${hh}:${mm}`;
 }
 
 /** Green → yellow → red ramp across `total` buckets. */

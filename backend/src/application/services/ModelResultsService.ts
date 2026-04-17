@@ -395,7 +395,17 @@ export class ModelResultsService {
                 const { findArrivalTifs } = await import('../../infrastructure/firestarr/index.js');
                 const arrival = findArrivalTifs(simDir);
                 if (arrival) {
-                  const startDate = new Date(Date.UTC(new Date().getFullYear(), 0, arrival.offsetDay)).toISOString();
+                  // Derive year from weather.csv (same source as ArrivalTimeExtractor)
+                  let modelYear = new Date().getFullYear();
+                  try {
+                    const weatherPath = path.join(simDir, 'weather.csv');
+                    if (fs.existsSync(weatherPath)) {
+                      const firstLines = fs.readFileSync(weatherPath, 'utf-8').split('\n').slice(0, 2);
+                      const dateMatch = firstLines[1]?.match(/(\d{4})-\d{2}-\d{2}/);
+                      if (dateMatch) modelYear = parseInt(dateMatch[1], 10);
+                    }
+                  } catch { /* use current year as fallback */ }
+                  const startDate = new Date(Date.UTC(modelYear, 0, arrival.offsetDay)).toISOString();
                   outputs.push({
                     id: `arrival-time-${modelId}`,
                     type: 'arrival_time' as OutputType,
