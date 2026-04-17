@@ -65,6 +65,28 @@ export interface GeoJSONLayerConfig extends BaseLayerConfig {
 }
 
 /**
+ * Classification timestep for arrival-time rasters (#226).
+ */
+export type ArrivalTimestep = 'hourly' | 'daily';
+
+/**
+ * Metadata needed to symbolize an arrival-time raster on the client.
+ * Present only when `legendType === 'arrival'`.
+ */
+export interface ArrivalRasterMeta {
+  /** Encoding offset — first Julian day of the model */
+  offsetDay: number;
+  /** First Julian day in the raster window */
+  startJulian: number;
+  /** Last Julian day + 1 */
+  endJulian: number;
+  /** ISO date corresponding to startJulian (UTC) */
+  startDate: string;
+  /** Current classification granularity; defaults to 'daily' */
+  timestep: ArrivalTimestep;
+}
+
+/**
  * Raster layer configuration
  */
 export interface RasterLayerConfig extends BaseLayerConfig {
@@ -75,6 +97,10 @@ export interface RasterLayerConfig extends BaseLayerConfig {
   tileSize?: number;
   /** Bounds [west, south, east, north] */
   bounds?: [number, number, number, number];
+  /** Which legend/symbology scheme to apply (probability = hard-coded ramp, arrival = dynamic by timestep) */
+  legendType?: 'probability' | 'arrival';
+  /** Arrival-time symbolization params (only for legendType = 'arrival') */
+  arrivalMeta?: ArrivalRasterMeta;
 }
 
 /**

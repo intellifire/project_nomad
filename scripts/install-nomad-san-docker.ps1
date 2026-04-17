@@ -5,8 +5,10 @@
 #
 # Usage:
 #   .\install-nomad-san-docker.ps1
-#   or
-#   iwr -useb https://.../install-nomad-san-docker.ps1 | iex
+#   or (PowerShell 7+):
+#   iwr -Uri https://.../install-nomad-san-docker.ps1 -UseBasicParsing | iex
+#   or (keep window open on error):
+#   powershell -NoExit -Command "iwr -Uri https://.../install-nomad-san-docker.ps1 | iex"
 #
 # Optional Environment Variables (defaults shown):
 #   $env:INSTALL_DIR=.\project_nomad     Where to extract Nomad
@@ -62,9 +64,21 @@ function Show-Header {
     Write-Host ""
 }
 
+# Check PowerShell version
+function Test-PowerShellVersion {
+    if ($PSVersionTable.PSVersion.Major -lt 7) {
+        Write-Warning "PowerShell $($PSVersionTable.PSVersion) detected. PowerShell 7+ recommended."
+        Write-Host "  Install: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-windows"
+        Write-Host "  Then run with: pwsh .\install-nomad-san-docker.ps1"
+        Write-Host ""
+    }
+}
+
 # Check prerequisites
 function Test-Prerequisites {
     Write-Step "Checking prerequisites..."
+
+    Test-PowerShellVersion
 
     # Check Docker
     try {
@@ -306,6 +320,18 @@ function Initialize-DockerEnvironment {
     # Build Nomad
     Write-Step "Building Nomad containers..."
     docker compose build
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Docker build failed (exit code $LASTEXITCODE)"
+        Write-Host ""
+        Write-Host "Common fixes:"
+        Write-Host "  - Check Docker Desktop is running"
+        Write-Host "  - Check disk space: docker system df"
+        Write-Host "  - Clean up: docker system prune -a"
+        Write-Host "  - Review build output above for errors"
+        Write-Host ""
+        $script:BuildFailed = $true
+        return
+    }
 
     Write-Success "Docker setup complete"
 }
@@ -328,12 +354,21 @@ function Show-Summary {
 function Start-Nomad {
     param($projectDir)
 
+    if ($script:BuildFailed) {
+        Write-Error "Skipping start — Docker build failed. Fix the errors above and re-run."
+        exit 1
+    }
+
     Write-Step "Starting Project Nomad..."
 
     Set-Location $projectDir
 
     if (-not $SkipStart) {
         docker compose up -d
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Failed to start containers (exit code $LASTEXITCODE)"
+            exit 1
+        }
         Write-Success "Project Nomad is starting!"
         Write-Host ""
         Write-Host "Access Nomad at: http://${Hostname}:$FrontendPort"
@@ -349,6 +384,8 @@ function Start-Nomad {
 
 # Main
 function Main {
+    $script:BuildFailed = $false
+
     Show-Header
 
     Test-Prerequisites
