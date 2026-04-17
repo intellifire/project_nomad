@@ -25,12 +25,6 @@
     "node": ">=20.0.0"
   },
   "devDependencies": {
-    "@types/adm-zip": "^0.5.8",
     "cross-env": "^7.0.3"
-  },
-  "dependencies": {
-    "@types/multer": "^2.1.0",
-    "adm-zip": "^0.5.17",
-    "multer": "^2.1.1"
   }
 }
