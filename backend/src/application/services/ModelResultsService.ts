@@ -389,23 +389,51 @@ export class ModelResultsService {
               const hasPerimeters = outputs.some(o => o.type === 'perimeter');
 
               // Arrival raster output (#226) — emit one OutputItem pointing at
-              // the RGB-encoded tile endpoint. Client applies dynamic daily/hourly
-              // symbolization via MapLibre raster-color paint.
+              // the classified tile endpoint. Classification window is derived
+              // from the model's configured timeRange, not from file count.
               try {
                 const { findArrivalTifs } = await import('../../infrastructure/firestarr/index.js');
                 const arrival = findArrivalTifs(simDir);
                 if (arrival) {
-                  // Derive year from weather.csv (same source as ArrivalTimeExtractor)
-                  let modelYear = new Date().getFullYear();
-                  try {
-                    const weatherPath = path.join(simDir, 'weather.csv');
-                    if (fs.existsSync(weatherPath)) {
-                      const firstLines = fs.readFileSync(weatherPath, 'utf-8').split('\n').slice(0, 2);
-                      const dateMatch = firstLines[1]?.match(/(\d{4})-\d{2}-\d{2}/);
-                      if (dateMatch) modelYear = parseInt(dateMatch[1], 10);
-                    }
-                  } catch { /* use current year as fallback */ }
-                  const startDate = new Date(Date.UTC(modelYear, 0, arrival.offsetDay)).toISOString();
+                  // Read timeRange from output-config.json to derive the model's
+                  // actual duration (not the number of arrival files, which can
+                  // include a trailing boundary file).
+                  const rawConfig = JSON.parse(fs.readFileSync(
+                    path.join(simDir, fs.existsSync(path.join(simDir, 'output-config.json'))
+                      ? 'output-config.json' : 'model.json'),
+                    'utf-8',
+                  ));
+                  const timeRange = rawConfig.timeRange as { start: string; end: string } | undefined;
+
+                  let startDate: string;
+                  let startJulian = arrival.offsetDay;
+                  let endJulian = arrival.endJulian;
+
+                  if (timeRange) {
+                    const startDt = new Date(timeRange.start);
+                    const endDt = new Date(timeRange.end);
+                    startDate = startDt.toISOString();
+                    const year = startDt.getUTCFullYear();
+                    const dayOfYear = (d: Date) => {
+                      const jan1 = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+                      return Math.floor((d.getTime() - jan1.getTime()) / 86_400_000) + 1;
+                    };
+                    startJulian = dayOfYear(startDt);
+                    endJulian = dayOfYear(endDt);
+                  } else {
+                    // Fallback: derive year from weather.csv
+                    let modelYear = new Date().getFullYear();
+                    try {
+                      const weatherPath = path.join(simDir, 'weather.csv');
+                      if (fs.existsSync(weatherPath)) {
+                        const firstLines = fs.readFileSync(weatherPath, 'utf-8').split('\n').slice(0, 2);
+                        const dateMatch = firstLines[1]?.match(/(\d{4})-\d{2}-\d{2}/);
+                        if (dateMatch) modelYear = parseInt(dateMatch[1], 10);
+                      }
+                    } catch { /* use current year */ }
+                    startDate = new Date(Date.UTC(modelYear, 0, startJulian)).toISOString();
+                  }
+
                   outputs.push({
                     id: `arrival-time-${modelId}`,
                     type: 'arrival_time' as OutputType,
@@ -419,9 +447,9 @@ export class ModelResultsService {
                       isRaster: true,
                       tileUrlTemplate: `/api/v1/models/${modelId}/arrival-tile/{z}/{x}/{y}.png`,
                       boundsUrl: `/api/v1/models/${modelId}/arrival-bounds`,
-                      offsetDay: arrival.offsetDay,
-                      startJulian: arrival.offsetDay,
-                      endJulian: arrival.endJulian,
+                      offsetDay: startJulian,
+                      startJulian,
+                      endJulian,
                       startDate,
                       julianDays: arrival.julianDays,
                       deterministic: true,

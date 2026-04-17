@@ -1549,12 +1549,30 @@ router.get(
     const info = findArrivalTifs(workingDir);
     if (!info) throw new NotFoundError('Arrival raster', id);
 
+    // Derive classification window from model's configured timeRange
+    let startJulian = info.offsetDay;
+    let endJulian = info.endJulian;
+    try {
+      const cfgPath = fs.existsSync(`${workingDir}/output-config.json`)
+        ? `${workingDir}/output-config.json`
+        : `${workingDir}/model.json`;
+      const raw = JSON.parse(fs.readFileSync(cfgPath, 'utf-8'));
+      if (raw.timeRange) {
+        const dayOfYear = (d: Date) => {
+          const jan1 = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+          return Math.floor((d.getTime() - jan1.getTime()) / 86_400_000) + 1;
+        };
+        startJulian = dayOfYear(new Date(raw.timeRange.start));
+        endJulian = dayOfYear(new Date(raw.timeRange.end));
+      }
+    } catch { /* use file-derived values */ }
+
     const bounds = await getRasterBounds(info.filePath);
     res.json({
       bounds,
-      offsetDay: info.offsetDay,
-      startJulian: info.offsetDay,
-      endJulian: info.endJulian,
+      offsetDay: startJulian,
+      startJulian,
+      endJulian,
       julianDays: info.julianDays,
     });
   }),
