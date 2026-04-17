@@ -158,6 +158,17 @@ export async function extractDeterministicPerimeters(
         { stdio: 'pipe', timeout: 30000 }
       );
 
+      // Step 2b: Skip if polygonize produced no features (empty mask)
+      if (existsSync(vectorPath)) {
+        const rawPoly = JSON.parse(readFileSync(vectorPath, 'utf-8')) as FeatureCollection;
+        if (!rawPoly.features || rawPoly.features.length === 0) {
+          console.log(`[ArrivalTimeExtractor] No burned area in ${filename}, skipping`);
+          continue;
+        }
+      } else {
+        continue;
+      }
+
       // Step 3: Get source CRS from the arrival raster (gdal_polygonize doesn't embed it in GeoJSON)
       let sourceSrs = '';
       try {
@@ -179,7 +190,7 @@ export async function extractDeterministicPerimeters(
         { stdio: 'pipe', timeout: 30000 }
       );
 
-      // Step 4: Read the GeoJSON
+      // Step 5: Read the GeoJSON
       if (existsSync(outputPath)) {
         const geojsonStr = readFileSync(outputPath, 'utf-8');
         const fc = JSON.parse(geojsonStr) as FeatureCollection<Polygon | MultiPolygon>;

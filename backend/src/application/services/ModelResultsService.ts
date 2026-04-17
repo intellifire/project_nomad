@@ -388,6 +388,77 @@ export class ModelResultsService {
               // Check if perimeter outputs already exist
               const hasPerimeters = outputs.some(o => o.type === 'perimeter');
 
+              // Arrival raster output (#226) — emit one OutputItem pointing at
+              // the classified tile endpoint. Classification window is derived
+              // from the model's configured timeRange, not from file count.
+              try {
+                const { findArrivalTifs } = await import('../../infrastructure/firestarr/index.js');
+                const arrival = findArrivalTifs(simDir);
+                if (arrival) {
+                  // Read timeRange from output-config.json to derive the model's
+                  // actual duration (not the number of arrival files, which can
+                  // include a trailing boundary file).
+                  const rawConfig = JSON.parse(fs.readFileSync(
+                    path.join(simDir, fs.existsSync(path.join(simDir, 'output-config.json'))
+                      ? 'output-config.json' : 'model.json'),
+                    'utf-8',
+                  ));
+                  const timeRange = rawConfig.timeRange as { start: string; end: string } | undefined;
+
+                  let startDate: string;
+                  let startJulian = arrival.offsetDay;
+                  let endJulian = arrival.endJulian;
+
+                  if (timeRange) {
+                    const startDt = new Date(timeRange.start);
+                    const endDt = new Date(timeRange.end);
+                    startDate = startDt.toISOString();
+                    const dayOfYear = (d: Date) => {
+                      const jan1 = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+                      return Math.floor((d.getTime() - jan1.getTime()) / 86_400_000) + 1;
+                    };
+                    startJulian = dayOfYear(startDt);
+                    endJulian = dayOfYear(endDt);
+                  } else {
+                    // Fallback: derive year from weather.csv
+                    let modelYear = new Date().getFullYear();
+                    try {
+                      const weatherPath = path.join(simDir, 'weather.csv');
+                      if (fs.existsSync(weatherPath)) {
+                        const firstLines = fs.readFileSync(weatherPath, 'utf-8').split('\n').slice(0, 2);
+                        const dateMatch = firstLines[1]?.match(/(\d{4})-\d{2}-\d{2}/);
+                        if (dateMatch) modelYear = parseInt(dateMatch[1], 10);
+                      }
+                    } catch { /* use current year */ }
+                    startDate = new Date(Date.UTC(modelYear, 0, startJulian)).toISOString();
+                  }
+
+                  outputs.push({
+                    id: `arrival-time-${modelId}`,
+                    type: 'arrival_time' as OutputType,
+                    format: 'geotiff' as OutputFormat,
+                    name: 'Fire Arrival Time',
+                    timeOffsetHours: null,
+                    filePath: null,
+                    previewUrl: `/api/v1/models/${modelId}/arrival-tile/{z}/{x}/{y}.png`,
+                    downloadUrl: `/api/v1/models/${modelId}/arrival-tile/{z}/{x}/{y}.png`,
+                    metadata: {
+                      isRaster: true,
+                      tileUrlTemplate: `/api/v1/models/${modelId}/arrival-tile/{z}/{x}/{y}.png`,
+                      boundsUrl: `/api/v1/models/${modelId}/arrival-bounds`,
+                      offsetDay: startJulian,
+                      startJulian,
+                      endJulian,
+                      startDate,
+                      julianDays: arrival.julianDays,
+                      deterministic: true,
+                    },
+                  });
+                }
+              } catch (e) {
+                console.warn(`[ModelResultsService] Arrival raster metadata unavailable:`, e);
+              }
+
               if (!hasPerimeters) {
                 // Extract perimeters from arrival-time rasters
                 const { extractDeterministicPerimeters } = await import('../../infrastructure/firestarr/index.js');
@@ -431,9 +502,10 @@ export class ModelResultsService {
         }
       }
 
-      // In deterministic mode, only show perimeter outputs (not probability rasters)
+      // In deterministic mode, surface perimeters and the arrival-time raster;
+      // probability rasters are hidden because they aren't produced in this mode.
       const filteredOutputs = loadedOutputConfig?.outputMode === 'deterministic'
-        ? outputs.filter(o => o.type === 'perimeter')
+        ? outputs.filter(o => o.type === 'perimeter' || o.type === 'arrival_time')
         : outputs;
 
       return Result.ok({

@@ -67,6 +67,16 @@ export {
   type DeterministicExtractionResult,
 } from './ArrivalTimeExtractor.js';
 
+// Arrival-Time Classified Tile Generation (#226)
+export {
+  generateArrivalTile,
+  clearArrivalTileCache,
+  findArrivalTifs,
+  buildArrivalColorTable,
+  type ArrivalTifInfo,
+  type ArrivalTimestep,
+} from './ArrivalTimeTileGenerator.js';
+
 // Types
 export {
   type WeatherHourlyData,

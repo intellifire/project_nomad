@@ -15,7 +15,13 @@ import {
 import { TimeRange } from '../../../domain/value-objects/index.js';
 import { NotFoundError, ValidationError } from '../../../domain/errors/index.js';
 import { getModelExecutionService } from '../../../infrastructure/services/index.js';
-import { getFireSTARREngine } from '../../../infrastructure/firestarr/index.js';
+import {
+  getFireSTARREngine,
+  generateArrivalTile,
+  findArrivalTifs,
+  getRasterBounds,
+} from '../../../infrastructure/firestarr/index.js';
+import { EngineError } from '../../../domain/errors/index.js';
 import { getModelResultsService } from '../../../application/services/index.js';
 import { getJobQueue } from '../../../infrastructure/services/JobQueue.js';
 import { getModelRepository, getResultRepository } from '../../../infrastructure/database/index.js';
@@ -1458,6 +1464,118 @@ router.get(
 
     res.json({ hasConfig: false, config: null });
   })
+);
+
+/**
+ * @openapi
+ * /models/{id}/arrival-tile/{z}/{x}/{y}.png:
+ *   get:
+ *     summary: RGB-encoded arrival-time tile
+ *     description: |
+ *       Returns a Web Mercator PNG tile of the FireSTARR arrival-time raster,
+ *       with Julian-day values terrain-RGB encoded for client-side MapLibre
+ *       `raster-color` classification. Issue #226.
+ */
+router.get(
+  '/models/:id/arrival-tile/:z/:x/:y.png',
+  asyncHandler(async (req, res) => {
+    const { id, z, x, y } = req.params;
+    const t = (req.query.t as string) ?? 'daily';
+    const timestep: 'daily' | 'hourly' = t === 'hourly' ? 'hourly' : 'daily';
+    const modelId = id as FireModelId;
+
+    const engine = getFireSTARREngine() as import('../../../infrastructure/firestarr/FireSTARREngine.js').FireSTARREngine;
+    const workingDir = engine.getWorkingDirectory(modelId);
+    if (!workingDir || !fs.existsSync(workingDir)) {
+      throw new NotFoundError('Working directory', id);
+    }
+
+    const info = findArrivalTifs(workingDir);
+    if (!info) throw new NotFoundError('Arrival raster', id);
+
+    let tileBuffer;
+    try {
+      tileBuffer = await generateArrivalTile(
+        info.filePath,
+        info.offsetDay,
+        info.endJulian,
+        timestep,
+        parseInt(z, 10),
+        parseInt(x, 10),
+        parseInt(y, 10),
+      );
+    } catch (err) {
+      throw EngineError.outputFailed(
+        EngineType.FireSTARR,
+        `Arrival tile generation failed: ${err instanceof Error ? err.message : err}`,
+      );
+    }
+
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    if (!tileBuffer) {
+      // 1x1 transparent PNG for out-of-bounds tiles
+      res.send(Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+        'base64',
+      ));
+      return;
+    }
+    res.send(tileBuffer);
+  }),
+);
+
+/**
+ * @openapi
+ * /models/{id}/arrival-bounds:
+ *   get:
+ *     summary: Arrival raster metadata
+ *     description: |
+ *       Returns bounds + offset / start / end Julian days for the model's
+ *       arrival-time raster — used by the frontend to configure its
+ *       `raster-color` paint and dynamic legend. Issue #226.
+ */
+router.get(
+  '/models/:id/arrival-bounds',
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const modelId = id as FireModelId;
+
+    const engine = getFireSTARREngine() as import('../../../infrastructure/firestarr/FireSTARREngine.js').FireSTARREngine;
+    const workingDir = engine.getWorkingDirectory(modelId);
+    if (!workingDir || !fs.existsSync(workingDir)) {
+      throw new NotFoundError('Working directory', id);
+    }
+    const info = findArrivalTifs(workingDir);
+    if (!info) throw new NotFoundError('Arrival raster', id);
+
+    // Derive classification window from model's configured timeRange
+    let startJulian = info.offsetDay;
+    let endJulian = info.endJulian;
+    try {
+      const cfgPath = fs.existsSync(`${workingDir}/output-config.json`)
+        ? `${workingDir}/output-config.json`
+        : `${workingDir}/model.json`;
+      const raw = JSON.parse(fs.readFileSync(cfgPath, 'utf-8'));
+      if (raw.timeRange) {
+        const dayOfYear = (d: Date) => {
+          const jan1 = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+          return Math.floor((d.getTime() - jan1.getTime()) / 86_400_000) + 1;
+        };
+        startJulian = dayOfYear(new Date(raw.timeRange.start));
+        endJulian = dayOfYear(new Date(raw.timeRange.end));
+      }
+    } catch { /* use file-derived values */ }
+
+    const bounds = await getRasterBounds(info.filePath);
+    res.json({
+      bounds,
+      offsetDay: startJulian,
+      startJulian,
+      endJulian,
+      julianDays: info.julianDays,
+    });
+  }),
 );
 
 export default router;

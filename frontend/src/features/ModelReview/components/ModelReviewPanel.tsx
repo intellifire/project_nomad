@@ -201,11 +201,29 @@ export function ModelReviewPanel({
       if (!onAddRasterToMap) return;
 
       try {
-        // Get bounds and tile URL via adapter (supports embedded mode)
-        const bounds = await api.results.getTileBounds(output.id);
-        const tileUrl = api.results.getTileUrlTemplate(output.id);
+        let bounds: [number, number, number, number];
+        let tileUrl: string;
 
-        // Pass model info for layer naming
+        if (output.type === 'arrival_time') {
+          // Arrival raster (#226) — not a DB result record. Bounds and tile
+          // template are served by a model-scoped endpoint and advertised
+          // on the OutputItem's metadata.
+          const boundsUrl = output.metadata?.boundsUrl as string | undefined;
+          const tileTemplate = output.metadata?.tileUrlTemplate as string | undefined;
+          if (!boundsUrl || !tileTemplate) {
+            throw new Error('Arrival output missing boundsUrl / tileUrlTemplate');
+          }
+          const resp = await api.fetch(boundsUrl);
+          if (!resp.ok) throw new Error(`Arrival bounds fetch failed: ${resp.status}`);
+          const info = await resp.json();
+          bounds = info.bounds as [number, number, number, number];
+          tileUrl = tileTemplate;
+        } else {
+          // Probability raster — adapter handles URL resolution.
+          bounds = await api.results.getTileBounds(output.id);
+          tileUrl = api.results.getTileUrlTemplate(output.id);
+        }
+
         const modelInfo = results ? {
           modelId: results.modelId,
           modelName: results.modelName,
