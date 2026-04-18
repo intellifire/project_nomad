@@ -12,6 +12,8 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useWizardData } from '../../Wizard';
 import { FirestarrCsvUpload } from '../components/FirestarrCsvUpload';
 import { RawWeatherUpload } from '../components/RawWeatherUpload';
+import { SpotwxUpload } from '../components/SpotwxUpload';
+import { StartingCodesInput } from '../components/StartingCodesInput';
 import type { ModelSetupData, WeatherSource, ParsedWeatherCSV, FWIStartingCodes } from '../types';
 
 const containerStyle: React.CSSProperties = {
@@ -105,10 +107,9 @@ export function WeatherStep() {
         id: 'spotwx' as WeatherSource,
         label: 'SpotWX',
         icon: '!',
-        disabledReason: isForecast ? undefined : 'Only available for Predictive Modelling',
       },
     ],
-    [isForecast]
+    []
   );
 
   const weather = data.weather ?? { source: 'firestarr_csv' };
@@ -157,13 +158,28 @@ export function WeatherStep() {
     [setField, weather]
   );
 
-  // Handle Starting Codes change
+  // Handle Starting Codes change — keeps the active tab as the source so it
+  // can be shared between raw_weather and spotwx.
   const handleStartingCodesChange = useCallback(
     (codes: FWIStartingCodes) => {
       setField('weather', {
         ...weather,
-        source: 'raw_weather',
+        source: activeTab,
         startingCodes: codes,
+      });
+    },
+    [setField, weather, activeTab]
+  );
+
+  // Handle SpotWX file upload
+  const handleSpotwxUpload = useCallback(
+    (file: File, parsed: ParsedWeatherCSV) => {
+      setField('weather', {
+        ...weather,
+        source: 'spotwx',
+        spotwxFile: file,
+        spotwxFileName: file.name,
+        spotwxParsed: parsed,
       });
     },
     [setField, weather]
@@ -246,36 +262,54 @@ export function WeatherStep() {
         )}
 
         {activeTab === 'spotwx' && (
-          <div
-            style={{
-              padding: '32px',
-              textAlign: 'center',
-              backgroundColor: '#ebf5fb',
-              borderRadius: '8px',
-            }}
-          >
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>!</div>
-            <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px', color: '#333' }}>
-              SpotWX Integration
-            </div>
-            <div style={{ fontSize: '14px', color: '#555', maxWidth: '500px', margin: '0 auto' }}>
-              Weather data will be automatically fetched from SpotWX forecast models based on your
-              selected location and time range. This feature uses high-resolution weather forecasts
-              optimized for fire behavior prediction.
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div
               style={{
-                marginTop: '24px',
-                padding: '12px',
-                backgroundColor: '#fff',
-                borderRadius: '4px',
-                fontSize: '13px',
-                color: '#666',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                padding: '16px',
+                border: '1px solid #e0e0e0',
+                borderRadius: '8px',
+                backgroundColor: '#fafafa',
               }}
             >
-              <strong>Note:</strong> SpotWX integration is under development. Full implementation
-              coming soon.
+              <div style={{ fontSize: '14px', fontWeight: 600, color: '#333' }}>
+                Import SpotWX.com (file)
+              </div>
+              <SpotwxUpload
+                onUpload={handleSpotwxUpload}
+                fileName={weather.spotwxFileName}
+                parsed={weather.spotwxParsed}
+              />
             </div>
+
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                padding: '16px',
+                border: '1px solid #e0e0e0',
+                borderRadius: '8px',
+                backgroundColor: '#fafafa',
+                opacity: 0.55,
+              }}
+              aria-disabled="true"
+            >
+              <div style={{ fontSize: '14px', fontWeight: 600, color: '#333' }}>
+                Import SpotWX.com (API)
+              </div>
+              <div style={{ fontSize: '13px', color: '#666' }}>
+                Coming soon — direct fetch from the SpotWX API with a user-supplied key.
+                For now, export a CSV from spotwx.com and upload it above.
+              </div>
+            </div>
+
+            <StartingCodesInput
+              values={weather.startingCodes ?? {}}
+              onChange={handleStartingCodesChange}
+            />
           </div>
         )}
       </div>

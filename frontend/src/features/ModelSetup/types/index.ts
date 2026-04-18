@@ -153,7 +153,11 @@ export interface WeatherData {
   rawWeatherFile?: File;
   rawWeatherFileName?: string;
   rawWeatherParsed?: ParsedWeatherCSV;
-  /** Starting codes for raw_weather source (used by backend for CFFDRS calculation) */
+  /** For spotwx: SpotWX CSV export normalized to raw weather shape */
+  spotwxFile?: File;
+  spotwxFileName?: string;
+  spotwxParsed?: ParsedWeatherCSV;
+  /** Starting codes for raw_weather / spotwx sources (backend runs CFFDRS) */
   startingCodes?: FWIStartingCodes;
   /** Legacy: Manual FWI values (kept for compatibility) */
   fwi?: FWIValues;

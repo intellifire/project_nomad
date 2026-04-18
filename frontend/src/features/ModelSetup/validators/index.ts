@@ -207,18 +207,35 @@ export const weatherValidator: StepValidator<ModelSetupData> = (data): Validatio
   }
 
   if (data.weather.source === 'spotwx') {
-    // SpotWX is only valid for forecast/predictive modelling
-    if (!data.temporal?.isForecast) {
+    if (!data.weather.spotwxFile) {
       errors.push({
-        message: 'SpotWX is only available for Predictive Modelling (future dates)',
+        message: 'Please upload a SpotWX CSV file',
         type: 'error',
       });
     }
-    // Note: SpotWX integration is still in development
-    errors.push({
-      message: 'SpotWX integration is under development. Please use file upload for now.',
-      type: 'warning',
-    });
+    if (!data.weather.startingCodes) {
+      errors.push({
+        message: 'Please enter FWI starting codes',
+        type: 'error',
+      });
+    } else {
+      const { ffmc, dmc, dc } = data.weather.startingCodes;
+      if (ffmc === undefined || ffmc === null || isNaN(ffmc)) {
+        errors.push({ field: 'ffmc', message: 'FFMC is required', type: 'error' });
+      } else if (ffmc < 0 || ffmc > 101) {
+        errors.push({ field: 'ffmc', message: 'FFMC must be between 0 and 101', type: 'error' });
+      }
+      if (dmc === undefined || dmc === null || isNaN(dmc)) {
+        errors.push({ field: 'dmc', message: 'DMC is required', type: 'error' });
+      } else if (dmc < 0) {
+        errors.push({ field: 'dmc', message: 'DMC cannot be negative', type: 'error' });
+      }
+      if (dc === undefined || dc === null || isNaN(dc)) {
+        errors.push({ field: 'dc', message: 'DC is required', type: 'error' });
+      } else if (dc < 0) {
+        errors.push({ field: 'dc', message: 'DC cannot be negative', type: 'error' });
+      }
+    }
   }
 
   return { isValid: errors.length === 0, errors };
