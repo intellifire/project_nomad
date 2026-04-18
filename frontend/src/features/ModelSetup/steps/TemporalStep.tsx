@@ -9,6 +9,7 @@
 import React, { useCallback, useMemo, useRef, useEffect } from 'react';
 import { useWizardData } from '../../Wizard';
 import type { ModelSetupData } from '../types';
+import { computeDefaultStartDate } from '../utils/computeTemporalDefaults.js';
 
 const containerStyle: React.CSSProperties = {
   display: 'flex',
@@ -223,10 +224,12 @@ function getActiveQuickSelect(dateStr: string): string | null {
 export function TemporalStep() {
   const { data, setField } = useWizardData<ModelSetupData>();
   const timeInputRef = useRef<HTMLInputElement>(null);
-  // Initialize with today's date if not set
+  // Initialize with the first datetime from imported weather, or today if no
+  // weather has been imported yet (weather-first wizard; refs #238).
   const temporal = useMemo(() => {
+    const defaultStartDate = computeDefaultStartDate(data.weather) ?? getTodayDate();
     const defaultTemporal = {
-      startDate: getTodayDate(),
+      startDate: defaultStartDate,
       startTime: '12:00',
       durationHours: 72,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -241,16 +244,16 @@ export function TemporalStep() {
       ...defaultTemporal,
       ...data.temporal,
     };
-  }, [data.temporal]);
+  }, [data.temporal, data.weather]);
 
-  // Set default date on mount if not already set
+  // Persist default date into wizard state if not already set
   useEffect(() => {
     if (!data.temporal || !data.temporal.startDate) {
-      const todayDate = getTodayDate();
+      const defaultStartDate = computeDefaultStartDate(data.weather) ?? getTodayDate();
       setField('temporal', {
         ...temporal,
-        startDate: todayDate,
-        isForecast: isFutureDate(todayDate),
+        startDate: defaultStartDate,
+        isForecast: isFutureDate(defaultStartDate),
       });
     }
   }, []); // Only run once on mount
