@@ -7,6 +7,7 @@
 import type { StepValidator, ValidationResult } from '../../Wizard/types';
 import type { ModelSetupData, BoundingBox } from '../types';
 import { CANADA_BOUNDS, isWithinCanada } from '../types';
+import { computeWeatherDateRange } from '../utils/computeTemporalDefaults.js';
 
 /**
  * Calculate bounding box from features array
@@ -102,6 +103,30 @@ export const temporalValidator: StepValidator<ModelSetupData> = (data): Validati
       message: 'Duration cannot exceed 720 hours (30 days)',
       type: 'error',
     });
+  }
+
+  // Weather-window bounds (refs #244): the sim window must fit inside the
+  // imported weather's dateRange.
+  const dateRange = computeWeatherDateRange(data.weather);
+  if (dateRange && data.temporal?.startDate && data.temporal?.durationHours) {
+    if (data.temporal.startDate < dateRange.minDate) {
+      errors.push({
+        field: 'startDate',
+        message: `Start date ${data.temporal.startDate} is before the weather data (${dateRange.minDate}).`,
+        type: 'error',
+      });
+    }
+    const startTime = data.temporal.startTime ?? '00:00';
+    const startMs = new Date(`${data.temporal.startDate}T${startTime}:00Z`).getTime();
+    const endMs = startMs + data.temporal.durationHours * 3_600_000;
+    const endDate = new Date(endMs).toISOString().slice(0, 10);
+    if (endDate > dateRange.maxDate) {
+      errors.push({
+        field: 'durationHours',
+        message: `Simulation end (${endDate}) goes past the weather data (${dateRange.maxDate}). Shorten the duration or pick an earlier start.`,
+        type: 'error',
+      });
+    }
   }
 
   return { isValid: errors.length === 0, errors };
