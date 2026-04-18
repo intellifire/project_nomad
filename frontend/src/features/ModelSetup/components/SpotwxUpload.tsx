@@ -46,19 +46,37 @@ const errorStyle: React.CSSProperties = {
   fontSize: '13px',
 };
 
+const noticeStyle: React.CSSProperties = {
+  color: '#8a6d3b',
+  backgroundColor: '#fcf8e3',
+  border: '1px solid #faebcc',
+  borderRadius: '4px',
+  padding: '8px 10px',
+  fontSize: '13px',
+};
+
 export function SpotwxUpload({ onUpload, fileName, parsed, error }: SpotwxUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [parseError, setParseError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const handleFile = useCallback(
     (file: File) => {
       setParseError(null);
+      setNotice(null);
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
           const content = (e.target?.result as string) ?? '';
-          const { headers, rows } = parseSpotwxCsv(content);
+          const { headers, rows, truncatedRowCount } = parseSpotwxCsv(content);
           const parsedData = buildParsedWeatherCSV(headers, rows);
+          if (truncatedRowCount) {
+            const plural = truncatedRowCount === 1 ? 'row' : 'rows';
+            setNotice(
+              `Dropped ${truncatedRowCount} ${plural} past the hourly→3-hourly transition. ` +
+                'For longer hourly runs, export a prometheus-format CSV from SpotWX.',
+            );
+          }
           onUpload(file, parsedData);
         } catch (err) {
           setParseError(err instanceof Error ? err.message : 'Failed to parse SpotWX file');
@@ -105,6 +123,11 @@ export function SpotwxUpload({ onUpload, fileName, parsed, error }: SpotwxUpload
           {parsed?.dateRange
             ? ` (${parsed.dateRange.minDate} to ${parsed.dateRange.maxDate})`
             : ''}
+        </div>
+      )}
+      {notice && !displayError && (
+        <div style={noticeStyle} role="status">
+          {notice}
         </div>
       )}
       {displayError && (

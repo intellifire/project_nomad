@@ -13,6 +13,8 @@ import { parseCSV } from './weatherValidation.js';
 export interface NormalizedWeather {
   headers: string[];
   rows: string[][];
+  /** Number of rows dropped because they fell past the hourly prefix. */
+  truncatedRowCount?: number;
 }
 
 const OUTPUT_HEADERS = ['Date', 'PREC', 'TEMP', 'RH', 'WS', 'WD'];
@@ -23,6 +25,25 @@ function normalizeDatetimeBasic(value: string): string {
   const isoDate = datePart.replace(/\//g, '-');
   const time = /^\d{2}:\d{2}:\d{2}$/.test(timePart) ? timePart : `${timePart}:00`;
   return `${isoDate} ${time}`;
+}
+
+/**
+ * Walks normalized rows keeping only the prefix whose consecutive timestamps
+ * are spaced exactly one hour apart. SpotWX basic exports switch from hourly
+ * to 3-hourly past day 5, and FireSTARR refuses non-hourly input (refs #244).
+ */
+function truncateAtFirstNonHourlyGap(rows: string[][]): {
+  rows: string[][];
+  truncatedRowCount?: number;
+} {
+  const toMillis = (value: string) => new Date(value.replace(' ', 'T') + 'Z').getTime();
+  for (let i = 1; i < rows.length; i++) {
+    const gapHours = (toMillis(rows[i][0]) - toMillis(rows[i - 1][0])) / 3_600_000;
+    if (gapHours !== 1) {
+      return { rows: rows.slice(0, i), truncatedRowCount: rows.length - i };
+    }
+  }
+  return { rows };
 }
 
 function normalizeDatetimePrometheus(dateStr: string, hour: string): string {
@@ -54,7 +75,12 @@ export function parseSpotwxCsv(content: string): NormalizedWeather {
       row[iWd] ?? '',
     ]);
 
-    return { headers: [...OUTPUT_HEADERS], rows: normalized };
+    const { rows: kept, truncatedRowCount } = truncateAtFirstNonHourlyGap(normalized);
+    return {
+      headers: [...OUTPUT_HEADERS],
+      rows: kept,
+      ...(truncatedRowCount ? { truncatedRowCount } : {}),
+    };
   }
 
   if (idx('HOURLY') !== -1 && idx('HOUR') !== -1) {
@@ -75,7 +101,12 @@ export function parseSpotwxCsv(content: string): NormalizedWeather {
       row[iWd] ?? '',
     ]);
 
-    return { headers: [...OUTPUT_HEADERS], rows: normalized };
+    const { rows: kept, truncatedRowCount } = truncateAtFirstNonHourlyGap(normalized);
+    return {
+      headers: [...OUTPUT_HEADERS],
+      rows: kept,
+      ...(truncatedRowCount ? { truncatedRowCount } : {}),
+    };
   }
 
   throw new Error('Unrecognized SpotWX CSV format');
