@@ -213,6 +213,12 @@ export const MODEL_SETUP_STEPS = [
     icon: 'location-dot',
   },
   {
+    id: 'weather' as const,
+    name: 'Weather',
+    description: 'Provide fire weather index values',
+    icon: 'cloud-sun',
+  },
+  {
     id: 'temporal' as const,
     name: 'Time Range',
     description: 'Set the simulation start time and duration',
@@ -223,12 +229,6 @@ export const MODEL_SETUP_STEPS = [
     name: 'Model',
     description: 'Select the fire modeling engine and run type',
     icon: 'fire',
-  },
-  {
-    id: 'weather' as const,
-    name: 'Weather',
-    description: 'Provide fire weather index values',
-    icon: 'cloud-sun',
   },
   {
     id: 'review' as const,
