@@ -72,4 +72,68 @@ describe('TemporalStep default start date', () => {
     const today = new Date().toISOString().slice(0, 10);
     expect(dateInput.value).toBe(today);
   });
+
+  it('clamps an existing startDate into the new weather range when it falls outside', () => {
+    const initialData: ModelSetupData = {
+      ...DEFAULT_MODEL_SETUP_DATA,
+      temporal: {
+        startDate: '2026-05-30',
+        startTime: '12:00',
+        durationHours: 72,
+        timezone: 'UTC',
+        isForecast: false,
+      },
+      weather: {
+        ...DEFAULT_MODEL_SETUP_DATA.weather,
+        source: 'raw_weather',
+        rawWeatherParsed: {
+          headers: ['Date'],
+          rowCount: 2,
+          previewRows: [],
+          hasScenarioColumn: false,
+          hasFWIColumns: false,
+          dateRange: { minDate: '2026-04-18', maxDate: '2026-04-22' },
+        },
+      },
+    };
+    const Wrapper = createWizardWrapper(initialData);
+
+    render(
+      <Wrapper>
+        <TemporalStep />
+      </Wrapper>,
+    );
+
+    const dateInput = screen.getByLabelText('Start date') as HTMLInputElement;
+    expect(dateInput.value).toBe('2026-04-18');
+  });
+
+  it('bounds the start-date input to the weather dateRange (min/max)', () => {
+    const initialData: ModelSetupData = {
+      ...DEFAULT_MODEL_SETUP_DATA,
+      weather: {
+        ...DEFAULT_MODEL_SETUP_DATA.weather,
+        source: 'raw_weather',
+        rawWeatherParsed: {
+          headers: ['Date'],
+          rowCount: 2,
+          previewRows: [],
+          hasScenarioColumn: false,
+          hasFWIColumns: false,
+          dateRange: { minDate: '2026-04-18', maxDate: '2026-04-22' },
+        },
+      },
+    };
+    const Wrapper = createWizardWrapper(initialData);
+
+    render(
+      <Wrapper>
+        <TemporalStep />
+      </Wrapper>,
+    );
+
+    const dateInput = screen.getByLabelText('Start date') as HTMLInputElement;
+    expect(dateInput.min).toBe('2026-04-18');
+    expect(dateInput.max).toBe('2026-04-22');
+  });
 });
