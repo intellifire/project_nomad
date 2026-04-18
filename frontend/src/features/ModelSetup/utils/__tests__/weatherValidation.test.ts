@@ -172,3 +172,21 @@ describe('validateDatetimes', () => {
     expect(result.valid).toBe(true);
   });
 });
+
+describe('extractDateRange', () => {
+  it('returns min and max YYYY-MM-DD from Date column', async () => {
+    const { extractDateRange } = await import('../weatherValidation.js');
+    const headers = ['Date', 'Hour', 'FFMC', 'DMC', 'DC', 'ISI', 'BUI', 'FWI'];
+    const rows = [
+      ['2025-07-15', '0', '85', '30', '200', '5', '40', '10'],
+      ['2025-07-15', '12', '88', '32', '210', '7', '42', '12'],
+      ['2025-07-17', '6', '90', '35', '220', '8', '45', '14'],
+      ['2025-07-16', '18', '87', '33', '215', '6', '43', '11'],
+    ];
+
+    expect(extractDateRange(headers, rows)).toEqual({
+      minDate: '2025-07-15',
+      maxDate: '2025-07-17',
+    });
+  });
+});
