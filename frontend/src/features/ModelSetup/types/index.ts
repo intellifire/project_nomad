@@ -135,6 +135,8 @@ export interface ParsedWeatherCSV {
   hasScenarioColumn: boolean;
   /** Whether all FWI columns are present (FFMC, DMC, DC, ISI, BUI, FWI) */
   hasFWIColumns: boolean;
+  /** Min and max date (YYYY-MM-DD) extracted from the parsed rows */
+  dateRange?: { minDate: string; maxDate: string };
 }
 
 /**
