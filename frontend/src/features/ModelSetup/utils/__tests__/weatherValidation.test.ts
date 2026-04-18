@@ -190,3 +190,35 @@ describe('extractDateRange', () => {
     });
   });
 });
+
+describe('buildParsedWeatherCSV', () => {
+  it('constructs ParsedWeatherCSV with dateRange, FWI flag, and scenario flag', async () => {
+    const { buildParsedWeatherCSV } = await import('../weatherValidation.js');
+    const headers = ['Scenario', 'Date', 'Hour', 'FFMC', 'DMC', 'DC', 'ISI', 'BUI', 'FWI'];
+    const rows = [
+      ['1', '2025-07-15', '0', '85', '30', '200', '5', '40', '10'],
+      ['1', '2025-07-17', '12', '90', '35', '220', '8', '45', '14'],
+    ];
+
+    expect(buildParsedWeatherCSV(headers, rows)).toEqual({
+      headers,
+      rowCount: 2,
+      previewRows: rows.slice(0, 5),
+      hasScenarioColumn: true,
+      hasFWIColumns: true,
+      dateRange: { minDate: '2025-07-15', maxDate: '2025-07-17' },
+    });
+  });
+
+  it('omits dateRange and flags when data is sparse', async () => {
+    const { buildParsedWeatherCSV } = await import('../weatherValidation.js');
+    const headers = ['FFMC', 'DMC'];
+    const rows = [['85', '30']];
+
+    const result = buildParsedWeatherCSV(headers, rows);
+    expect(result.hasScenarioColumn).toBe(false);
+    expect(result.hasFWIColumns).toBe(false);
+    expect(result.dateRange).toBeUndefined();
+    expect(result.rowCount).toBe(1);
+  });
+});
