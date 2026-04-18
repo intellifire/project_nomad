@@ -46,3 +46,21 @@ describe('parseSpotwxCsv', () => {
     expect(() => parseSpotwxCsv(content)).toThrow(/Unrecognized SpotWX/i);
   });
 });
+
+describe('normalizeSpotwxToRawWeather', () => {
+  it('emits a raw-weather CSV text that the backend raw_weather path accepts', async () => {
+    const { normalizeSpotwxToRawWeather } = await import('../spotwxParser.js');
+    const content =
+      'DATETIME,DATE,TIME,TMP,RH,WS,WD,WG,APCP\n' +
+      '2026/04/18 00:00,2026/04/18,00:00,-17.5,93,12,074,18,0.0\n' +
+      '2026/04/18 01:00,2026/04/18,01:00,-18.5,98,11,088,12,0.3\n';
+
+    const out = normalizeSpotwxToRawWeather(content);
+
+    expect(out).toBe(
+      'Date,PREC,TEMP,RH,WS,WD\n' +
+        '2026-04-18 00:00:00,0.0,-17.5,93,12,074\n' +
+        '2026-04-18 01:00:00,0.3,-18.5,98,11,088',
+    );
+  });
+});

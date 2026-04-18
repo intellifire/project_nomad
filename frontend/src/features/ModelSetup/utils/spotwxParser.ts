@@ -80,3 +80,14 @@ export function parseSpotwxCsv(content: string): NormalizedWeather {
 
   throw new Error('Unrecognized SpotWX CSV format');
 }
+
+/**
+ * Parses a SpotWX CSV and serializes it back out as a raw-weather CSV text
+ * (Date, PREC, TEMP, RH, WS, WD) for submission to the backend's raw_weather
+ * pipeline — the frontend handles all SpotWX-specific translation so the
+ * backend stays unaware of SpotWX file uploads.
+ */
+export function normalizeSpotwxToRawWeather(content: string): string {
+  const { headers, rows } = parseSpotwxCsv(content);
+  return [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+}
