@@ -10,6 +10,7 @@ import React, { useCallback, useState, useRef } from 'react';
 import { useModels } from '../hooks/useModels.js';
 import { useModelSelection } from '../context/DashboardContext.js';
 import { ModelCard } from './ModelCard.js';
+import { isProgressStatus } from './importStatus.js';
 import { useOpenNomad } from '../../../openNomad/index.js';
 import type { Model, ModelStatus, EngineType } from '../../../openNomad/api.js';
 import type { ModelSortOption } from '../context/DashboardContext.js';
@@ -332,6 +333,13 @@ export function ModelList({
           backgroundColor: importStatus.startsWith('Import failed') ? '#ffebee' : '#e8f5e9',
           color: importStatus.startsWith('Import failed') ? '#c62828' : '#2e7d32',
         }}>
+          {isProgressStatus(importStatus) && (
+            <i
+              className="fa-solid fa-spinner fa-spin"
+              style={{ marginRight: '8px' }}
+              aria-hidden="true"
+            />
+          )}
           {importStatus}
         </div>
       )}
