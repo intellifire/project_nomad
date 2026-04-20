@@ -1,3 +1,8 @@
+import { execSync } from 'child_process';
+import { mkdtempSync, readFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
+
 /**
  * Arrival-perimeter animation helpers (refs #236).
  *
@@ -131,6 +136,35 @@ export async function extractArrivalAnimation(
   } finally {
     deps.rmrf(tmpDir);
   }
+}
+
+/**
+ * Default dependencies backed by the real filesystem and GDAL CLI tools.
+ * Used by the HTTP route; unit tests substitute mocks.
+ */
+export function defaultAnimationExtractorDeps(): AnimationExtractorDeps {
+  return {
+    exec: (command) => {
+      execSync(command, { encoding: 'utf8', stdio: 'pipe' });
+    },
+    mkdtemp: (prefix) => mkdtempSync(join(tmpdir(), prefix)),
+    readJSON: (path) => JSON.parse(readFileSync(path, 'utf-8')),
+    rmrf: (path) => {
+      try {
+        execSync(`rm -rf "${path}"`, { stdio: 'pipe' });
+      } catch {
+        /* best-effort cleanup */
+      }
+    },
+    getSrsWkt: (rasterPath) =>
+      execSync(`gdalsrsinfo -o wkt "${rasterPath}"`, {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      })
+        .toString()
+        .split(/\r?\n/)[0]
+        .trim(),
+  };
 }
 
 export function toAnimationFeatureCollection(
