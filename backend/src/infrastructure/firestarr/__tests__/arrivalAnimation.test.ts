@@ -8,8 +8,11 @@
 
 import { describe, it, expect } from 'vitest';
 import {
+  buildReclassifyExpression,
   computeAnimationFrames,
+  extractArrivalAnimation,
   extractSimTimeRange,
+  julianDayFromDate,
   toAnimationFeatureCollection,
 } from '../arrivalAnimation.js';
 
@@ -116,5 +119,123 @@ describe('toAnimationFeatureCollection', () => {
       type: 'Polygon',
       coordinates: [[[0, 0], [1, 0], [1, 1], [0, 0]]],
     });
+  });
+});
+
+describe('julianDayFromDate', () => {
+  it('returns 1.0 at Jan 1 00:00 UTC (day-of-year convention)', () => {
+    expect(julianDayFromDate(new Date('2026-01-01T00:00:00Z'))).toBe(1);
+  });
+
+  it('includes the fractional time of day', () => {
+    expect(julianDayFromDate(new Date('2026-01-01T12:00:00Z'))).toBe(1.5);
+  });
+
+  it('produces the expected day number for a mid-year date', () => {
+    // 2026-04-18 = Jan(31) + Feb(28) + Mar(31) + Apr 1..17(17) = 107 days after Jan 1 00:00.
+    expect(julianDayFromDate(new Date('2026-04-18T00:00:00Z'))).toBe(108);
+  });
+});
+
+describe('buildReclassifyExpression', () => {
+  it('emits a gdal_calc expression referencing simStartJulian and the frame cap', () => {
+    const expr = buildReclassifyExpression(108.0, 168);
+    expect(expr).toContain('108');
+    expect(expr).toContain('168');
+    expect(expr).toContain('24'); // hours per day
+    expect(expr).toContain('A'); // input band
+  });
+});
+
+describe('extractArrivalAnimation (orchestrator)', () => {
+  function stubDeps(readJSONResult: unknown = {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        properties: { DN: 0 },
+        geometry: { type: 'Polygon', coordinates: [[[0, 0], [1, 0], [1, 1], [0, 0]]] },
+      },
+      {
+        type: 'Feature',
+        properties: { DN: 3 },
+        geometry: { type: 'Polygon', coordinates: [[[2, 2], [3, 2], [3, 3], [2, 2]]] },
+      },
+    ],
+  }) {
+    const execCalls: string[] = [];
+    const rmrfCalls: string[] = [];
+    const deps = {
+      exec: (cmd: string) => {
+        execCalls.push(cmd);
+      },
+      mkdtemp: (prefix: string) => `/tmp/${prefix}test`,
+      readJSON: () => readJSONResult,
+      rmrf: (path: string) => {
+        rmrfCalls.push(path);
+      },
+      getSrsWkt: () => 'PROJCS["NAD83/CanadaAtlas",...]',
+    };
+    return { deps, execCalls, rmrfCalls };
+  }
+
+  it('runs gdal_calc → gdal_polygonize → ogr2ogr and returns the transformed FeatureCollection', async () => {
+    const { deps, execCalls } = stubDeps();
+
+    const result = await extractArrivalAnimation(
+      {
+        arrivalPath: '/sims/m1/arrival.tif',
+        simStart: new Date('2026-04-18T00:00:00Z'),
+        durationHours: 72,
+      },
+      deps,
+    );
+
+    const tools = execCalls.map((c) => c.split(/\s+/)[0]);
+    expect(tools).toEqual(['gdal_calc.py', 'gdal_polygonize.py', 'ogr2ogr']);
+    expect(execCalls[0]).toContain('/sims/m1/arrival.tif');
+    expect(execCalls[2]).toContain('EPSG:4326');
+
+    expect(result.type).toBe('FeatureCollection');
+    expect(result.features).toHaveLength(1);
+    expect(result.features[0].properties.offsetHours).toBe(3);
+  });
+
+  it('cleans up the temp directory on success', async () => {
+    const { deps, rmrfCalls } = stubDeps();
+
+    await extractArrivalAnimation(
+      {
+        arrivalPath: '/sims/m1/arrival.tif',
+        simStart: new Date('2026-04-18T00:00:00Z'),
+        durationHours: 24,
+      },
+      deps,
+    );
+
+    expect(rmrfCalls).toHaveLength(1);
+    expect(rmrfCalls[0]).toContain('nomad-anim-');
+  });
+
+  it('cleans up the temp directory even when a command fails', async () => {
+    const { deps, rmrfCalls } = stubDeps();
+    let callCount = 0;
+    deps.exec = () => {
+      callCount++;
+      if (callCount === 2) throw new Error('gdal_polygonize exploded');
+    };
+
+    await expect(
+      extractArrivalAnimation(
+        {
+          arrivalPath: '/sims/m1/arrival.tif',
+          simStart: new Date('2026-04-18T00:00:00Z'),
+          durationHours: 24,
+        },
+        deps,
+      ),
+    ).rejects.toThrow(/exploded/);
+
+    expect(rmrfCalls).toHaveLength(1);
   });
 });

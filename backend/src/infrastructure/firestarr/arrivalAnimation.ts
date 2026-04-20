@@ -57,6 +57,82 @@ export interface AnimationFeatureCollection {
  *  - Preserves geometry verbatim; simplification/reprojection happens upstream
  *    in the GDAL pipeline.
  */
+/**
+ * Dependencies injected into extractArrivalAnimation so the orchestrator can
+ * be unit-tested without spawning real GDAL processes. Production wires
+ * these to execSync, mkdtempSync, fs.readFileSync + JSON.parse, rm -rf, and
+ * gdalsrsinfo.
+ */
+export interface AnimationExtractorDeps {
+  /** Runs a shell command synchronously; throws on non-zero exit. */
+  exec: (command: string) => void;
+  /** Creates a unique temp directory with the given prefix; returns path. */
+  mkdtemp: (prefix: string) => string;
+  /** Reads a JSON file from disk and parses it. */
+  readJSON: (path: string) => unknown;
+  /** Recursively removes a directory (best-effort cleanup). */
+  rmrf: (path: string) => void;
+  /** Returns the spatial reference WKT for a raster. */
+  getSrsWkt: (rasterPath: string) => string;
+}
+
+export interface ExtractArrivalAnimationParams {
+  arrivalPath: string;
+  simStart: Date;
+  durationHours: number;
+  capFrames?: number;
+}
+
+/**
+ * Orchestrates the GDAL pipeline that turns a FireSTARR arrival-time raster
+ * into a FeatureCollection of per-hour perimeter polygons (refs #236):
+ *
+ *   arrival.tif --(gdal_calc)--> classified.tif
+ *                              --(gdal_polygonize)--> frames.gpkg
+ *                              --(ogr2ogr)--> frames.geojson (WGS84)
+ *
+ * Each classified pixel's value is the 1-based frame index (the hour in which
+ * the pixel ignited). gdal_polygonize emits one feature per contiguous
+ * same-value region, which toAnimationFeatureCollection then tags with
+ * offsetHours + isoTime. All temp files land in a single directory that is
+ * removed in the `finally` block, even on failure.
+ */
+export async function extractArrivalAnimation(
+  params: ExtractArrivalAnimationParams,
+  deps: AnimationExtractorDeps,
+): Promise<AnimationFeatureCollection> {
+  const capFrames = params.capFrames ?? DEFAULT_FRAME_CAP;
+  const tmpDir = deps.mkdtemp('nomad-anim-');
+  try {
+    const classifiedPath = `${tmpDir}/classified.tif`;
+    const vectorPath = `${tmpDir}/frames.gpkg`;
+    const geojsonPath = `${tmpDir}/frames.geojson`;
+
+    const simStartJulian = julianDayFromDate(params.simStart);
+    const expression = buildReclassifyExpression(simStartJulian, capFrames);
+
+    deps.exec(
+      `gdal_calc.py -A "${params.arrivalPath}" --outfile="${classifiedPath}" ` +
+        `--calc="${expression}" --type=Int32 --NoDataValue=0 --quiet`,
+    );
+
+    deps.exec(
+      `gdal_polygonize.py "${classifiedPath}" -f GPKG "${vectorPath}" frames DN`,
+    );
+
+    const srsWkt = deps.getSrsWkt(params.arrivalPath);
+    deps.exec(
+      `ogr2ogr -f GeoJSON "${geojsonPath}" "${vectorPath}" ` +
+        `-s_srs "${srsWkt}" -t_srs EPSG:4326`,
+    );
+
+    const raw = deps.readJSON(geojsonPath) as RawPolygonizedFeatureCollection;
+    return toAnimationFeatureCollection(raw, params.simStart);
+  } finally {
+    deps.rmrf(tmpDir);
+  }
+}
+
 export function toAnimationFeatureCollection(
   raw: RawPolygonizedFeatureCollection,
   simStart: Date,
@@ -79,6 +155,34 @@ export function toAnimationFeatureCollection(
 }
 
 export const DEFAULT_FRAME_CAP = 168;
+
+/**
+ * Returns the day-of-year (Jan 1 = 1.0) for the given Date, including
+ * fractional hours. This matches the convention FireSTARR uses in the
+ * arrival-time raster (e.g., `170.464` = day 170 at ~11am UTC).
+ */
+export function julianDayFromDate(date: Date): number {
+  const year = date.getUTCFullYear();
+  const yearStartMs = Date.UTC(year, 0, 1, 0, 0, 0, 0);
+  return 1 + (date.getTime() - yearStartMs) / 86_400_000;
+}
+
+/**
+ * Builds the gdal_calc expression that reclassifies an arrival-time raster
+ * (band A, decimal Julian days) into a per-pixel frame index (1..capFrames)
+ * used by the animation. Cells that never burned (A=0), burned before the
+ * sim start, or burned past the cap emit 0 so gdal_polygonize can drop them.
+ */
+export function buildReclassifyExpression(
+  simStartJulian: number,
+  capFrames: number,
+): string {
+  return (
+    `((A>0)*(ceil((A-${simStartJulian})*24)>=1)` +
+    `*(ceil((A-${simStartJulian})*24)<=${capFrames})` +
+    `*ceil((A-${simStartJulian})*24)).astype(int)`
+  );
+}
 
 export interface SimTimeRange {
   simStart: Date;
