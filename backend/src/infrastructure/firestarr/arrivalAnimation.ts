@@ -79,6 +79,13 @@ export interface AnimationExtractorDeps {
   rmrf: (path: string) => void;
   /** Returns the spatial reference WKT for a raster. */
   getSrsWkt: (rasterPath: string) => string;
+  /**
+   * Returns the minimum arrival value in the raster's band 1 (decimal Julian
+   * day). This is the actual ignition time — FireSTARR writes arrival values
+   * from the moment cells first catch fire, which may be earlier than the
+   * user-configured timeRange.start in output-config.json.
+   */
+  getRasterMinValue: (rasterPath: string) => number;
 }
 
 export interface ExtractArrivalAnimationParams {
@@ -113,7 +120,15 @@ export async function extractArrivalAnimation(
     const vectorPath = `${tmpDir}/frames.gpkg`;
     const geojsonPath = `${tmpDir}/frames.geojson`;
 
-    const simStartJulian = julianDayFromDate(params.simStart);
+    // Anchor the reclassify to the raster's actual ignition time — the min
+    // arrival value — not to params.simStart. FireSTARR's arrival grid begins
+    // when cells first catch fire, which can be hours earlier than the
+    // user-configured timeRange.start. Using the config value caused the
+    // first animation frames to land several km from ignition (refs #236).
+    const rasterMin = deps.getRasterMinValue(params.arrivalPath);
+    // Shift the anchor down by one hour so the earliest cell (A = rasterMin)
+    // cleanly falls into frame 1 instead of getting ceil(0) = 0 and dropping.
+    const simStartJulian = rasterMin - 1 / 24;
     const expression = buildReclassifyExpression(simStartJulian, capFrames);
 
     deps.exec(
@@ -132,7 +147,11 @@ export async function extractArrivalAnimation(
     );
 
     const raw = deps.readJSON(geojsonPath) as RawPolygonizedFeatureCollection;
-    return toAnimationFeatureCollection(raw, params.simStart);
+    // isoTime labels also anchor to the raster's ignition time, using the
+    // year from params.simStart to situate the decimal Julian day in calendar
+    // time.
+    const anchor = julianToDate(simStartJulian, params.simStart.getUTCFullYear());
+    return toAnimationFeatureCollection(raw, anchor);
   } finally {
     deps.rmrf(tmpDir);
   }
@@ -164,6 +183,21 @@ export function defaultAnimationExtractorDeps(): AnimationExtractorDeps {
         .toString()
         .split(/\r?\n/)[0]
         .trim(),
+    getRasterMinValue: (rasterPath) => {
+      const out = execSync(`gdalinfo -stats "${rasterPath}"`, {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      }).toString();
+      const match = out.match(/STATISTICS_MINIMUM=([-\d.eE+]+)/);
+      if (!match) {
+        throw new Error(`Could not parse STATISTICS_MINIMUM from gdalinfo output for ${rasterPath}`);
+      }
+      const value = parseFloat(match[1]);
+      if (!Number.isFinite(value)) {
+        throw new Error(`gdalinfo returned a non-finite minimum for ${rasterPath}: ${match[1]}`);
+      }
+      return value;
+    },
   };
 }
 
@@ -199,6 +233,15 @@ export function julianDayFromDate(date: Date): number {
   const year = date.getUTCFullYear();
   const yearStartMs = Date.UTC(year, 0, 1, 0, 0, 0, 0);
   return 1 + (date.getTime() - yearStartMs) / 86_400_000;
+}
+
+/**
+ * Inverse of julianDayFromDate — converts a decimal day-of-year (1.0 = Jan 1
+ * 00:00) in the given calendar year back into a UTC Date.
+ */
+export function julianToDate(julianDay: number, year: number): Date {
+  const yearStartMs = Date.UTC(year, 0, 1, 0, 0, 0, 0);
+  return new Date(yearStartMs + (julianDay - 1) * 86_400_000);
 }
 
 /**

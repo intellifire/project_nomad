@@ -13,6 +13,7 @@ import {
   extractArrivalAnimation,
   extractSimTimeRange,
   julianDayFromDate,
+  julianToDate,
   toAnimationFeatureCollection,
 } from '../arrivalAnimation.js';
 
@@ -137,6 +138,22 @@ describe('julianDayFromDate', () => {
   });
 });
 
+describe('julianToDate', () => {
+  it('is the inverse of julianDayFromDate', () => {
+    const d = new Date('2023-06-19T11:08:30.000Z');
+    const j = julianDayFromDate(d);
+    expect(julianToDate(j, 2023).toISOString()).toBe('2023-06-19T11:08:30.000Z');
+  });
+
+  it('returns Jan 1 00:00 UTC for julianDay 1.0', () => {
+    expect(julianToDate(1, 2023).toISOString()).toBe('2023-01-01T00:00:00.000Z');
+  });
+
+  it('returns mid-day noon for a .5 fraction', () => {
+    expect(julianToDate(170.5, 2023).toISOString()).toBe('2023-06-19T12:00:00.000Z');
+  });
+});
+
 describe('buildReclassifyExpression', () => {
   it('emits a gdal_calc expression referencing simStartJulian and the frame cap', () => {
     const expr = buildReclassifyExpression(108.0, 168);
@@ -175,6 +192,9 @@ describe('extractArrivalAnimation (orchestrator)', () => {
         rmrfCalls.push(path);
       },
       getSrsWkt: () => 'PROJCS["NAD83/CanadaAtlas",...]',
+      // Default stub: raster's earliest arrival is Jun 19 2026 at 11:08Z
+      // (julianDay ~170.464). Tests can override via deps.getRasterMinValue =.
+      getRasterMinValue: () => 170.46420288086,
     };
     return { deps, execCalls, rmrfCalls };
   }
@@ -215,6 +235,46 @@ describe('extractArrivalAnimation (orchestrator)', () => {
 
     expect(rmrfCalls).toHaveLength(1);
     expect(rmrfCalls[0]).toContain('nomad-anim-');
+  });
+
+  it('anchors isoTime labels to the raster ignition time (min arrival), not params.simStart', async () => {
+    const { deps } = stubDeps();
+    deps.getRasterMinValue = () => 170.5; // Jun 19 12:00 UTC of year 2026
+
+    const result = await extractArrivalAnimation(
+      {
+        // simStart only contributes the calendar year; the reclassify and
+        // isoTime anchor both come from the raster min.
+        arrivalPath: '/sims/m1/arrival.tif',
+        simStart: new Date('2026-06-19T19:00:00Z'),
+        durationHours: 72,
+      },
+      deps,
+    );
+
+    // Anchor = julianToDate(170.5 - 1/24, 2026) = Jun 19 11:00Z. Feature DN=3
+    // then has isoTime = anchor + 3h = Jun 19 14:00Z.
+    expect(result.features[0].properties.isoTime).toBe('2026-06-19T14:00:00.000Z');
+  });
+
+  it('passes the raster-min-derived anchor into the gdal_calc expression', async () => {
+    const { deps, execCalls } = stubDeps();
+    deps.getRasterMinValue = () => 170.46420288086;
+
+    await extractArrivalAnimation(
+      {
+        arrivalPath: '/sims/m1/arrival.tif',
+        simStart: new Date('2026-06-19T19:00:00Z'),
+        durationHours: 72,
+      },
+      deps,
+    );
+
+    // Expression should reference (rasterMin - 1/24) ≈ 170.4225..., NOT the
+    // params.simStart julian day (170.79..).
+    const calcCall = execCalls[0];
+    expect(calcCall).toContain('170.42');
+    expect(calcCall).not.toContain('170.79');
   });
 
   it('cleans up the temp directory even when a command fails', async () => {
