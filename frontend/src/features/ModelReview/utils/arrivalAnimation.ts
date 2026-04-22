@@ -65,3 +65,25 @@ export function getFrameIsoTime(
   }
   return bestIso;
 }
+
+/**
+ * Formats a UTC ISO-8601 timestamp as a human-readable local time string.
+ * When `timezone` is provided (e.g. the model's configured
+ * `data.temporal.timezone`), the result is rendered in that zone; otherwise
+ * the browser's local timezone is used. Zulu/UTC is never surfaced
+ * directly — fire analysts work in local time (refs #236).
+ */
+export function formatLocalTime(isoTime: string, timezone?: string): string {
+  const date = new Date(isoTime);
+  if (Number.isNaN(date.getTime())) return isoTime;
+  return date.toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZoneName: 'short',
+    ...(timezone ? { timeZone: timezone } : {}),
+  });
+}

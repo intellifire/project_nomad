@@ -8,6 +8,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   computeAnimationBounds,
+  formatLocalTime,
   getFrameIsoTime,
 } from '../arrivalAnimation.js';
 import type { ArrivalPerimeterFeatureCollection } from '../arrivalAnimation.js';
@@ -56,5 +57,31 @@ describe('getFrameIsoTime', () => {
   it('returns null when no frame ≤ requested offset exists', () => {
     const data = fc([5, 6, 7]);
     expect(getFrameIsoTime(data, 2)).toBeNull();
+  });
+});
+
+describe('formatLocalTime', () => {
+  it('does not surface a trailing Z / UTC marker', () => {
+    const formatted = formatLocalTime('2023-06-19T19:00:00.000Z', 'America/Edmonton');
+    expect(formatted).not.toMatch(/Z$/);
+    expect(formatted).not.toContain('UTC');
+  });
+
+  it('renders the MDT wall-clock time when timezone=America/Edmonton', () => {
+    // 19:00 UTC → 13:00 MDT
+    const formatted = formatLocalTime('2023-06-19T19:00:00.000Z', 'America/Edmonton');
+    expect(formatted).toContain('13:00');
+    expect(formatted).toMatch(/Jun/);
+    expect(formatted).toContain('2023');
+  });
+
+  it('falls back to the browser locale when no timezone is given', () => {
+    const formatted = formatLocalTime('2023-06-19T19:00:00.000Z');
+    expect(formatted.length).toBeGreaterThan(0);
+    expect(formatted).not.toMatch(/T\d\d:\d\d:\d\dZ?$/);
+  });
+
+  it('returns the raw input unchanged when the ISO string cannot be parsed', () => {
+    expect(formatLocalTime('not a date')).toBe('not a date');
   });
 });

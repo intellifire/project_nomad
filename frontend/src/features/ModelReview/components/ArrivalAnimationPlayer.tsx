@@ -10,6 +10,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   computeAnimationBounds,
+  formatLocalTime,
   getFrameIsoTime,
 } from '../utils/arrivalAnimation.js';
 import type { ArrivalPerimeterFeatureCollection } from '../utils/arrivalAnimation.js';
@@ -19,6 +20,11 @@ export interface ArrivalAnimationPlayerProps {
   onFrameChange: (offsetHours: number) => void;
   /** Milliseconds between auto-advance ticks when playing. Defaults to 200ms. */
   tickIntervalMs?: number;
+  /**
+   * IANA timezone to render the frame time in (e.g. 'America/Edmonton'). When
+   * omitted, the browser's local timezone is used. Never rendered as UTC/Z.
+   */
+  timezone?: string;
 }
 
 const containerStyle: React.CSSProperties = {
@@ -63,6 +69,7 @@ export function ArrivalAnimationPlayer({
   data,
   onFrameChange,
   tickIntervalMs = 200,
+  timezone,
 }: ArrivalAnimationPlayerProps) {
   const bounds = useMemo(() => computeAnimationBounds(data), [data]);
   const [current, setCurrent] = useState<number>(bounds?.minOffset ?? 0);
@@ -103,7 +110,8 @@ export function ArrivalAnimationPlayer({
     );
   }
 
-  const isoTime = getFrameIsoTime(data, current) ?? '—';
+  const isoTime = getFrameIsoTime(data, current);
+  const displayTime = isoTime ? formatLocalTime(isoTime, timezone) : '—';
 
   return (
     <div style={containerStyle}>
@@ -128,7 +136,7 @@ export function ArrivalAnimationPlayer({
         />
       </div>
       <div style={labelStyle}>
-        Hour {current} / {bounds.maxOffset} — {isoTime}
+        Hour {current} / {bounds.maxOffset} — {displayTime}
       </div>
     </div>
   );

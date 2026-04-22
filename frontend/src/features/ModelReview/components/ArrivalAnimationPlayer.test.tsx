@@ -56,11 +56,18 @@ describe('ArrivalAnimationPlayer', () => {
     expect(screen.getByRole('button', { name: /pause/i }).textContent).toMatch(/pause/i);
   });
 
-  it('displays a human-readable time label for the current frame', () => {
+  it('renders the current frame time in local form (no trailing Z / UTC)', () => {
     const data = buildFC([1, 2, 3]);
-    render(<ArrivalAnimationPlayer data={data} onFrameChange={() => {}} />);
+    render(
+      <ArrivalAnimationPlayer
+        data={data}
+        onFrameChange={() => {}}
+        timezone="America/Edmonton"
+      />,
+    );
 
-    // Default current frame = first available (offsetHours 1 = simStart + 1h = 21:00 UTC)
-    expect(screen.getByText(/2026-06-19T21:00/)).toBeDefined();
+    // 2026-06-19T21:00Z in MDT = 15:00 local.
+    expect(screen.getByText(/Hour 1 \/ 3 —.*15:00.*MDT/)).toBeDefined();
+    expect(screen.queryByText(/2026-06-19T21:00.*Z/)).toBeNull();
   });
 });
