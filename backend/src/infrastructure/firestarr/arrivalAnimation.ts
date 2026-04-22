@@ -79,13 +79,6 @@ export interface AnimationExtractorDeps {
   rmrf: (path: string) => void;
   /** Returns the spatial reference WKT for a raster. */
   getSrsWkt: (rasterPath: string) => string;
-  /**
-   * Returns the minimum arrival value in the raster's band 1 (decimal Julian
-   * day). This is the actual ignition time — FireSTARR writes arrival values
-   * from the moment cells first catch fire, which may be earlier than the
-   * user-configured timeRange.start in output-config.json.
-   */
-  getRasterMinValue: (rasterPath: string) => number;
 }
 
 export interface ExtractArrivalAnimationParams {
@@ -120,15 +113,12 @@ export async function extractArrivalAnimation(
     const vectorPath = `${tmpDir}/frames.gpkg`;
     const geojsonPath = `${tmpDir}/frames.geojson`;
 
-    // Anchor the reclassify to the raster's actual ignition time — the min
-    // arrival value — not to params.simStart. FireSTARR's arrival grid begins
-    // when cells first catch fire, which can be hours earlier than the
-    // user-configured timeRange.start. Using the config value caused the
-    // first animation frames to land several km from ignition (refs #236).
-    const rasterMin = deps.getRasterMinValue(params.arrivalPath);
-    // Shift the anchor down by one hour so the earliest cell (A = rasterMin)
-    // cleanly falls into frame 1 instead of getting ceil(0) = 0 and dropping.
-    const simStartJulian = rasterMin - 1 / 24;
+    // Anchor the reclassify to the user-configured sim start (from
+    // output-config.json's timeRange.start). FireSTARR may emit arrival
+    // values BEFORE this instant (pre-warmup), and the reclassify
+    // expression clips those to DN=1 so they become part of the
+    // animation's initial state rather than being dropped (refs #236).
+    const simStartJulian = julianDayFromDate(params.simStart);
     const expression = buildReclassifyExpression(simStartJulian, capFrames);
 
     deps.exec(
@@ -147,11 +137,7 @@ export async function extractArrivalAnimation(
     );
 
     const raw = deps.readJSON(geojsonPath) as RawPolygonizedFeatureCollection;
-    // isoTime labels also anchor to the raster's ignition time, using the
-    // year from params.simStart to situate the decimal Julian day in calendar
-    // time.
-    const anchor = julianToDate(simStartJulian, params.simStart.getUTCFullYear());
-    return toAnimationFeatureCollection(raw, anchor);
+    return toAnimationFeatureCollection(raw, params.simStart);
   } finally {
     deps.rmrf(tmpDir);
   }
@@ -183,21 +169,6 @@ export function defaultAnimationExtractorDeps(): AnimationExtractorDeps {
         .toString()
         .split(/\r?\n/)[0]
         .trim(),
-    getRasterMinValue: (rasterPath) => {
-      const out = execSync(`gdalinfo -stats "${rasterPath}"`, {
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'pipe'],
-      }).toString();
-      const match = out.match(/STATISTICS_MINIMUM=([-\d.eE+]+)/);
-      if (!match) {
-        throw new Error(`Could not parse STATISTICS_MINIMUM from gdalinfo output for ${rasterPath}`);
-      }
-      const value = parseFloat(match[1]);
-      if (!Number.isFinite(value)) {
-        throw new Error(`gdalinfo returned a non-finite minimum for ${rasterPath}: ${match[1]}`);
-      }
-      return value;
-    },
   };
 }
 
@@ -247,17 +218,25 @@ export function julianToDate(julianDay: number, year: number): Date {
 /**
  * Builds the gdal_calc expression that reclassifies an arrival-time raster
  * (band A, decimal Julian days) into a per-pixel frame index (1..capFrames)
- * used by the animation. Cells that never burned (A=0), burned before the
- * sim start, or burned past the cap emit 0 so gdal_polygonize can drop them.
+ * used by the animation.
+ *
+ *  - Unburned cells (A=0) emit 0 so gdal_polygonize drops them.
+ *  - Cells with arrival before simStart (FireSTARR's pre-warmup burn period,
+ *    typically several hours) are clipped to DN=1 and rendered as part of
+ *    the animation's initial state. Dropping them creates a visible gap
+ *    between the ignition polygon and the first animated ring (refs #236).
+ *  - Cells beyond the capFrames window emit 0.
  */
 export function buildReclassifyExpression(
   simStartJulian: number,
   capFrames: number,
 ): string {
+  const raw = `ceil((A-${simStartJulian})*24)`;
   return (
-    `((A>0)*(ceil((A-${simStartJulian})*24)>=1)` +
-    `*(ceil((A-${simStartJulian})*24)<=${capFrames})` +
-    `*ceil((A-${simStartJulian})*24)).astype(int)`
+    `((A>0)*` +
+    `(${raw}<=${capFrames})*` +
+    `maximum(1, ${raw}.astype(int))` +
+    `).astype(int)`
   );
 }
 

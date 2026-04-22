@@ -162,6 +162,14 @@ describe('buildReclassifyExpression', () => {
     expect(expr).toContain('24'); // hours per day
     expect(expr).toContain('A'); // input band
   });
+
+  it('clips pre-sim-start (pre-warmup) cells to DN=1 via numpy.maximum', () => {
+    // FireSTARR may emit arrival values earlier than timeRange.start during
+    // its warmup burn. Those cells must land in frame 1 (already-burning
+    // initial state), not be dropped as DN=0.
+    const expr = buildReclassifyExpression(170.7917, 168);
+    expect(expr).toContain('maximum(1,');
+  });
 });
 
 describe('extractArrivalAnimation (orchestrator)', () => {
@@ -192,9 +200,6 @@ describe('extractArrivalAnimation (orchestrator)', () => {
         rmrfCalls.push(path);
       },
       getSrsWkt: () => 'PROJCS["NAD83/CanadaAtlas",...]',
-      // Default stub: raster's earliest arrival is Jun 19 2026 at 11:08Z
-      // (julianDay ~170.464). Tests can override via deps.getRasterMinValue =.
-      getRasterMinValue: () => 170.46420288086,
     };
     return { deps, execCalls, rmrfCalls };
   }
@@ -237,14 +242,11 @@ describe('extractArrivalAnimation (orchestrator)', () => {
     expect(rmrfCalls[0]).toContain('nomad-anim-');
   });
 
-  it('anchors isoTime labels to the raster ignition time (min arrival), not params.simStart', async () => {
+  it('anchors isoTime labels to params.simStart (user-configured sim start)', async () => {
     const { deps } = stubDeps();
-    deps.getRasterMinValue = () => 170.5; // Jun 19 12:00 UTC of year 2026
 
     const result = await extractArrivalAnimation(
       {
-        // simStart only contributes the calendar year; the reclassify and
-        // isoTime anchor both come from the raster min.
         arrivalPath: '/sims/m1/arrival.tif',
         simStart: new Date('2026-06-19T19:00:00Z'),
         durationHours: 72,
@@ -252,29 +254,25 @@ describe('extractArrivalAnimation (orchestrator)', () => {
       deps,
     );
 
-    // Anchor = julianToDate(170.5 - 1/24, 2026) = Jun 19 11:00Z. Feature DN=3
-    // then has isoTime = anchor + 3h = Jun 19 14:00Z.
-    expect(result.features[0].properties.isoTime).toBe('2026-06-19T14:00:00.000Z');
+    // Feature with DN=3 → isoTime = simStart + 3h = 2026-06-19T22:00Z.
+    expect(result.features[0].properties.isoTime).toBe('2026-06-19T22:00:00.000Z');
   });
 
-  it('passes the raster-min-derived anchor into the gdal_calc expression', async () => {
+  it('passes the params.simStart julian day into the gdal_calc expression', async () => {
     const { deps, execCalls } = stubDeps();
-    deps.getRasterMinValue = () => 170.46420288086;
 
     await extractArrivalAnimation(
       {
         arrivalPath: '/sims/m1/arrival.tif',
-        simStart: new Date('2026-06-19T19:00:00Z'),
+        simStart: new Date('2023-06-19T19:00:00Z'),
         durationHours: 72,
       },
       deps,
     );
 
-    // Expression should reference (rasterMin - 1/24) ≈ 170.4225..., NOT the
-    // params.simStart julian day (170.79..).
+    // julianDayFromDate(2023-06-19T19:00Z) = 170.7917
     const calcCall = execCalls[0];
-    expect(calcCall).toContain('170.42');
-    expect(calcCall).not.toContain('170.79');
+    expect(calcCall).toContain('170.79');
   });
 
   it('cleans up the temp directory even when a command fails', async () => {
