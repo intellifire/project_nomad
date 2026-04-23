@@ -112,6 +112,22 @@ export function ArrivalAnimationPlayer({
 
   const isoTime = getFrameIsoTime(data, current);
   const displayTime = isoTime ? formatLocalTime(isoTime, timezone) : '—';
+  const atEnd = !playing && current >= bounds.maxOffset;
+  const buttonLabel = playing ? 'Pause' : atEnd ? 'Replay' : 'Play';
+  const buttonAriaLabel = playing
+    ? 'Pause animation'
+    : atEnd
+      ? 'Replay animation'
+      : 'Play animation';
+
+  const handlePlayPause = () => {
+    if (atEnd) {
+      setCurrent(bounds.minOffset);
+      setPlaying(true);
+      return;
+    }
+    setPlaying((p) => !p);
+  };
 
   return (
     <div style={containerStyle}>
@@ -119,10 +135,10 @@ export function ArrivalAnimationPlayer({
         <button
           type="button"
           style={playButtonStyle}
-          aria-label={playing ? 'Pause animation' : 'Play animation'}
-          onClick={() => setPlaying((p) => !p)}
+          aria-label={buttonAriaLabel}
+          onClick={handlePlayPause}
         >
-          {playing ? 'Pause' : 'Play'}
+          {buttonLabel}
         </button>
         <input
           type="range"

@@ -56,6 +56,33 @@ describe('ArrivalAnimationPlayer', () => {
     expect(screen.getByRole('button', { name: /pause/i }).textContent).toMatch(/pause/i);
   });
 
+  it('shows "Replay" once the animation is at the last frame', () => {
+    const data = buildFC([1, 2, 3]);
+    render(<ArrivalAnimationPlayer data={data} onFrameChange={() => {}} />);
+
+    const slider = screen.getByRole('slider', { name: /animation frame/i }) as HTMLInputElement;
+    fireEvent.change(slider, { target: { value: '3' } });
+
+    expect(screen.getByRole('button', { name: /replay/i })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^play animation$/i })).toBeNull();
+  });
+
+  it('rewinds to the first frame and starts playing when Replay is clicked', async () => {
+    const data = buildFC([1, 2, 3]);
+    const onFrameChange = vi.fn();
+    render(<ArrivalAnimationPlayer data={data} onFrameChange={onFrameChange} />);
+
+    const slider = screen.getByRole('slider', { name: /animation frame/i }) as HTMLInputElement;
+    fireEvent.change(slider, { target: { value: '3' } });
+    onFrameChange.mockClear();
+
+    await userEvent.click(screen.getByRole('button', { name: /replay/i }));
+
+    expect(onFrameChange).toHaveBeenCalledWith(1);
+    // Once rewound, button should be Pause (we started playing).
+    expect(screen.getByRole('button', { name: /pause/i })).toBeDefined();
+  });
+
   it('renders the current frame time in local form (no trailing Z / UTC)', () => {
     const data = buildFC([1, 2, 3]);
     render(
