@@ -221,11 +221,13 @@ export function julianToDate(julianDay: number, year: number): Date {
  * used by the animation.
  *
  *  - Unburned cells (A=0) emit 0 so gdal_polygonize drops them.
- *  - Cells with arrival before simStart (FireSTARR's pre-warmup burn period,
- *    typically several hours) are clipped to DN=1 and rendered as part of
- *    the animation's initial state. Dropping them creates a visible gap
- *    between the ignition polygon and the first animated ring (refs #236).
+ *  - Cells with arrival AT or before simStart (A <= simStart, including
+ *    ignition-polygon cells whose arrival equals simStart) emit 0 — those
+ *    cells are "already burning" and belong to the ignition layer, not the
+ *    animation. The frontend can show the user's ignition polygon
+ *    separately (refs #236).
  *  - Cells beyond the capFrames window emit 0.
+ *  - Everything in (simStart, simStart + capFrames*h] gets a 1-based DN.
  */
 export function buildReclassifyExpression(
   simStartJulian: number,
@@ -233,10 +235,7 @@ export function buildReclassifyExpression(
 ): string {
   const raw = `ceil((A-${simStartJulian})*24)`;
   return (
-    `((A>0)*` +
-    `(${raw}<=${capFrames})*` +
-    `maximum(1, ${raw}.astype(int))` +
-    `).astype(int)`
+    `((A>0)*(${raw}>=1)*(${raw}<=${capFrames})*${raw}).astype(int)`
   );
 }
 

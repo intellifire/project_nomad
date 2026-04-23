@@ -163,12 +163,13 @@ describe('buildReclassifyExpression', () => {
     expect(expr).toContain('A'); // input band
   });
 
-  it('clips pre-sim-start (pre-warmup) cells to DN=1 via numpy.maximum', () => {
-    // FireSTARR may emit arrival values earlier than timeRange.start during
-    // its warmup burn. Those cells must land in frame 1 (already-burning
-    // initial state), not be dropped as DN=0.
+  it('drops cells at or before simStart (they belong to the ignition layer, not the animation)', () => {
+    // The formula requires ceil((A-S)*24) >= 1, so a cell with A = simStart
+    // (ignition-polygon cell already burning at the sim start) produces
+    // DN=0 and is excluded by gdal_polygonize.
     const expr = buildReclassifyExpression(170.7917, 168);
-    expect(expr).toContain('maximum(1,');
+    expect(expr).toContain('>=1');
+    expect(expr).not.toContain('maximum(');
   });
 });
 
