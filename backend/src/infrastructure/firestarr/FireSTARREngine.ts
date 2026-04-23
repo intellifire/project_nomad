@@ -695,15 +695,9 @@ export class FireSTARREngine implements IFireModelingEngine {
       logger.debug(`Using corrected centroid: lat=${latitude.toFixed(6)}, lon=${longitude.toFixed(6)} (original: lat=${params.latitude.toFixed(6)}, lon=${params.longitude.toFixed(6)})`, 'FireSTARR');
     }
 
-    // Hand FireSTARR everything in UTC. The old longitude-based solar
-    // timezone approximation (round(longitude/15)) was wrong for two
-    // reasons: (1) it doesn't track real timezones (Hay River is MDT =
-    // UTC-6 in summer, not UTC-8 at longitude -115°), and (2) the
-    // date/time we pass alongside --tz comes from UTC-read getters,
-    // which already encodes the moment in UTC. Mixing a UTC time with a
-    // solar-TZ label caused arrival-raster values to drift by several
-    // hours (refs #236 debugging, 2026-04-23).
-    const utcOffset = 0;
+    // Calculate UTC offset from longitude (natural solar timezone)
+    // Each 15° of longitude = 1 hour offset from UTC
+    const utcOffset = Math.round(longitude / 15);
 
     const args: string[] = [
       binaryPath,
@@ -761,10 +755,9 @@ export class FireSTARREngine implements IFireModelingEngine {
    * Formats a date as yyyy-mm-dd.
    */
   private formatDate(date: Date): string {
-    // UTC readers so behaviour is identical regardless of server TZ.
-    const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
 
@@ -772,9 +765,8 @@ export class FireSTARREngine implements IFireModelingEngine {
    * Formats a date's time as HH:MM.
    */
   private formatTime(date: Date): string {
-    // UTC readers so the time we hand FireSTARR matches the --tz 0 we pass.
-    const hours = String(date.getUTCHours()).padStart(2, '0');
-    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
     return `${hours}:${minutes}`;
   }
 }
