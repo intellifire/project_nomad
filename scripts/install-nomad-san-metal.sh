@@ -359,8 +359,13 @@ build_nomad() {
     print_step "Installing Node.js dependencies..."
     cd "$INSTALL_DIR"
 
-    # Install with dev dependencies
-    env NODE_ENV=development npm install --include=dev
+    # Install with dev dependencies in BOTH root and workspaces. TypeScript
+    # and friends live in backend/ and frontend/ package.json — without
+    # --workspaces the build fails with "tsc: command not found".
+    env NODE_ENV=development npm install \
+        --include=dev \
+        --workspaces \
+        --include-workspace-root
 
     print_step "Rebuilding native modules..."
     npm rebuild
