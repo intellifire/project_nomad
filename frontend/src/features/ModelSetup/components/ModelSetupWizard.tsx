@@ -25,7 +25,26 @@ import { TemporalStep } from '../steps/TemporalStep';
 import { ModelSelectionStep } from '../steps/ModelSelectionStep';
 import { WeatherStep } from '../steps/WeatherStep';
 import { ReviewStep } from '../steps/ReviewStep';
-import type { ModelSetupData } from '../types';
+import type { ModelSetupData, ModelSetupStepId } from '../types';
+import { MODEL_SETUP_STEPS } from '../types';
+
+const STEP_COMPONENTS_BY_ID: Record<ModelSetupStepId, React.ComponentType> = {
+  spatial: SpatialInputStep,
+  weather: WeatherStep,
+  temporal: TemporalStep,
+  model: ModelSelectionStep,
+  review: ReviewStep,
+};
+
+/**
+ * Returns the step component for a given wizard step index, derived from
+ * MODEL_SETUP_STEPS order. Returns null if the index is out of range.
+ */
+export function getStepComponent(index: number): React.ComponentType | null {
+  const step = MODEL_SETUP_STEPS[index];
+  if (!step) return null;
+  return STEP_COMPONENTS_BY_ID[step.id] ?? null;
+}
 
 export interface ModelSetupWizardProps {
   /** Called when model setup completes */
@@ -182,21 +201,8 @@ function getStyles(isMobile: boolean, isTablet: boolean) {
  */
 function StepRouter() {
   const { currentStepIndex } = useWizard<ModelSetupData>();
-
-  switch (currentStepIndex) {
-    case 0:
-      return <SpatialInputStep />;
-    case 1:
-      return <TemporalStep />;
-    case 2:
-      return <ModelSelectionStep />;
-    case 3:
-      return <WeatherStep />;
-    case 4:
-      return <ReviewStep />;
-    default:
-      return null;
-  }
+  const Component = getStepComponent(currentStepIndex);
+  return Component ? <Component /> : null;
 }
 
 /**

@@ -12,6 +12,7 @@
 
 import React, { useCallback, useRef, useState } from 'react';
 import type { ParsedWeatherCSV } from '../types';
+import { buildParsedWeatherCSV } from '../utils/weatherValidation.js';
 
 export interface FirestarrCsvUploadProps {
   /** Called when a valid file is uploaded */
@@ -126,7 +127,6 @@ const warningStyle: React.CSSProperties = {
 
 // Required columns for FireSTARR weather file
 const REQUIRED_COLUMNS = ['Date', 'PREC', 'TEMP', 'RH', 'WS', 'WD', 'FFMC', 'DMC', 'DC', 'ISI', 'BUI', 'FWI'];
-const FWI_COLUMNS = ['FFMC', 'DMC', 'DC', 'ISI', 'BUI', 'FWI'];
 
 /**
  * Parse a CSV file and extract header and data
@@ -187,18 +187,7 @@ export function FirestarrCsvUpload({ onUpload, fileName, parsed, error }: Firest
           return;
         }
 
-        // Check for FWI columns
-        const headerSet = new Set(headers.map((h) => h.toUpperCase()));
-        const hasFWI = FWI_COLUMNS.every((col) => headerSet.has(col.toUpperCase()));
-        const hasScenario = headerSet.has('SCENARIO');
-
-        const parsedData: ParsedWeatherCSV = {
-          headers,
-          rowCount: rows.length,
-          previewRows: rows.slice(0, 5),
-          hasScenarioColumn: hasScenario,
-          hasFWIColumns: hasFWI,
-        };
+        const parsedData = buildParsedWeatherCSV(headers, rows);
 
         onUpload(file, parsedData);
       };

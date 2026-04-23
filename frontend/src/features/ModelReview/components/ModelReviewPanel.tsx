@@ -9,6 +9,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Rnd } from 'react-rnd';
 import { ResultsSummary } from './ResultsSummary';
 import { OutputList, type BreaksMode } from './OutputList';
+import { ArrivalAnimationManager } from './ArrivalAnimationManager';
 import { useModelResults } from '../hooks/useModelResults';
 import { ExportPanel } from '../../Export';
 import { useOpenNomad } from '../../../openNomad/context';
@@ -292,6 +293,9 @@ export function ModelReviewPanel({
           onAddRasterToMap={onAddRasterToMap ? handleAddRasterToMap : undefined}
           onExport={handleExport}
         />
+        {results.outputConfig?.outputMode === 'deterministic' && (
+          <ArrivalAnimationManager modelId={results.modelId} />
+        )}
       </div>
     );
   };
