@@ -1,0 +1,48 @@
+# Intellifire production-style compose for project_nomad.
+#
+# Pulls a pre-built image from ghcr.io/intellifire/project_nomad rather
+# than building from source. Used by the Ansible deploy-nomad role on
+# staging / UAT / prod hosts.
+#
+# Local dev (with hot-reload) should still use the upstream
+# docker-compose.yaml + docker-compose.dev.yaml combination.
+
+services:
+  nomad:
+    container_name: nomad
+    image: ghcr.io/intellifire/project_nomad:${NOMAD_IMAGE_TAG}
+    ports:
+      - "${NOMAD_FRONTEND_HOST_PORT}:3001"
+    volumes:
+      # Docker socket — backend spawns ephemeral firestarr-app containers
+      # per simulation. See README "Security Considerations".
+      - /var/run/docker.sock:/var/run/docker.sock
+      # FireSTARR dataset (fuel grids, DEM, sims working dir)
+      - ${FIRESTARR_DATASET_PATH}:/appl/data
+      # Compose file mounted in so backend's DockerExecutor can spawn
+      # firestarr-app via `docker compose run`. Must match this file.
+      - ./docker-compose.intellifire.yaml:/app/docker-compose.yaml:ro
+      - ./.env:/app/.env:ro
+      - ./.env:/app/host.env:ro
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      # Containers see the dataset at /appl/data, not the host path
+      - FIRESTARR_DATASET_PATH=/appl/data
+      - NOMAD_DATA_PATH=/appl/data
+      - NOMAD_AUTH_MODE=${NOMAD_AUTH_MODE:-simple}
+      - VITE_AUTH_MODE=${VITE_AUTH_MODE:-simple}
+    env_file:
+      - .env
+    restart: unless-stopped
+
+  # FireSTARR engine — NOT auto-started. The Nomad backend spawns this
+  # ephemerally via `docker compose run firestarr-app <command>` per job.
+  firestarr-app:
+    image: ${FIRESTARR_IMAGE:?FIRESTARR_IMAGE must be set in .env}
+    profiles: ["modeling"]
+    entrypoint: ["/bin/sh", "-c", "sed -i 's|RASTER_ROOT.*|RASTER_ROOT = /appl/data/generated/grid/100m|' /appl/firestarr/settings.ini && exec \"$$@\"", "--"]
+    volumes:
+      - /etc/ssl/certs:/etc/ssl/certs
+      - ${FIRESTARR_DATASET_PATH}:/appl/data
+      - ${FIRESTARR_DATASET_PATH}/sims:/appl/data/sims
