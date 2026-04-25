@@ -1,12 +1,12 @@
 name: Build and Push Nomad Image
 
-# Triggers on Intellifire-specific tags. Tag scheme: vX.Y.Z-if.N where
-# X.Y.Z mirrors upstream and N is our internal build counter on the
-# intellifire branch (e.g., v0.5.0-if.1).
+# Triggers on Intellifire-specific tags. Tag scheme: vX.Y.Z.N where
+# X.Y.Z mirrors the upstream Nomad release and N is our internal build
+# counter on the intellifire branch (e.g., v0.5.0.1, v0.5.0.2).
 on:
   push:
     tags:
-      - 'v*.*.*-if.*'
+      - 'v*.*.*.*'
   workflow_dispatch:
 
 env:
@@ -39,8 +39,11 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.IMAGE_NAME }}
+          # Tag scheme is vX.Y.Z.N (4 segments) — standard semver parsing
+          # rejects this. Use the git tag verbatim (minus the v prefix) plus
+          # latest.
           tags: |
-            type=semver,pattern={{version}}
+            type=match,pattern=v(.*),group=1
             type=raw,value=latest
 
       # Vite frontend bake-in args. Mapbox token is technically public (it ends
