@@ -47,21 +47,21 @@ jobs:
       # up in the JS bundle anyway) but managed via Actions secrets for change
       # control. NOMAD_AUTH_MODE defaults to simple — Intellifire usage runs
       # behind the EM3 backend proxy.
+      # Backend-only image (Dockerfile.intellifire skips the Vite stage).
+      # EM3 vendors Nomad's frontend tgz so the backend never serves it.
+      # No VITE_* build args needed — backend/src/index.ts handles a missing
+      # frontend/dist gracefully via existsSync().
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: backend/Dockerfile
+          file: Dockerfile.intellifire
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
-          build-args: |
-            VITE_MAPBOX_TOKEN=${{ secrets.VITE_MAPBOX_TOKEN }}
-            VITE_API_BASE_URL=
-            VITE_AUTH_MODE=simple
 
       - name: Image digest
         run: echo "Image pushed with digest ${{ steps.meta.outputs.digest }}"
