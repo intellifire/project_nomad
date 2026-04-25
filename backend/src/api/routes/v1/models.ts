@@ -47,6 +47,8 @@ interface RunModelRequestBody {
     start: string;
     end: string;
   };
+  /** IANA timezone identifier (e.g. "America/Edmonton"). Required — no fallback. */
+  timezone: string;
   weather: WeatherConfig;
   scenarios?: number;
   outputMode?: 'probabilistic' | 'deterministic';
@@ -129,6 +131,11 @@ router.post(
         { field: 'weather', message: 'Must provide weather source' },
       ]);
     }
+    if (typeof body.timezone !== 'string' || body.timezone.length === 0) {
+      throw new ValidationError('Timezone required', [
+        { field: 'timezone', message: 'Must provide IANA timezone identifier (e.g. "America/Edmonton") — no runtime fallback' },
+      ]);
+    }
 
     // Validate and resolve modelMode (default: probabilistic)
     const modelMode: ModelMode = body.modelMode ?? 'probabilistic';
@@ -197,6 +204,7 @@ router.post(
     const executionOptions: ExecutionOptions = {
       ignitionGeometry,
       timeRange,
+      timezone: body.timezone,
       weatherConfig: body.weather,
       simulationCount: body.scenarios ?? 100,
       outputMode: derivedOutputMode,
@@ -420,6 +428,8 @@ interface ExecuteRequestBody {
     start: string;
     end: string;
   };
+  /** IANA timezone identifier (e.g. "America/Edmonton"). Required — no fallback. */
+  timezone: string;
   weather: WeatherConfig;
   scenarios?: number;
   outputMode?: 'probabilistic' | 'deterministic';
@@ -565,6 +575,11 @@ router.post(
         { field: 'weather', message: 'Must provide weather source (manual or spotwx)' },
       ]);
     }
+    if (typeof body.timezone !== 'string' || body.timezone.length === 0) {
+      throw new ValidationError('Timezone required', [
+        { field: 'timezone', message: 'Must provide IANA timezone identifier (e.g. "America/Edmonton") — no runtime fallback' },
+      ]);
+    }
 
     // Create ignition geometry
     const geometryType = body.ignition.type === 'point'
@@ -589,6 +604,7 @@ router.post(
     const executionOptions: ExecutionOptions = {
       ignitionGeometry,
       timeRange,
+      timezone: body.timezone,
       weatherConfig: body.weather,
       simulationCount: body.scenarios ?? 100,
       outputMode: body.outputMode === 'deterministic' ? 'deterministic' : 'probabilistic',

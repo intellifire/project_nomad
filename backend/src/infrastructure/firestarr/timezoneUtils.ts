@@ -21,6 +21,12 @@ const NUMERIC_PARTS = {
 } as const;
 
 function partsIn(date: Date, timezone: string): Record<string, string> {
+  if (typeof timezone !== 'string' || timezone.length === 0) {
+    throw new Error(
+      `IANA timezone is required (got ${JSON.stringify(timezone)}). ` +
+      'No silent fallback to runtime zone — caller must supply data.temporal.timezone.',
+    );
+  }
   let formatter: Intl.DateTimeFormat;
   try {
     formatter = new Intl.DateTimeFormat('en-US', {

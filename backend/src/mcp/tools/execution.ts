@@ -58,6 +58,7 @@ export function registerExecutionTools(server: McpServer): void {
       if (!config?.ignition) missing.push('ignition');
       if (!config?.weather) missing.push('weather');
       if (!config?.timeRange) missing.push('simulation-time');
+      if (!config?.timezone) missing.push('timezone');
 
       if (missing.length > 0) {
         return modelNotReady(modelId, missing);
@@ -93,10 +94,12 @@ export function registerExecutionTools(server: McpServer): void {
       }
 
       const weatherConfig = config!.weather as WeatherConfig;
+      const timezone = config!.timezone as string;
 
       const executionOptions = {
         ignitionGeometry,
         timeRange,
+        timezone,
         weatherConfig,
       };
 

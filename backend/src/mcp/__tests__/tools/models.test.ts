@@ -383,6 +383,7 @@ describe('MCP Model Tools', () => {
           modelId,
           startTime: '2026-06-15T14:00:00Z',
           endTime: '2026-06-15T20:00:00Z',
+          timezone: 'America/Edmonton',
         },
       });
 
@@ -390,9 +391,11 @@ describe('MCP Model Tools', () => {
       const data = JSON.parse((result.content as Array<{ text: string }>)[0].text);
       expect(data.timeRange.start).toBe('2026-06-15T14:00:00Z');
       expect(data.timeRange.end).toBe('2026-06-15T20:00:00Z');
+      expect(data.timezone).toBe('America/Edmonton');
 
       const config = mockConfigs.get(modelId);
       expect(config?.timeRange).toEqual({ start: '2026-06-15T14:00:00Z', end: '2026-06-15T20:00:00Z' });
+      expect(config?.timezone).toBe('America/Edmonton');
     });
 
     it('rejects invalid startTime', async () => {
@@ -408,6 +411,7 @@ describe('MCP Model Tools', () => {
           modelId,
           startTime: 'not-a-date',
           endTime: '2026-06-15T20:00:00Z',
+          timezone: 'America/Edmonton',
         },
       });
 
@@ -430,6 +434,7 @@ describe('MCP Model Tools', () => {
           modelId,
           startTime: '2026-06-15T20:00:00Z',
           endTime: '2026-06-15T14:00:00Z', // before start
+          timezone: 'America/Edmonton',
         },
       });
 
