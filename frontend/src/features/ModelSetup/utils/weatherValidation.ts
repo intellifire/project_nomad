@@ -167,3 +167,62 @@ export function validateDatetimes(
 
   return { valid: true, hasHourColumn };
 }
+
+import type { ParsedWeatherCSV } from '../types';
+
+/**
+ * Constructs a ParsedWeatherCSV summary from parsed headers and rows.
+ * Single source of truth used by all weather upload components so every
+ * produced ParsedWeatherCSV carries the same fields (including dateRange).
+ */
+export function buildParsedWeatherCSV(
+  headers: string[],
+  rows: string[][],
+): ParsedWeatherCSV {
+  const headerSet = new Set(headers.map((h) => h.toUpperCase()));
+  const hasFWIColumns = FWI_COLUMNS.every((col) => headerSet.has(col.toUpperCase()));
+  const hasScenarioColumn = headerSet.has('SCENARIO');
+  const dateRange = extractDateRange(headers, rows);
+
+  return {
+    headers,
+    rowCount: rows.length,
+    previewRows: rows.slice(0, 5),
+    hasScenarioColumn,
+    hasFWIColumns,
+    ...(dateRange ? { dateRange } : {}),
+  };
+}
+
+/**
+ * Extracts the min and max calendar date (YYYY-MM-DD) present in the Date
+ * column of a parsed weather CSV. Accepts both bare dates ("2025-07-15") and
+ * timestamps ("2025-07-15 13:00:00"), taking only the date prefix. Returns
+ * undefined when no Date column is present or no valid dates are found.
+ */
+export function extractDateRange(
+  headers: string[],
+  rows: string[][],
+): { minDate: string; maxDate: string } | undefined {
+  const dateIndex = headers.findIndex((h) => h.trim().toLowerCase() === 'date');
+  if (dateIndex === -1) return undefined;
+
+  const dateRegex = /^\d{4}-\d{2}-\d{2}/;
+  const dates: string[] = [];
+  for (const row of rows) {
+    const cell = row[dateIndex]?.trim();
+    if (!cell) continue;
+    const match = dateRegex.exec(cell);
+    if (match) dates.push(match[0]);
+  }
+
+  if (dates.length === 0) return undefined;
+
+  let minDate = dates[0];
+  let maxDate = dates[0];
+  for (const d of dates) {
+    if (d < minDate) minDate = d;
+    if (d > maxDate) maxDate = d;
+  }
+  return { minDate, maxDate };
+}

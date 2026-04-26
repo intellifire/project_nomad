@@ -255,9 +255,11 @@ export function registerModelTools(server: McpServer): void {
           .describe('Simulation start time (ISO 8601, e.g., "2026-06-15T14:00:00Z")'),
         endTime: z.string()
           .describe('Simulation end time (ISO 8601, e.g., "2026-06-15T20:00:00Z")'),
+        timezone: z.string().min(1)
+          .describe('IANA timezone identifier for the ignition location (e.g. "America/Edmonton"). Required — no fallback.'),
       },
     },
-    async ({ modelId, startTime, endTime }): Promise<CallToolResult> => {
+    async ({ modelId, startTime, endTime, timezone }): Promise<CallToolResult> => {
       const repo = getModelRepository();
       const model = await repo.findById(createFireModelId(modelId));
       if (!model) return modelNotFound(modelId);
@@ -284,6 +286,7 @@ export function registerModelTools(server: McpServer): void {
       await repo.saveConfigJson(createFireModelId(modelId), {
         ...existingConfig,
         timeRange,
+        timezone,
       });
 
       return {
@@ -292,7 +295,8 @@ export function registerModelTools(server: McpServer): void {
           text: JSON.stringify({
             modelId,
             timeRange,
-            message: `Simulation time set for model '${model.name}': ${startTime} to ${endTime}.`,
+            timezone,
+            message: `Simulation time set for model '${model.name}': ${startTime} to ${endTime} (${timezone}).`,
           }, null, 2),
         }],
       };

@@ -47,6 +47,8 @@ interface RunModelRequestBody {
     start: string;
     end: string;
   };
+  /** IANA timezone identifier (e.g. "America/Edmonton"). Required — no fallback. */
+  timezone: string;
   weather: WeatherConfig;
   scenarios?: number;
   outputMode?: 'probabilistic' | 'deterministic';
@@ -129,6 +131,11 @@ router.post(
         { field: 'weather', message: 'Must provide weather source' },
       ]);
     }
+    if (typeof body.timezone !== 'string' || body.timezone.length === 0) {
+      throw new ValidationError('Timezone required', [
+        { field: 'timezone', message: 'Must provide IANA timezone identifier (e.g. "America/Edmonton") — no runtime fallback' },
+      ]);
+    }
 
     // Validate and resolve modelMode (default: probabilistic)
     const modelMode: ModelMode = body.modelMode ?? 'probabilistic';
@@ -197,6 +204,7 @@ router.post(
     const executionOptions: ExecutionOptions = {
       ignitionGeometry,
       timeRange,
+      timezone: body.timezone,
       weatherConfig: body.weather,
       simulationCount: body.scenarios ?? 100,
       outputMode: derivedOutputMode,
@@ -420,6 +428,8 @@ interface ExecuteRequestBody {
     start: string;
     end: string;
   };
+  /** IANA timezone identifier (e.g. "America/Edmonton"). Required — no fallback. */
+  timezone: string;
   weather: WeatherConfig;
   scenarios?: number;
   outputMode?: 'probabilistic' | 'deterministic';
@@ -565,6 +575,11 @@ router.post(
         { field: 'weather', message: 'Must provide weather source (manual or spotwx)' },
       ]);
     }
+    if (typeof body.timezone !== 'string' || body.timezone.length === 0) {
+      throw new ValidationError('Timezone required', [
+        { field: 'timezone', message: 'Must provide IANA timezone identifier (e.g. "America/Edmonton") — no runtime fallback' },
+      ]);
+    }
 
     // Create ignition geometry
     const geometryType = body.ignition.type === 'point'
@@ -589,6 +604,7 @@ router.post(
     const executionOptions: ExecutionOptions = {
       ignitionGeometry,
       timeRange,
+      timezone: body.timezone,
       weatherConfig: body.weather,
       simulationCount: body.scenarios ?? 100,
       outputMode: body.outputMode === 'deterministic' ? 'deterministic' : 'probabilistic',
@@ -1575,6 +1591,55 @@ router.get(
       endJulian,
       julianDays: info.julianDays,
     });
+  }),
+);
+
+/**
+ * @openapi
+ * /models/{id}/arrival-perimeters:
+ *   get:
+ *     summary: Hourly perimeter polygons for the animation slider
+ *     description: |
+ *       Polygonizes the deterministic arrival-time raster into a
+ *       FeatureCollection of incremental per-hour perimeters. Each feature
+ *       carries `offsetHours` (1-based hour from sim start) and `isoTime`
+ *       (wall-clock UTC) so the frontend slider can render the fire growing
+ *       through time. Capped at 168 frames (7 days). Issue #236.
+ */
+router.get(
+  '/models/:id/arrival-perimeters',
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const modelId = id as FireModelId;
+
+    const engine = getFireSTARREngine() as import('../../../infrastructure/firestarr/FireSTARREngine.js').FireSTARREngine;
+    const workingDir = engine.getWorkingDirectory(modelId);
+    if (!workingDir || !fs.existsSync(workingDir)) {
+      throw new NotFoundError('Working directory', id);
+    }
+
+    const info = findArrivalTifs(workingDir);
+    if (!info) throw new NotFoundError('Arrival raster', id);
+
+    const cfgPath = fs.existsSync(`${workingDir}/output-config.json`)
+      ? `${workingDir}/output-config.json`
+      : `${workingDir}/model.json`;
+    const rawCfg = JSON.parse(fs.readFileSync(cfgPath, 'utf-8'));
+
+    const { extractArrivalAnimation, extractSimTimeRange, defaultAnimationExtractorDeps } =
+      await import('../../../infrastructure/firestarr/arrivalAnimation.js');
+    const { simStart, durationHours } = extractSimTimeRange(rawCfg);
+
+    const featureCollection = await extractArrivalAnimation(
+      {
+        arrivalPath: info.filePath,
+        simStart,
+        durationHours,
+      },
+      defaultAnimationExtractorDeps(),
+    );
+
+    res.json(featureCollection);
   }),
 );
 

@@ -234,12 +234,33 @@ function AppContent() {
               : data.geometry.bounds?.[1],
           };
           break;
-        case 'spotwx':
-        default:
+        case 'spotwx': {
+          if (!data.weather.spotwxFile) {
+            throw new Error('SpotWX CSV file is required');
+          }
+          if (!data.weather.startingCodes) {
+            throw new Error('Starting codes are required');
+          }
+          // Frontend normalizes SpotWX exports into raw_weather shape and
+          // submits through the backend's raw_weather pipeline so no SpotWX
+          // API key is required for file uploads (refs #244).
+          const { normalizeSpotwxToRawWeather } = await import(
+            './features/ModelSetup/utils/spotwxParser.js'
+          );
+          const spotwxRaw = await readFileContent(data.weather.spotwxFile);
           weatherConfig = {
-            source: 'spotwx',
+            source: 'raw_weather',
+            rawWeatherContent: normalizeSpotwxToRawWeather(spotwxRaw),
+            startingCodes: data.weather.startingCodes,
+            latitude:
+              data.geometry.features[0]?.geometry?.type === 'Point'
+                ? (data.geometry.features[0].geometry.coordinates as [number, number])[1]
+                : data.geometry.bounds?.[1],
           };
           break;
+        }
+        default:
+          throw new Error(`Unsupported weather source: ${data.weather.source}`);
       }
 
       // Create and run model in single atomic call (no orphaned drafts)
@@ -255,6 +276,7 @@ function AppContent() {
           start: startDateTime.toISOString(),
           end: endDateTime.toISOString(),
         },
+        timezone: data.temporal.timezone,
         weather: weatherConfig,
         scenarios: data.model.runType === 'probabilistic' ? 100 : 1,
         outputMode: data.model.outputMode,

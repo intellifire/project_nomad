@@ -9,6 +9,10 @@
 import React, { useCallback, useMemo, useRef, useEffect } from 'react';
 import { useWizardData } from '../../Wizard';
 import type { ModelSetupData } from '../types';
+import {
+  computeDefaultStartDate,
+  computeWeatherDateRange,
+} from '../utils/computeTemporalDefaults.js';
 
 const containerStyle: React.CSSProperties = {
   display: 'flex',
@@ -223,10 +227,16 @@ function getActiveQuickSelect(dateStr: string): string | null {
 export function TemporalStep() {
   const { data, setField } = useWizardData<ModelSetupData>();
   const timeInputRef = useRef<HTMLInputElement>(null);
-  // Initialize with today's date if not set
+  const weatherDateRange = useMemo(
+    () => computeWeatherDateRange(data.weather),
+    [data.weather],
+  );
+  // Initialize with the first datetime from imported weather, or today if no
+  // weather has been imported yet (weather-first wizard; refs #238).
   const temporal = useMemo(() => {
+    const defaultStartDate = computeDefaultStartDate(data.weather) ?? getTodayDate();
     const defaultTemporal = {
-      startDate: getTodayDate(),
+      startDate: defaultStartDate,
       startTime: '12:00',
       durationHours: 72,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -241,17 +251,31 @@ export function TemporalStep() {
       ...defaultTemporal,
       ...data.temporal,
     };
-  }, [data.temporal]);
+  }, [data.temporal, data.weather]);
 
-  // Set default date on mount if not already set
+  // Persist default date into wizard state on mount, and clamp an existing
+  // startDate into the weather range if the range has shifted since the user
+  // last visited this step (refs #244).
   useEffect(() => {
     if (!data.temporal || !data.temporal.startDate) {
-      const todayDate = getTodayDate();
+      const defaultStartDate = computeDefaultStartDate(data.weather) ?? getTodayDate();
       setField('temporal', {
         ...temporal,
-        startDate: todayDate,
-        isForecast: isFutureDate(todayDate),
+        startDate: defaultStartDate,
+        isForecast: isFutureDate(defaultStartDate),
       });
+      return;
+    }
+    if (weatherDateRange) {
+      const { minDate, maxDate } = weatherDateRange;
+      const current = data.temporal.startDate;
+      if (current < minDate || current > maxDate) {
+        setField('temporal', {
+          ...data.temporal,
+          startDate: minDate,
+          isForecast: isFutureDate(minDate),
+        });
+      }
     }
   }, []); // Only run once on mount
 
@@ -372,8 +396,8 @@ export function TemporalStep() {
             type="date"
             value={temporal.startDate}
             onChange={(e) => handleDateChange(e.target.value)}
-            min="1900-01-01"
-            max="2099-12-31"
+            min={weatherDateRange?.minDate ?? '1900-01-01'}
+            max={weatherDateRange?.maxDate ?? '2099-12-31'}
             style={timeInputStyle}
             aria-label="Start date"
           />

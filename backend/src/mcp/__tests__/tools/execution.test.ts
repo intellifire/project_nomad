@@ -140,6 +140,7 @@ describe('MCP Execution Tools', () => {
         modelId,
         startTime: '2026-06-15T14:00:00Z',
         endTime: '2026-06-15T20:00:00Z',
+        timezone: 'America/Edmonton',
       },
     });
 

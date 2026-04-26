@@ -69,6 +69,7 @@ describe('FireSTARREngine — output-config.json for re-run', () => {
       new Date('2026-07-01T12:00:00Z'),
       new Date('2026-07-04T12:00:00Z'),
     ),
+    timezone: 'America/Edmonton',
     weatherConfig: {
       source: 'firestarr_csv' as const,
     },

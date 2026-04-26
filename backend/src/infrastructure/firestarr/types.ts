@@ -52,8 +52,10 @@ export interface FireSTARRParams {
   readonly longitude: number;
   /** Simulation start date */
   readonly startDate: Date;
-  /** Simulation start time (HH:MM format, local solar time) */
+  /** Simulation start time (HH:MM format, local wall-clock time in `timezone`) */
   readonly startTime: string;
+  /** IANA timezone identifier for ignition location (e.g. "America/Edmonton") */
+  readonly timezone: string;
   /** Hourly weather data array */
   readonly weatherData: WeatherHourlyData[];
   /** Previous day's FFMC (Fine Fuel Moisture Code) */

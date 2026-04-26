@@ -10,6 +10,8 @@ import React, { useCallback, useState, useRef } from 'react';
 import { useModels } from '../hooks/useModels.js';
 import { useModelSelection } from '../context/DashboardContext.js';
 import { ModelCard } from './ModelCard.js';
+import { isProgressStatus } from './importStatus.js';
+import { buildRerunRequest } from './rerunRequest.js';
 import { useOpenNomad } from '../../../openNomad/index.js';
 import type { Model, ModelStatus, EngineType } from '../../../openNomad/api.js';
 import type { ModelSortOption } from '../context/DashboardContext.js';
@@ -170,22 +172,16 @@ export function ModelList({
         return;
       }
 
-      // Build the /models/run request from stored config
-      const runBody = {
-        name: `${model.name.replace(/ \(imported\)$/, '')} (re-run)`,
-        engineType: config.engineType || model.engine || 'firestarr',
-        ignition: config.ignition,
-        timeRange: config.timeRange,
-        weather: config.weather,
-        scenarios: config.scenarios,
-        modelMode: config.modelMode || model.outputMode || 'probabilistic',
-      };
-
-      if (!runBody.ignition || !runBody.timeRange || !runBody.weather) {
-        setImportStatus('Incomplete config — missing ignition, time range, or weather data');
-        setTimeout(() => setImportStatus(null), 5000);
+      const built = buildRerunRequest(model, config);
+      if (!built.ok) {
+        const message = built.reason === 'missing-timezone'
+          ? 'Incomplete config — missing timezone (was the model exported before timezone support?)'
+          : 'Incomplete config — missing ignition, time range, or weather data';
+        setImportStatus(message);
+        setTimeout(() => setImportStatus(null), 6000);
         return;
       }
+      const runBody = built.body;
 
       setImportStatus('Starting model run...');
       const username = localStorage.getItem('nomad_username') || '';
@@ -332,6 +328,13 @@ export function ModelList({
           backgroundColor: importStatus.startsWith('Import failed') ? '#ffebee' : '#e8f5e9',
           color: importStatus.startsWith('Import failed') ? '#c62828' : '#2e7d32',
         }}>
+          {isProgressStatus(importStatus) && (
+            <i
+              className="fa-solid fa-spinner fa-spin"
+              style={{ marginRight: '8px' }}
+              aria-hidden="true"
+            />
+          )}
           {importStatus}
         </div>
       )}

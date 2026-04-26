@@ -41,6 +41,8 @@ export interface ExecutionOptions {
   readonly ignitionGeometry: SpatialGeometry;
   /** Time range for the simulation */
   readonly timeRange: TimeRange;
+  /** IANA timezone identifier for ignition location (e.g. "America/Edmonton"). Required — no silent default. */
+  readonly timezone: string;
   /** Output time offsets in hours from start */
   readonly outputTimeOffsets?: number[];
   /** Probability threshold for perimeter generation (0-1) */

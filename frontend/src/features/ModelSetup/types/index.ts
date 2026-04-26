@@ -135,6 +135,8 @@ export interface ParsedWeatherCSV {
   hasScenarioColumn: boolean;
   /** Whether all FWI columns are present (FFMC, DMC, DC, ISI, BUI, FWI) */
   hasFWIColumns: boolean;
+  /** Min and max date (YYYY-MM-DD) extracted from the parsed rows */
+  dateRange?: { minDate: string; maxDate: string };
 }
 
 /**
@@ -151,7 +153,11 @@ export interface WeatherData {
   rawWeatherFile?: File;
   rawWeatherFileName?: string;
   rawWeatherParsed?: ParsedWeatherCSV;
-  /** Starting codes for raw_weather source (used by backend for CFFDRS calculation) */
+  /** For spotwx: SpotWX CSV export normalized to raw weather shape */
+  spotwxFile?: File;
+  spotwxFileName?: string;
+  spotwxParsed?: ParsedWeatherCSV;
+  /** Starting codes for raw_weather / spotwx sources (backend runs CFFDRS) */
   startingCodes?: FWIStartingCodes;
   /** Legacy: Manual FWI values (kept for compatibility) */
   fwi?: FWIValues;
@@ -213,6 +219,12 @@ export const MODEL_SETUP_STEPS = [
     icon: 'location-dot',
   },
   {
+    id: 'weather' as const,
+    name: 'Weather',
+    description: 'Provide fire weather index values',
+    icon: 'cloud-sun',
+  },
+  {
     id: 'temporal' as const,
     name: 'Time Range',
     description: 'Set the simulation start time and duration',
@@ -223,12 +235,6 @@ export const MODEL_SETUP_STEPS = [
     name: 'Model',
     description: 'Select the fire modeling engine and run type',
     icon: 'fire',
-  },
-  {
-    id: 'weather' as const,
-    name: 'Weather',
-    description: 'Provide fire weather index values',
-    icon: 'cloud-sun',
   },
   {
     id: 'review' as const,
