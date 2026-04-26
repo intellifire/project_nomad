@@ -243,22 +243,24 @@ export function julianToDate(julianDay: number, year: number): Date {
  * (band A, decimal Julian days) into a per-pixel frame index (1..capFrames)
  * used by the animation.
  *
- *  - Unburned cells (A=0) emit 0 so gdal_polygonize drops them.
- *  - Cells with arrival AT or before simStart (A <= simStart, including
- *    ignition-polygon cells whose arrival equals simStart) emit 0 — those
- *    cells are "already burning" and belong to the ignition layer, not the
- *    animation. The frontend can show the user's ignition polygon
- *    separately (refs #236).
+ *  - Unburned cells (A=0) emit 0 so gdal_polygonize drops them (NoData).
+ *  - Cells with A > 0 but arrival AT or before simStart (warmup growth
+ *    around the ignition polygon, plus the ignition cells themselves) are
+ *    CLAMPED into frame 1 — they belong to the animation's initial state.
+ *    Apr 26 2026: previously dropped by PR #251, which left a visible "halo"
+ *    of FireSTARR-side warmup growth missing from the slider's first frame.
  *  - Cells beyond the capFrames window emit 0.
- *  - Everything in (simStart, simStart + capFrames*h] gets a 1-based DN.
+ *  - Cells in (simStart, simStart + capFrames*h] get a 1-based DN.
  */
 export function buildReclassifyExpression(
   simStartJulian: number,
   capFrames: number,
 ): string {
   const raw = `ceil((A-${simStartJulian})*24)`;
+  // Clamp to >=1 so pre-warmup cells become DN=1 instead of being dropped.
+  const clamped = `maximum(${raw},1)`;
   return (
-    `((A>0)*(${raw}>=1)*(${raw}<=${capFrames})*${raw}).astype(int)`
+    `((A>0)*(${clamped}<=${capFrames})*${clamped}).astype(int)`
   );
 }
 

@@ -175,13 +175,18 @@ describe('buildReclassifyExpression', () => {
     expect(expr).toContain('A'); // input band
   });
 
-  it('drops cells at or before simStart (they belong to the ignition layer, not the animation)', () => {
-    // The formula requires ceil((A-S)*24) >= 1, so a cell with A = simStart
-    // (ignition-polygon cell already burning at the sim start) produces
-    // DN=0 and is excluded by gdal_polygonize.
+  it('clamps pre-warmup cells (A <= simStart, A > 0) into frame 1 instead of dropping', () => {
+    // FireSTARR emits arrival values for warmup growth that lands outside
+    // the user's ignition polygon BEFORE the user's simStart. PR #251 had
+    // dropped them, but Papa observed (Apr 26 2026) that the resulting
+    // animation skipped the visible "halo" of initial growth. The expression
+    // must clamp these into DN=1 (initial state) rather than dropping them.
     const expr = buildReclassifyExpression(170.7917, 168);
-    expect(expr).toContain('>=1');
-    expect(expr).not.toContain('maximum(');
+    expect(expr).toContain('maximum(');
+    // Must still gate on A>0 so true NoData (unburned) cells stay dropped.
+    expect(expr).toContain('A>0');
+    // The cap must still bound the upper end.
+    expect(expr).toContain('168');
   });
 });
 
