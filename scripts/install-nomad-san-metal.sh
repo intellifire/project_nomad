@@ -57,7 +57,7 @@ SIMS_OUTPUT_PATH="${SIMS_OUTPUT_PATH:-$FIRESTARR_DATASET_PATH/sims}"
 
 # FireSTARR binary source
 FIRESTARR_BINARY_RELEASE_REPO="https://github.com/CWFMF/firestarr-cpp/releases/download"
-FIRESTARR_BINARY_RELEASE_TAG="v0.9.5.10"
+FIRESTARR_BINARY_RELEASE_TAG="${FIRESTARR_BINARY_RELEASE_TAG:-unstable-latest}"
 
 # GitHub
 REPO_OWNER="WISE-Developers"
@@ -359,8 +359,13 @@ build_nomad() {
     print_step "Installing Node.js dependencies..."
     cd "$INSTALL_DIR"
 
-    # Install with dev dependencies
-    env NODE_ENV=development npm install --include=dev
+    # Install with dev dependencies in BOTH root and workspaces. TypeScript
+    # and friends live in backend/ and frontend/ package.json — without
+    # --workspaces the build fails with "tsc: command not found".
+    env NODE_ENV=development npm install \
+        --include=dev \
+        --workspaces \
+        --include-workspace-root
 
     print_step "Rebuilding native modules..."
     npm rebuild

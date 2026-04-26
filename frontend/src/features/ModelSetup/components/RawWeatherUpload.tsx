@@ -18,7 +18,7 @@ import {
   parseCSV,
   validateColumns,
   validateDatetimes,
-  FWI_COLUMNS,
+  buildParsedWeatherCSV,
 } from '../utils/weatherValidation.js';
 
 export interface RawWeatherUploadProps {
@@ -201,18 +201,7 @@ export function RawWeatherUpload({
           return;
         }
 
-        // Check if file has FWI columns (would be wrong file type)
-        const headerSet = new Set(headers.map((h) => h.toUpperCase()));
-        const hasFWI = FWI_COLUMNS.every((col) => headerSet.has(col.toUpperCase()));
-        const hasScenario = headerSet.has('SCENARIO');
-
-        const parsedData: ParsedWeatherCSV = {
-          headers,
-          rowCount: rows.length,
-          previewRows: rows.slice(0, 5),
-          hasScenarioColumn: hasScenario,
-          hasFWIColumns: hasFWI,
-        };
+        const parsedData = buildParsedWeatherCSV(headers, rows);
 
         onFileUpload(file, parsedData);
       };

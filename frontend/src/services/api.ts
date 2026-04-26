@@ -211,6 +211,8 @@ export interface RunModelRequest {
     start: string;
     end: string;
   };
+  /** IANA timezone identifier (e.g. "America/Edmonton"). Required by backend. */
+  timezone: string;
   weather: {
     source: 'firestarr_csv' | 'raw_weather' | 'spotwx';
     firestarrCsvContent?: string;

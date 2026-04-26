@@ -9,6 +9,7 @@
 
 import { writeFile } from 'fs/promises';
 import { WeatherHourlyData } from './types.js';
+import { formatLocalDateTime } from './timezoneUtils.js';
 
 /**
  * CSV column headers in required order.
@@ -31,21 +32,6 @@ const CSV_HEADERS = [
 ] as const;
 
 /**
- * Formats a date for FireSTARR CSV.
- * Format: YYYY-MM-DD HH:MM:SS (no T separator, no timezone)
- */
-function formatDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
-
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-}
-
-/**
  * Formats a number for CSV output.
  * Uses up to 2 decimal places, removes trailing zeros.
  */
@@ -56,10 +42,10 @@ function formatNumber(value: number): string {
 /**
  * Converts weather data to a CSV row.
  */
-function weatherToRow(weather: WeatherHourlyData, scenarioId: number): string {
+function weatherToRow(weather: WeatherHourlyData, scenarioId: number, timezone: string): string {
   const values = [
     scenarioId.toString(),
-    formatDate(weather.date),
+    formatLocalDateTime(weather.date, timezone),
     formatNumber(weather.precip),
     formatNumber(weather.temp),
     formatNumber(weather.rh),
@@ -82,6 +68,8 @@ function weatherToRow(weather: WeatherHourlyData, scenarioId: number): string {
 export interface WeatherCSVOptions {
   /** Scenario ID (default: 0 for deterministic runs) */
   scenarioId?: number;
+  /** IANA timezone identifier for CSV timestamps. Required — must match engine `--tz`. */
+  timezone: string;
 }
 
 /**
@@ -102,14 +90,21 @@ export interface WeatherCSVOptions {
 export async function writeWeatherCSV(
   filePath: string,
   weatherData: WeatherHourlyData[],
-  options: WeatherCSVOptions = {}
+  options: WeatherCSVOptions
 ): Promise<void> {
+  if (typeof options?.timezone !== 'string' || options.timezone.length === 0) {
+    throw new Error(
+      'WeatherCSVWriter: IANA timezone is required (no runtime-zone fallback). ' +
+      'Caller must pass options.timezone matching the engine --tz value.',
+    );
+  }
   const scenarioId = options.scenarioId ?? 0;
+  const timezone = options.timezone;
 
   // Build CSV content
   const lines: string[] = [
     CSV_HEADERS.join(','),
-    ...weatherData.map((w) => weatherToRow(w, scenarioId)),
+    ...weatherData.map((w) => weatherToRow(w, scenarioId, timezone)),
   ];
 
   const content = lines.join('\n') + '\n';
