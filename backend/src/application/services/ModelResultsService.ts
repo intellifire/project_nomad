@@ -285,9 +285,13 @@ export class ModelResultsService {
         // Get file path from metadata
         const filePath = (result.metadata.filePath as string) ?? null;
 
-        // Calculate time offset in hours from days
-        const julianDay = (result.metadata.parameters as Record<string, unknown>)?.julianDay as number | undefined;
-        const timeOffsetHours = julianDay !== undefined ? julianDay * 24 : null;
+        // Calculate time offset in hours from days.
+        // TODO(#236-followup): this used to be `julianDay * 24` which is
+        // year-anchored (e.g. Jun 19 → 4080h). The deterministic perimeter
+        // path below uses `(julianDay - startJulian) * 24` instead. This .map
+        // runs for stored DB results (probabilistic outputs) where startJulian
+        // is not yet in scope; null is safer than a misleading absolute value.
+        const timeOffsetHours: number | null = null;
 
         return {
           id: result.id,
@@ -388,6 +392,11 @@ export class ModelResultsService {
               // Check if perimeter outputs already exist
               const hasPerimeters = outputs.some(o => o.type === 'perimeter');
 
+              // Hoisted so the perimeter cherry-pick below can compute
+              // hours-since-simStart from each perimeter's filename julianDay.
+              // null when no arrival raster / timeRange is available.
+              let startJulianForPerimeters: number | null = null;
+
               // Arrival raster output (#226) — emit one OutputItem pointing at
               // the classified tile endpoint. Classification window is derived
               // from the model's configured timeRange, not from file count.
@@ -432,6 +441,7 @@ export class ModelResultsService {
                     } catch { /* use current year */ }
                     startDate = new Date(Date.UTC(modelYear, 0, startJulian)).toISOString();
                   }
+                  startJulianForPerimeters = startJulian;
 
                   outputs.push({
                     id: `arrival-time-${modelId}`,
@@ -472,12 +482,18 @@ export class ModelResultsService {
                   perimeterResult.value.perimeters.forEach((perimeter, index) => {
                     const dateLabel = perimeter.date || `Day ${perimeter.julianDay}`;
                     const color = PERIMETER_COLORS[index % PERIMETER_COLORS.length];
+                    // Hours since sim start, not "hours since Jan 1 of year 0".
+                    // perimeter.julianDay is the FILENAME's 1-indexed day-of-year
+                    // (170 = Jun 19), startJulian was computed from timeRange.start
+                    // above. For a 3-day sim starting Jun 19 these read 0, 24, 48.
                     outputs.push({
                       id: `perimeter-day${perimeter.julianDay}-${modelId}`,
                       type: 'perimeter' as OutputType,
                       format: 'geojson' as OutputFormat,
                       name: `Fire Boundary - ${dateLabel}`,
-                      timeOffsetHours: perimeter.julianDay * 24,
+                      timeOffsetHours: startJulianForPerimeters !== null
+                        ? (perimeter.julianDay - startJulianForPerimeters) * 24
+                        : null,
                       filePath: null,
                       previewUrl: `/api/v1/models/${modelId}/perimeters?day=${perimeter.julianDay}`,
                       downloadUrl: `/api/v1/models/${modelId}/perimeters?day=${perimeter.julianDay}&download=true`,
