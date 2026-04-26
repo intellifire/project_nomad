@@ -26,6 +26,11 @@ import {
 } from '../../domain/entities/index.js';
 import { Coordinates } from '../../domain/value-objects/index.js';
 import { FireSTARRParams, WeatherHourlyData } from './types.js';
+import {
+  computeUtcOffsetHours,
+  formatLocalDate,
+  formatLocalTime,
+} from './timezoneUtils.js';
 import { getFireSTARRExecutor, isBinaryMode } from '../execution/index.js';
 import { FireSTARRInputGenerator, createFireSTARRInputGenerator } from './FireSTARRInputGenerator.js';
 import { FireSTARROutputParser, getFireSTARROutputParser } from './FireSTARROutputParser.js';
@@ -145,6 +150,7 @@ export class FireSTARREngine implements IFireModelingEngine {
         start: options.timeRange.start.toISOString(),
         end: options.timeRange.end.toISOString(),
       } : undefined,
+      timezone: options.timezone,
       weather: options.weatherConfig,
       modelMode: options.outputMode === 'deterministic' ? 'deterministic' : 'probabilistic',
     };
@@ -637,7 +643,8 @@ export class FireSTARREngine implements IFireModelingEngine {
       latitude,
       longitude,
       startDate,
-      startTime: this.formatTime(options.timeRange.start),
+      startTime: formatLocalTime(options.timeRange.start, options.timezone),
+      timezone: options.timezone,
       weatherData,
       previousFFMC: firstPoint.ffmc,
       previousDMC: firstPoint.dmc,
@@ -695,14 +702,14 @@ export class FireSTARREngine implements IFireModelingEngine {
       logger.debug(`Using corrected centroid: lat=${latitude.toFixed(6)}, lon=${longitude.toFixed(6)} (original: lat=${params.latitude.toFixed(6)}, lon=${params.longitude.toFixed(6)})`, 'FireSTARR');
     }
 
-    // Calculate UTC offset from longitude (natural solar timezone)
-    // Each 15° of longitude = 1 hour offset from UTC
-    const utcOffset = Math.round(longitude / 15);
+    // UTC offset comes from the caller's IANA zone (DST-aware), not solar
+    // longitude. Hay River sits at -115° but observes MDT/MST.
+    const utcOffset = computeUtcOffsetHours(params.startDate, params.timezone);
 
     const args: string[] = [
       binaryPath,
       workingDir,
-      this.formatDate(params.startDate),
+      formatLocalDate(params.startDate, params.timezone),
       latitude.toString(),
       longitude.toString(),
       params.startTime,
@@ -751,24 +758,6 @@ export class FireSTARREngine implements IFireModelingEngine {
     return args;
   }
 
-  /**
-   * Formats a date as yyyy-mm-dd.
-   */
-  private formatDate(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
-
-  /**
-   * Formats a date's time as HH:MM.
-   */
-  private formatTime(date: Date): string {
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${hours}:${minutes}`;
-  }
 }
 
 /**

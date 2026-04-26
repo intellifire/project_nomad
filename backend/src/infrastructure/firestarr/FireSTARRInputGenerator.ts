@@ -188,6 +188,7 @@ export class FireSTARRInputGenerator implements IInputGenerator<FireSTARRParams>
       const weatherFile = join(workingDir, 'weather.csv');
       await writeWeatherCSV(weatherFile, params.weatherData, {
         scenarioId: params.scenarioId ?? 0,
+        timezone: params.timezone,
       });
 
       // Write ignition geometry as GeoJSON Feature

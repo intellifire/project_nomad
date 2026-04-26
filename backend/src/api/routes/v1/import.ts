@@ -30,6 +30,7 @@ import {
   OutputFormat,
 } from '../../../domain/entities/ModelResult.js';
 import { getModelRepository, getResultRepository } from '../../../infrastructure/database/index.js';
+import { pickImportResponseConfig } from './importResponseConfig.js';
 
 const router = Router();
 
@@ -228,13 +229,7 @@ router.post(
       name: model.name,
       status: model.status,
       hasConfig: !!modelConfig,
-      config: modelConfig ? {
-        ignition: modelConfig.ignition,
-        timeRange: modelConfig.timeRange,
-        weather: modelConfig.weather,
-        scenarios: modelConfig.scenarios,
-        modelMode: modelConfig.modelMode,
-      } : null,
+      config: modelConfig ? pickImportResponseConfig(modelConfig as unknown as Record<string, unknown>) : null,
       imported: {
         files: importedFiles.length,
         results: resultRecords.length,

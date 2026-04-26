@@ -276,6 +276,7 @@ function AppContent() {
           start: startDateTime.toISOString(),
           end: endDateTime.toISOString(),
         },
+        timezone: data.temporal.timezone,
         weather: weatherConfig,
         scenarios: data.model.runType === 'probabilistic' ? 100 : 1,
         outputMode: data.model.outputMode,

@@ -15,6 +15,7 @@ import {
   julianDayFromDate,
   julianToDate,
   toAnimationFeatureCollection,
+  toFireSTARRRasterJulianDay,
 } from '../arrivalAnimation.js';
 
 describe('computeAnimationFrames', () => {
@@ -123,6 +124,17 @@ describe('toAnimationFeatureCollection', () => {
   });
 });
 
+describe('toFireSTARRRasterJulianDay', () => {
+  it('returns julianDayFromDate minus 1 (FireSTARR rasters use 0-indexed Julian)', () => {
+    // Hay River simStart from the Apr 25 2026 regression: raster max for the
+    // simStart pixel was empirically 169.79167. Our julianDayFromDate would
+    // give 170.79167, so the converter must subtract exactly 1.0.
+    const simStart = new Date('2023-06-19T19:00:00Z');
+    expect(julianDayFromDate(simStart)).toBeCloseTo(170.79167, 4);
+    expect(toFireSTARRRasterJulianDay(simStart)).toBeCloseTo(169.79167, 4);
+  });
+});
+
 describe('julianDayFromDate', () => {
   it('returns 1.0 at Jan 1 00:00 UTC (day-of-year convention)', () => {
     expect(julianDayFromDate(new Date('2026-01-01T00:00:00Z'))).toBe(1);
@@ -163,13 +175,18 @@ describe('buildReclassifyExpression', () => {
     expect(expr).toContain('A'); // input band
   });
 
-  it('drops cells at or before simStart (they belong to the ignition layer, not the animation)', () => {
-    // The formula requires ceil((A-S)*24) >= 1, so a cell with A = simStart
-    // (ignition-polygon cell already burning at the sim start) produces
-    // DN=0 and is excluded by gdal_polygonize.
+  it('clamps pre-warmup cells (A <= simStart, A > 0) into frame 1 instead of dropping', () => {
+    // FireSTARR emits arrival values for warmup growth that lands outside
+    // the user's ignition polygon BEFORE the user's simStart. PR #251 had
+    // dropped them, but Papa observed (Apr 26 2026) that the resulting
+    // animation skipped the visible "halo" of initial growth. The expression
+    // must clamp these into DN=1 (initial state) rather than dropping them.
     const expr = buildReclassifyExpression(170.7917, 168);
-    expect(expr).toContain('>=1');
-    expect(expr).not.toContain('maximum(');
+    expect(expr).toContain('maximum(');
+    // Must still gate on A>0 so true NoData (unburned) cells stay dropped.
+    expect(expr).toContain('A>0');
+    // The cap must still bound the upper end.
+    expect(expr).toContain('168');
   });
 });
 
@@ -259,7 +276,7 @@ describe('extractArrivalAnimation (orchestrator)', () => {
     expect(result.features[0].properties.isoTime).toBe('2026-06-19T22:00:00.000Z');
   });
 
-  it('passes the params.simStart julian day into the gdal_calc expression', async () => {
+  it('passes the FireSTARR-convention (0-indexed) sim start julian day into gdal_calc', async () => {
     const { deps, execCalls } = stubDeps();
 
     await extractArrivalAnimation(
@@ -271,9 +288,14 @@ describe('extractArrivalAnimation (orchestrator)', () => {
       deps,
     );
 
-    // julianDayFromDate(2023-06-19T19:00Z) = 170.7917
+    // Our julianDayFromDate(2023-06-19T19:00Z) = 170.7917 (Jan 1 = 1.0).
+    // FireSTARR writes 0-indexed values (Jan 1 = 0.0) inside the raster,
+    // so the value baked into the gdal_calc expression must be 169.7917.
+    // If we pass 170.7917 here, the first 24h of spread would be DN <= 0
+    // and dropped from the animation (regression observed Apr 25 2026).
     const calcCall = execCalls[0];
-    expect(calcCall).toContain('170.79');
+    expect(calcCall).toContain('169.79');
+    expect(calcCall).not.toContain('170.79');
   });
 
   it('cleans up the temp directory even when a command fails', async () => {

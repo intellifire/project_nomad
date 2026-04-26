@@ -114,11 +114,13 @@ export async function extractArrivalAnimation(
     const geojsonPath = `${tmpDir}/frames.geojson`;
 
     // Anchor the reclassify to the user-configured sim start (from
-    // output-config.json's timeRange.start). FireSTARR may emit arrival
-    // values BEFORE this instant (pre-warmup), and the reclassify
-    // expression clips those to DN=1 so they become part of the
-    // animation's initial state rather than being dropped (refs #236).
-    const simStartJulian = julianDayFromDate(params.simStart);
+    // output-config.json's timeRange.start). FireSTARR writes arrival
+    // values in 0-indexed Julian days (Jan 1 = 0.0) inside the raster,
+    // so we MUST convert our 1-indexed simStart through
+    // toFireSTARRRasterJulianDay — otherwise gdal_calc compares against
+    // a value 24h ahead and the first day of spread gets bucketed as
+    // DN <= 0 and dropped (refs #236 follow-up).
+    const simStartJulian = toFireSTARRRasterJulianDay(params.simStart);
     const expression = buildReclassifyExpression(simStartJulian, capFrames);
 
     deps.exec(
@@ -197,13 +199,34 @@ export const DEFAULT_FRAME_CAP = 168;
 
 /**
  * Returns the day-of-year (Jan 1 = 1.0) for the given Date, including
- * fractional hours. This matches the convention FireSTARR uses in the
- * arrival-time raster (e.g., `170.464` = day 170 at ~11am UTC).
+ * fractional hours. This is the human/calendar convention (Jun 19 → 170).
+ *
+ * NOTE: FireSTARR writes a DIFFERENT convention inside the arrival-time
+ * raster — values are 0-indexed (Jan 1 = 0.0, so Jun 19 → 169.x).
+ * Use `toFireSTARRRasterJulianDay` when comparing this value against raster
+ * pixel values. The filename of an arrival raster (e.g. `..._170_arrival.tif`)
+ * still uses the 1-indexed convention this function returns.
  */
 export function julianDayFromDate(date: Date): number {
   const year = date.getUTCFullYear();
   const yearStartMs = Date.UTC(year, 0, 1, 0, 0, 0, 0);
   return 1 + (date.getTime() - yearStartMs) / 86_400_000;
+}
+
+/**
+ * Converts our 1-indexed `julianDayFromDate` into FireSTARR's 0-indexed
+ * raster-internal Julian day. FireSTARR writes Jan 1 00:00 UTC as 0.0 in
+ * arrival rasters; our convention writes it as 1.0. The two are off by
+ * exactly one day. Use this when feeding a date into `buildReclassifyExpression`
+ * or otherwise comparing against raster pixel values.
+ *
+ * Empirical proof (Hay River sim, simStart 2023-06-19 19:00 UTC):
+ *   julianDayFromDate(simStart) = 170.79167
+ *   raster value at simStart pixel = 169.79167  ← FireSTARR's convention
+ *   delta = exactly 1.0
+ */
+export function toFireSTARRRasterJulianDay(date: Date): number {
+  return julianDayFromDate(date) - 1;
 }
 
 /**
@@ -220,22 +243,24 @@ export function julianToDate(julianDay: number, year: number): Date {
  * (band A, decimal Julian days) into a per-pixel frame index (1..capFrames)
  * used by the animation.
  *
- *  - Unburned cells (A=0) emit 0 so gdal_polygonize drops them.
- *  - Cells with arrival AT or before simStart (A <= simStart, including
- *    ignition-polygon cells whose arrival equals simStart) emit 0 — those
- *    cells are "already burning" and belong to the ignition layer, not the
- *    animation. The frontend can show the user's ignition polygon
- *    separately (refs #236).
+ *  - Unburned cells (A=0) emit 0 so gdal_polygonize drops them (NoData).
+ *  - Cells with A > 0 but arrival AT or before simStart (warmup growth
+ *    around the ignition polygon, plus the ignition cells themselves) are
+ *    CLAMPED into frame 1 — they belong to the animation's initial state.
+ *    Apr 26 2026: previously dropped by PR #251, which left a visible "halo"
+ *    of FireSTARR-side warmup growth missing from the slider's first frame.
  *  - Cells beyond the capFrames window emit 0.
- *  - Everything in (simStart, simStart + capFrames*h] gets a 1-based DN.
+ *  - Cells in (simStart, simStart + capFrames*h] get a 1-based DN.
  */
 export function buildReclassifyExpression(
   simStartJulian: number,
   capFrames: number,
 ): string {
   const raw = `ceil((A-${simStartJulian})*24)`;
+  // Clamp to >=1 so pre-warmup cells become DN=1 instead of being dropped.
+  const clamped = `maximum(${raw},1)`;
   return (
-    `((A>0)*(${raw}>=1)*(${raw}<=${capFrames})*${raw}).astype(int)`
+    `((A>0)*(${clamped}<=${capFrames})*${clamped}).astype(int)`
   );
 }
 
