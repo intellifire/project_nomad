@@ -4,10 +4,79 @@ Auto-generated from git history. Do not edit manually.
 
 ---
 
-## v0.7.0
+## v0.8.0
+
+### 2026-04-26
+
+- [`a80c704`](https://github.com/WISE-Developers/project_nomad/commit/a80c7046d3fb4daa2776a9c24fc89b38f371de8d) Merge pull request #254 from WISE-Developers/dev — *Franco Nogarin, 10:52*
+- [`1156f4b`](https://github.com/WISE-Developers/project_nomad/commit/1156f4b792c2b2a37a874aee353ea6092d84313a) chore: dev build 8 [skip ci] — *github-actions[bot], 16:49*
+- [`345b65f`](https://github.com/WISE-Developers/project_nomad/commit/345b65f59fc2cff837c2c3f2f66b89d5a4d050d3) chore: resync package-lock.json with workspace versions — *Franco Nogarin, 10:49*
+- [`0b97646`](https://github.com/WISE-Developers/project_nomad/commit/0b976464604ef099eaddda27c47723f68cbf47e9) chore: dev build 7 [skip ci] — *github-actions[bot], 16:43*
+- [`ca03ae1`](https://github.com/WISE-Developers/project_nomad/commit/ca03ae1460fe7d8372fbaa60d11725564555245b) Merge pull request #253 from WISE-Developers/fix/firestarr-iana-tz — *Franco Nogarin, 10:43*
+- [`a749f84`](https://github.com/WISE-Developers/project_nomad/commit/a749f84c81b45f77f09a7f230e22bd3dba5fc597) fix(firestarr): include FireSTARR pre-warmup cells in animation frame 1 — *Franco Nogarin, 10:38*
+- [`3700818`](https://github.com/WISE-Developers/project_nomad/commit/37008188f0dd57215142654d9252a84e6e22fc8f) fix(firestarr): align animation + perimeter labels with FireSTARR Julian convention — *Franco Nogarin, 05:29*
+
+### 2026-04-25
+
+- [`e1e5a35`](https://github.com/WISE-Developers/project_nomad/commit/e1e5a3555f6e9d6966c5b954b5c9275e623c1836) feat(firestarr): wire IANA timezone end-to-end + fix re-run regression — *Franco Nogarin, 15:24*
+
+### 2026-04-23
+
+- [`884f00d`](https://github.com/WISE-Developers/project_nomad/commit/884f00d0730dbec899d06307720e591b6e3b79e7) feat(firestarr): IANA timezone helpers (prep for #236 DST fix) — *Franco Nogarin, 15:08*
+- [`48f2723`](https://github.com/WISE-Developers/project_nomad/commit/48f2723a76bb1ce85497d02ac76689a7314da149) chore: dev build 6 [skip ci] — *github-actions[bot], 19:31*
+- [`d61e3aa`](https://github.com/WISE-Developers/project_nomad/commit/d61e3aac0bedd78227553d95a42f4d7b1c6e9785) Merge pull request #252 from WISE-Developers/fix/revert-firestarr-utc — *Franco Nogarin, 13:31*
+- [`95b9574`](https://github.com/WISE-Developers/project_nomad/commit/95b9574bb72bfde37136611ff594ade300407f58) Revert "Merge pull request #250 from WISE-Developers/fix/firestarr-utc-tz" — *Franco Nogarin, 13:31*
+- [`3fd6d40`](https://github.com/WISE-Developers/project_nomad/commit/3fd6d402552df2ed3a9d61344abc63dca707e072) chore: dev build 5 [skip ci] — *github-actions[bot], 18:17*
+- [`619cdb6`](https://github.com/WISE-Developers/project_nomad/commit/619cdb6c2be19d5601b674acb08631b6542eeb41) Merge pull request #251 from WISE-Developers/fix/animation-drop-ignition-cells — *Franco Nogarin, 12:16*
+- [`4d1c030`](https://github.com/WISE-Developers/project_nomad/commit/4d1c030c7afc01aec65ba9681354aafe178229cb) fix(animation): drop ignition cells from frame 1 (don't clip) — *Franco Nogarin, 12:16*
+- [`1d0c83f`](https://github.com/WISE-Developers/project_nomad/commit/1d0c83f6acc33f666ff9dd23b815bdc833f076b8) chore: dev build 4 [skip ci] — *github-actions[bot], 17:59*
+- [`42a12f0`](https://github.com/WISE-Developers/project_nomad/commit/42a12f01ae035ba2a8848af67652fd8471731610) Merge pull request #250 from WISE-Developers/fix/firestarr-utc-tz — *Franco Nogarin, 11:59*
+- [`8def9c8`](https://github.com/WISE-Developers/project_nomad/commit/8def9c8481587f00c1785ccaeb4dc9e861441c81) fix(firestarr): pass UTC time + --tz 0 to FireSTARR (was tz-mixed) — *Franco Nogarin, 11:58*
+- [`495495f`](https://github.com/WISE-Developers/project_nomad/commit/495495f5a64a97a4020bc5f3eaf8c60c0756fa3a) chore: dev build 3 [skip ci] — *github-actions[bot], 16:25*
+- [`c3ebb20`](https://github.com/WISE-Developers/project_nomad/commit/c3ebb20cecfe8fc130cf84a9118a7faaff434af5) Merge pull request #249 from WISE-Developers/fix/installer-workspace-deps — *Franco Nogarin, 10:25*
+- [`10722c4`](https://github.com/WISE-Developers/project_nomad/commit/10722c403d073eaf2458cc28f1fa793a6e01a25c) fix(installer): install workspace dev dependencies so build finds tsc — *Franco Nogarin, 10:24*
+- [`fd1b41a`](https://github.com/WISE-Developers/project_nomad/commit/fd1b41a708f5b182683b9b73318a0c9f1478c223) chore: dev build 2 [skip ci] — *github-actions[bot], 15:38*
+- [`44a2288`](https://github.com/WISE-Developers/project_nomad/commit/44a22883d202ae3751fe94d91280e1e14a9a5efd) Merge pull request #248 from WISE-Developers/feature/weather-first-wizard — *Franco Nogarin, 09:37*
+- [`5b1b9a2`](https://github.com/WISE-Developers/project_nomad/commit/5b1b9a2a0951591e58a0acb72b8d9dff2081fbea) feat(animation): "Replay" button once the slider hits the last frame (#236) — *Franco Nogarin, 07:49*
+
+### 2026-04-22
+
+- [`9efd597`](https://github.com/WISE-Developers/project_nomad/commit/9efd597e2b7ec72c1f60e0f662c506eb54748df2) fix(animation): anchor labels to config sim start, clip warmup to DN=1 (#236) — *Franco Nogarin, 16:56*
+- [`8b9c2c6`](https://github.com/WISE-Developers/project_nomad/commit/8b9c2c61cd117c5746b2a52c6494d99182f23090) fix(animation): render frame time in local, not UTC (#236) — *Franco Nogarin, 12:30*
+- [`bfe7284`](https://github.com/WISE-Developers/project_nomad/commit/bfe7284a84b0893f2f711757d31a508d01a9f217) fix(animation): anchor reclassify to raster ignition time, not config (#236) — *Franco Nogarin, 12:17*
+- [`2ecea86`](https://github.com/WISE-Developers/project_nomad/commit/2ecea866be375b067c74b9854f538f6dc3c2c20a) fix(installers): unpin FireSTARR bare-metal binary from v0.9.5.10 — *Franco Nogarin, 08:45*
+
+### 2026-04-20
+
+- [`4cae48e`](https://github.com/WISE-Developers/project_nomad/commit/4cae48e09a44dc8617eaef5ef90f121ec90ab476) feat(model-review): wire ArrivalAnimationManager into the panel (#236) — *Franco Nogarin, 09:20*
+- [`9a12f2e`](https://github.com/WISE-Developers/project_nomad/commit/9a12f2e4faf1684e29a1f50ae2a2ca9e25f70d92) feat(model-review): arrival animation helpers + Player component (#236) — *Franco Nogarin, 09:05*
+- [`377cd4a`](https://github.com/WISE-Developers/project_nomad/commit/377cd4a17bb8018e626f3be593622790b6e48524) feat(api): GET /models/:id/arrival-perimeters + production GDAL wiring (#236) — *Franco Nogarin, 08:11*
+- [`a374e8b`](https://github.com/WISE-Developers/project_nomad/commit/a374e8bd61b0734cb4ee8e6245f4df7effe839b6) feat(firestarr): arrival-animation orchestrator with injected GDAL runner (#236) — *Franco Nogarin, 08:09*
+- [`be3c212`](https://github.com/WISE-Developers/project_nomad/commit/be3c2120749027e71bc5723f1a364ec6cefa3a6c) feat(firestarr): sim metadata + feature transform helpers (#236) — *Franco Nogarin, 07:39*
+- [`c1fbb12`](https://github.com/WISE-Developers/project_nomad/commit/c1fbb1298481627214a249fe5ef771aa891a8784) feat(firestarr): animation frame planner (#236) — *Franco Nogarin, 07:24*
+
+### 2026-04-18
+
+- [`e5aead2`](https://github.com/WISE-Developers/project_nomad/commit/e5aead2eaa8330f1759ed0ddacc8dd44b6ca25ba) feat(dashboard): spinner on in-progress import status (#239) — *Franco Nogarin, 16:18*
+- [`862b587`](https://github.com/WISE-Developers/project_nomad/commit/862b5879c3bf7922391b777177a0df9a237d1e5b) feat(temporal): validate sim window against imported weather (#244) — *Franco Nogarin, 16:00*
+- [`dbfd072`](https://github.com/WISE-Developers/project_nomad/commit/dbfd07299262898584acc9928ef05ba3d3290759) fix(temporal): bound startDate to the weather window (#244, #238) — *Franco Nogarin, 15:48*
+- [`656a8ae`](https://github.com/WISE-Developers/project_nomad/commit/656a8aed804f72c30dd2ca5316112c3eb83a2519) fix(spotwx): truncate at the hourly→3-hourly transition (#244) — *Franco Nogarin, 14:53*
+- [`5b53be2`](https://github.com/WISE-Developers/project_nomad/commit/5b53be292c5ac0b19a905395a40d71be9cfa88de) fix(spotwx): submit file uploads via raw_weather pipeline (#244) — *Franco Nogarin, 14:22*
+- [`5784d3a`](https://github.com/WISE-Developers/project_nomad/commit/5784d3a506e5ff18f055f54e4b972328b5252a18) feat(weather): wire SpotWX file import into the wizard (#244) — *Franco Nogarin, 10:16*
+- [`2dcb0c7`](https://github.com/WISE-Developers/project_nomad/commit/2dcb0c783e9d33457700db33695685d9dd031ddf) feat(spotwx): SpotwxUpload component for file-based weather import — *Franco Nogarin, 10:13*
+- [`627d41a`](https://github.com/WISE-Developers/project_nomad/commit/627d41ad9c705873c86342e982bc857c6e3c068a) feat(spotwx): parser for basic + prometheus CSV exports — *Franco Nogarin, 10:10*
+- [`5761f6f`](https://github.com/WISE-Developers/project_nomad/commit/5761f6f9cf6f90316c24728b3ef6bab56cdd2471) feat(temporal): default startDate to first weather datetime — *Franco Nogarin, 09:01*
+- [`d715d87`](https://github.com/WISE-Developers/project_nomad/commit/d715d876bbc5a3a0a2b4f14cb92d87eb6fb22a82) refactor(weather): share ParsedWeatherCSV construction + populate dateRange — *Franco Nogarin, 08:59*
+- [`7cef81d`](https://github.com/WISE-Developers/project_nomad/commit/7cef81d7c66872a66a33fd4514d423944f263511) feat(weather): add extractDateRange helper — *Franco Nogarin, 08:53*
+- [`2b2b8f2`](https://github.com/WISE-Developers/project_nomad/commit/2b2b8f2abf7ee7ca5997f2ddb167654bd7400a56) feat(weather): add dateRange to ParsedWeatherCSV + default-start helper — *Franco Nogarin, 08:50*
+- [`044ab8d`](https://github.com/WISE-Developers/project_nomad/commit/044ab8de9d28c8ed6d3b6bc9911a54fc6e61e3fe) refactor(wizard): reshuffle ModelSetup to weather-first order — *Franco Nogarin, 08:41*
+- [`97e953d`](https://github.com/WISE-Developers/project_nomad/commit/97e953d707de30bb7d6c04cd2664a3d40a64a973) chore: dev build 1 [skip ci] — *github-actions[bot], 12:42*
+- [`ced2509`](https://github.com/WISE-Developers/project_nomad/commit/ced250996a3cfe3662dee73a34299c3a25f9245c) chore: remove SME_Data/FireSTARR docs from repo (#163) — *Franco Nogarin, 06:41*
 
 ### 2026-04-17
 
+- [`393f997`](https://github.com/WISE-Developers/project_nomad/commit/393f997138921decd2c3c28307d7284ee15e2766) chore: reset dev build counter after v0.7.0 [skip ci] — *github-actions[bot], 17:41*
+- [`e554888`](https://github.com/WISE-Developers/project_nomad/commit/e5548880330a4ec35a1317af44d3efa7a625bedc) chore: release v0.7.0 [skip ci] — *github-actions[bot], 17:41*
 - [`0c4cbe9`](https://github.com/WISE-Developers/project_nomad/commit/0c4cbe9c3cebbe322b0f28bc7cab093df92db158) Merge pull request #237 from WISE-Developers/dev — *Franco Nogarin, 11:41*
 - [`08c9a62`](https://github.com/WISE-Developers/project_nomad/commit/08c9a62cd93743ed8de4952ae983e6698bc2ce3a) chore: dev build 2 [skip ci] — *github-actions[bot], 16:38*
 - [`be4e267`](https://github.com/WISE-Developers/project_nomad/commit/be4e267442f2c377ccc5bd3eb4e0e2832f4ea7aa) fix: ArrivalTimeExtractor crashes on empty polygon from gdal_polygonize — *Franco Nogarin, 10:37*
