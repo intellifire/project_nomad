@@ -65,8 +65,7 @@ export interface AnimationFeatureCollection {
 /**
  * Dependencies injected into extractArrivalAnimation so the orchestrator can
  * be unit-tested without spawning real GDAL processes. Production wires
- * these to execSync, mkdtempSync, fs.readFileSync + JSON.parse, rm -rf, and
- * gdalsrsinfo.
+ * these to execSync, mkdtempSync, fs.readFileSync + JSON.parse, and rm -rf.
  */
 export interface AnimationExtractorDeps {
   /** Runs a shell command synchronously; throws on non-zero exit. */
@@ -77,8 +76,6 @@ export interface AnimationExtractorDeps {
   readJSON: (path: string) => unknown;
   /** Recursively removes a directory (best-effort cleanup). */
   rmrf: (path: string) => void;
-  /** Returns the spatial reference WKT for a raster. */
-  getSrsWkt: (rasterPath: string) => string;
 }
 
 export interface ExtractArrivalAnimationParams {
@@ -132,10 +129,14 @@ export async function extractArrivalAnimation(
       `gdal_polygonize.py "${classifiedPath}" -f GPKG "${vectorPath}" frames DN`,
     );
 
-    const srsWkt = deps.getSrsWkt(params.arrivalPath);
+    // gdal_polygonize writes the source raster's SRS into the GPKG, so
+    // ogr2ogr reads it from the file directly. Earlier versions passed
+    // `-s_srs "<wkt>"` from gdalsrsinfo, which broke when modern PROJ
+    // emitted multi-line WKT (Apr 27 2026 staging regression — PR #255 +
+    // follow-up): shell-arg splitting mangled the WKT and ogr2ogr aborted
+    // with "Failed to process SRS definition", producing a 0-byte GeoJSON.
     deps.exec(
-      `ogr2ogr -f GeoJSON "${geojsonPath}" "${vectorPath}" ` +
-        `-s_srs "${srsWkt}" -t_srs EPSG:4326`,
+      `ogr2ogr -f GeoJSON "${geojsonPath}" "${vectorPath}" -t_srs EPSG:4326`,
     );
 
     const raw = deps.readJSON(geojsonPath) as RawPolygonizedFeatureCollection;
@@ -163,13 +164,6 @@ export function defaultAnimationExtractorDeps(): AnimationExtractorDeps {
         /* best-effort cleanup */
       }
     },
-    getSrsWkt: (rasterPath) =>
-      parseSrsWktOutput(
-        execSync(`gdalsrsinfo -o wkt "${rasterPath}"`, {
-          encoding: 'utf8',
-          stdio: ['ignore', 'pipe', 'pipe'],
-        }).toString(),
-      ),
   };
 }
 
