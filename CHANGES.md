@@ -4,10 +4,18 @@ Auto-generated from git history. Do not edit manually.
 
 ---
 
-## v0.8.0
+## v0.8.1
+
+### 2026-04-27
+
+- [`1af4e70`](https://github.com/WISE-Developers/project_nomad/commit/1af4e70aafdf4dedc090c5299437a9b89ba6c9cf) Merge pull request #255 from WISE-Developers/dev — *Franco Nogarin, 07:56*
+- [`e65f38f`](https://github.com/WISE-Developers/project_nomad/commit/e65f38f718357ae4be96ae2354fd71d4db7c7ae3) chore: dev build 1 [skip ci] — *github-actions[bot], 13:54*
+- [`b79d0e5`](https://github.com/WISE-Developers/project_nomad/commit/b79d0e5a617c438add3a39ab7fd3cb98b6e444ae) fix(animation): handle multi-line WKT from new PROJ in defaultAnimationExtractorDeps — *Franco Nogarin, 07:54*
 
 ### 2026-04-26
 
+- [`62e552b`](https://github.com/WISE-Developers/project_nomad/commit/62e552b87bc55548d5aa99d0302116135957541a) chore: reset dev build counter after v0.8.0 [skip ci] — *github-actions[bot], 16:53*
+- [`8389915`](https://github.com/WISE-Developers/project_nomad/commit/8389915f1db2385dd08441aa6d72d10bb07bc2bb) chore: release v0.8.0 [skip ci] — *github-actions[bot], 16:52*
 - [`a80c704`](https://github.com/WISE-Developers/project_nomad/commit/a80c7046d3fb4daa2776a9c24fc89b38f371de8d) Merge pull request #254 from WISE-Developers/dev — *Franco Nogarin, 10:52*
 - [`1156f4b`](https://github.com/WISE-Developers/project_nomad/commit/1156f4b792c2b2a37a874aee353ea6092d84313a) chore: dev build 8 [skip ci] — *github-actions[bot], 16:49*
 - [`345b65f`](https://github.com/WISE-Developers/project_nomad/commit/345b65f59fc2cff837c2c3f2f66b89d5a4d050d3) chore: resync package-lock.json with workspace versions — *Franco Nogarin, 10:49*
