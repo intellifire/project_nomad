@@ -4,10 +4,15 @@ Auto-generated from git history. Do not edit manually.
 
 ---
 
-## v0.8.1
+## v0.8.2
 
 ### 2026-04-27
 
+- [`d1b1e73`](https://github.com/WISE-Developers/project_nomad/commit/d1b1e7384d21ba94849c94fa22b59c38b0d5a104) Merge pull request #256 from WISE-Developers/dev — *Franco Nogarin, 09:11*
+- [`b9fe3bf`](https://github.com/WISE-Developers/project_nomad/commit/b9fe3bf91caaedffd2c533fec50731f9e2e80dca) chore: dev build 1 [skip ci] — *github-actions[bot], 15:08*
+- [`fa56e6d`](https://github.com/WISE-Developers/project_nomad/commit/fa56e6d4e590832e0cc03f09bcddb1c4e34f2961) fix(animation): drop `-s_srs` — let GPKG carry the SRS through to ogr2ogr — *Franco Nogarin, 09:08*
+- [`e3e971b`](https://github.com/WISE-Developers/project_nomad/commit/e3e971b7f9401690990de5b476173d37b594e3c5) chore: reset dev build counter after v0.8.1 [skip ci] — *github-actions[bot], 13:57*
+- [`6f6dfe3`](https://github.com/WISE-Developers/project_nomad/commit/6f6dfe352d2471960b70a2f45a08a34bb2c00efa) chore: release v0.8.1 [skip ci] — *github-actions[bot], 13:56*
 - [`1af4e70`](https://github.com/WISE-Developers/project_nomad/commit/1af4e70aafdf4dedc090c5299437a9b89ba6c9cf) Merge pull request #255 from WISE-Developers/dev — *Franco Nogarin, 07:56*
 - [`e65f38f`](https://github.com/WISE-Developers/project_nomad/commit/e65f38f718357ae4be96ae2354fd71d4db7c7ae3) chore: dev build 1 [skip ci] — *github-actions[bot], 13:54*
 - [`b79d0e5`](https://github.com/WISE-Developers/project_nomad/commit/b79d0e5a617c438add3a39ab7fd3cb98b6e444ae) fix(animation): handle multi-line WKT from new PROJ in defaultAnimationExtractorDeps — *Franco Nogarin, 07:54*
