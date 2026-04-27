@@ -164,14 +164,36 @@ export function defaultAnimationExtractorDeps(): AnimationExtractorDeps {
       }
     },
     getSrsWkt: (rasterPath) =>
-      execSync(`gdalsrsinfo -o wkt "${rasterPath}"`, {
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'pipe'],
-      })
-        .toString()
-        .split(/\r?\n/)[0]
-        .trim(),
+      parseSrsWktOutput(
+        execSync(`gdalsrsinfo -o wkt "${rasterPath}"`, {
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'pipe'],
+        }).toString(),
+      ),
   };
+}
+
+/**
+ * Normalises the raw `gdalsrsinfo -o wkt <raster>` stdout into a single
+ * WKT string suitable for passing to `ogr2ogr -s_srs`.
+ *
+ * Two real-world formats are observed depending on PROJ version:
+ *
+ *   - **Old PROJ (≤ 6, e.g. older macOS Homebrew gdal):** entire WKT on
+ *     one line, no leading blank. Trim whitespace and we're done.
+ *   - **New PROJ (≥ 7, e.g. Debian gdal 3.6+ used in our containers):**
+ *     a blank line, then a 30+ line pretty-printed PROJCRS block.
+ *
+ * The previous implementation took only the first line of stdout, which
+ * worked by accident for old PROJ but returned the empty leading line for
+ * new PROJ — ogr2ogr then errored with "Failed to process SRS definition"
+ * and the animation endpoint 500'd. Apr 27 2026 staging regression.
+ *
+ * ogr2ogr accepts multi-line WKT, so we keep the full block; we just trim
+ * the leading/trailing whitespace.
+ */
+export function parseSrsWktOutput(rawOutput: string): string {
+  return rawOutput.replace(/\r/g, '').trim();
 }
 
 export function toAnimationFeatureCollection(

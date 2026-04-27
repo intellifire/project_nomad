@@ -14,6 +14,7 @@ import {
   extractSimTimeRange,
   julianDayFromDate,
   julianToDate,
+  parseSrsWktOutput,
   toAnimationFeatureCollection,
   toFireSTARRRasterJulianDay,
 } from '../arrivalAnimation.js';
@@ -121,6 +122,55 @@ describe('toAnimationFeatureCollection', () => {
       type: 'Polygon',
       coordinates: [[[0, 0], [1, 0], [1, 1], [0, 0]]],
     });
+  });
+});
+
+describe('parseSrsWktOutput', () => {
+  // Old GDAL/PROJ (≤ PROJ 6, e.g. macOS Homebrew gdal at ~3.4) emits the
+  // entire WKT on a single line, no leading blank. The existing
+  // `.split(/\r?\n/)[0].trim()` worked here by accident.
+  it('returns the WKT unchanged for old single-line PROJ output', () => {
+    const oldGdalOutput =
+      'PROJCS["NAD83 / Canada Atlas Lambert",GEOGCS["NAD83",DATUM["North_American_Datum_1983",SPHEROID["GRS 1980",6378137,298.257222101]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433]],PROJECTION["Lambert_Conformal_Conic_2SP"],PARAMETER["latitude_of_origin",49],PARAMETER["central_meridian",-95],UNIT["metre",1]]\n';
+    const result = parseSrsWktOutput(oldGdalOutput);
+    expect(result.startsWith('PROJCS[')).toBe(true);
+    expect(result.endsWith(']]')).toBe(true);
+    expect(result).not.toContain('\n');
+  });
+
+  // New GDAL/PROJ (≥ PROJ 7, e.g. Debian-based container with gdal 3.6+)
+  // emits a leading blank line followed by 30+ pretty-printed indented
+  // lines. Empirically reproduced on staging Apr 27 2026 — the bug.
+  it('returns a usable multi-line WKT for new pretty-printed PROJ output', () => {
+    const newGdalOutput = [
+      '', // <— leading blank line is what bit us
+      'PROJCRS["unnamed",',
+      '    BASEGEOGCRS["unknown",',
+      '        DATUM["unnamed",',
+      '            ELLIPSOID["GRS 1980",6378137,298.257222101004,',
+      '                LENGTHUNIT["metre",1],',
+      '                ID["EPSG",7019]]],',
+      '        PRIMEM["Greenwich",0,',
+      '            ANGLEUNIT["unknown",0.0174532925199433]]],',
+      '    CONVERSION["Transverse Mercator",',
+      '        METHOD["Transverse Mercator", ID["EPSG",9807]]],',
+      '    CS[Cartesian,2],',
+      '        AXIS["easting",east], AXIS["northing",north],',
+      '        LENGTHUNIT["metre",1]]',
+      '',
+    ].join('\n');
+    const result = parseSrsWktOutput(newGdalOutput);
+    // Must NOT be empty (the bug) and must include the closing `]]`
+    // so ogr2ogr can parse it as a complete SRS definition.
+    expect(result).not.toBe('');
+    expect(result.startsWith('PROJCRS[')).toBe(true);
+    expect(result).toContain('Transverse Mercator');
+    expect(result.endsWith(']]')).toBe(true);
+  });
+
+  it('handles CRLF line endings without losing content', () => {
+    const crlfOutput = 'PROJCS["x",GEOGCS["y",DATUM["z",SPHEROID["w",1,1]]]]\r\n';
+    expect(parseSrsWktOutput(crlfOutput)).toBe('PROJCS["x",GEOGCS["y",DATUM["z",SPHEROID["w",1,1]]]]');
   });
 });
 
