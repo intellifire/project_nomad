@@ -267,7 +267,6 @@ describe('extractArrivalAnimation (orchestrator)', () => {
       rmrf: (path: string) => {
         rmrfCalls.push(path);
       },
-      getSrsWkt: () => 'PROJCS["NAD83/CanadaAtlas",...]',
     };
     return { deps, execCalls, rmrfCalls };
   }
@@ -287,6 +286,11 @@ describe('extractArrivalAnimation (orchestrator)', () => {
     const tools = execCalls.map((c) => c.split(/\s+/)[0]);
     expect(tools).toEqual(['gdal_calc.py', 'gdal_polygonize.py', 'ogr2ogr']);
     expect(execCalls[0]).toContain('/sims/m1/arrival.tif');
+
+    // ogr2ogr must NOT pass -s_srs: gdal_polygonize embeds the source raster's
+    // SRS into the GPKG, and passing a multi-line WKT through `-s_srs` causes
+    // shell-arg splitting that breaks ogr2ogr (Apr 27 2026 staging regression).
+    expect(execCalls[2]).not.toContain('-s_srs');
     expect(execCalls[2]).toContain('EPSG:4326');
 
     expect(result.type).toBe('FeatureCollection');
