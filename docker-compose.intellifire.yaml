@@ -11,6 +11,7 @@ services:
   nomad:
     container_name: nomad
     image: ghcr.io/intellifire/project_nomad:${NOMAD_IMAGE_TAG}
+    mem_limit: ${NOMAD_MEM_LIMIT:-1g}
     ports:
       - "${NOMAD_FRONTEND_HOST_PORT}:3001"
     volumes:
@@ -38,9 +39,16 @@ services:
 
   # FireSTARR engine — NOT auto-started. The Nomad backend spawns this
   # ephemerally via `docker compose run firestarr-app <command>` per job.
+  # Per-job resource limits keep a runaway sim from starving the host (DB,
+  # CMS, app backends share the same machine). Defaults are conservative;
+  # override per-env via FIRESTARR_MEM_LIMIT / FIRESTARR_CPUS in .env.
+  # NOTE: defaults below are placeholders — Franco should confirm peak sim
+  # memory and the right cap before relying on these in production.
   firestarr-app:
     image: ${FIRESTARR_IMAGE:?FIRESTARR_IMAGE must be set in .env}
     profiles: ["modeling"]
+    mem_limit: ${FIRESTARR_MEM_LIMIT:-8g}
+    cpus: ${FIRESTARR_CPUS:-2}
     entrypoint: ["/bin/sh", "-c", "sed -i 's|RASTER_ROOT.*|RASTER_ROOT = /appl/data/generated/grid/100m|' /appl/firestarr/settings.ini && exec \"$$@\"", "--"]
     volumes:
       - /etc/ssl/certs:/etc/ssl/certs
