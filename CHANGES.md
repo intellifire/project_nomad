@@ -4,10 +4,218 @@ Auto-generated from git history. Do not edit manually.
 
 ---
 
-## v0.8.2
+## v0.11.1
+
+### 2026-06-17
+
+- [`17193b0`](https://github.com/WISE-Developers/project_nomad/commit/17193b06fb1107c1ae9e90fec7eb3e5e427e9eda) Merge pull request #295 from WISE-Developers/dev — *Franco Nogarin, 12:18*
+- [`0c600c4`](https://github.com/WISE-Developers/project_nomad/commit/0c600c4a9ab927d3b5aae02235a2cd6052691b08) chore: dev build 1 [skip ci] — *github-actions[bot], 17:29*
+- [`9796016`](https://github.com/WISE-Developers/project_nomad/commit/97960164634c26507ffd83589f0ca0d665c900a3) Merge architecture remediation into dev (issue #293) — *Franco Nogarin, 11:27*
+- [`e2efe03`](https://github.com/WISE-Developers/project_nomad/commit/e2efe03b56513d6aa305ab10afb1fd6340be04b8) docs: add openNomad contract proposal (item 7 design) — *Franco Nogarin, 11:27*
+- [`bb19598`](https://github.com/WISE-Developers/project_nomad/commit/bb195983636a8000539ec280088420dd85c0020f) docs: closing DIP re-scan — 26 violations -> 0 (proven) — *Franco Nogarin, 09:03*
+- [`1536a18`](https://github.com/WISE-Developers/project_nomad/commit/1536a18fef485e2250e454ad4ab71395c0f20e42) refactor(frontend): honest IOpenNomadAPI contract — optional capabilities (item 7) — *Franco Nogarin, 08:55*
+- [`15793f5`](https://github.com/WISE-Developers/project_nomad/commit/15793f520793304ef798b67118423eb77fac0918) refactor(backend): extract BundleStore; move TTL sweep off import-time (item 8) — *Franco Nogarin, 08:50*
+- [`80e6991`](https://github.com/WISE-Developers/project_nomad/commit/80e6991ce8721489e1e57b530d2076a143b27089) docs: mark Phase 2 complete for behavior-preserving scope; lift out items 7 & 8 — *Franco Nogarin, 07:10*
+- [`f91dec3`](https://github.com/WISE-Developers/project_nomad/commit/f91dec321bf33e7a4556cf61588504811b57b77e) refactor(backend): relocate domain-reaching utilities inward (item 6) — *Franco Nogarin, 07:07*
+- [`b23be3d`](https://github.com/WISE-Developers/project_nomad/commit/b23be3dc12c5957aa0c39f107dd9ef79fef32088) refactor(backend): inject ModelResultsService dependencies via ports (item 4) — *Franco Nogarin, 05:10*
+
+### 2026-06-16
+
+- [`39cec44`](https://github.com/WISE-Developers/project_nomad/commit/39cec44ef2af5f112ad36464047698e260799fec) refactor(backend): lift weather contracts into application layer (item 3) — *Franco Nogarin, 08:46*
+- [`842049e`](https://github.com/WISE-Developers/project_nomad/commit/842049efdb7f55520ce56beed14076a3a260ce03) refactor(backend): redirect all engine callers off the concrete factory (item 2) — *Franco Nogarin, 07:18*
+- [`914ba2a`](https://github.com/WISE-Developers/project_nomad/commit/914ba2a1a2433f850b3fa4c26d737eede7992110) test(backend): characterize engine-wiring handlers before resolver swap (item 2) — *Franco Nogarin, 07:10*
+- [`139b051`](https://github.com/WISE-Developers/project_nomad/commit/139b051f6eb194ba806f101e2ad35081598f079b) docs: add engine port-leak survey (item 2 scoping) — *Franco Nogarin, 07:03*
+- [`1ac55f5`](https://github.com/WISE-Developers/project_nomad/commit/1ac55f519b25f82963b196a938baf094ea2f5b84) refactor(backend): replace engineType switches with engine strategy registry (item 1) — *Franco Nogarin, 06:21*
+
+### 2026-06-15
+
+- [`a883331`](https://github.com/WISE-Developers/project_nomad/commit/a883331271787bef37442451f0fad97bcb0874c8) docs: add architecture compliance review + remediation plans — *Franco Nogarin, 11:42*
+
+### 2026-06-12
+
+- [`010393e`](https://github.com/WISE-Developers/project_nomad/commit/010393eab323f464caf949d4e614d013e48ebcab) chore: reset dev build counter after v0.11.0 [skip ci] — *github-actions[bot], 17:31*
+- [`c0158b0`](https://github.com/WISE-Developers/project_nomad/commit/c0158b004194f7af4adbc4f33624dc458d21db94) chore: release v0.11.0 [skip ci] — *github-actions[bot], 17:30*
+- [`292540b`](https://github.com/WISE-Developers/project_nomad/commit/292540bf88dab86d538fb3f7d507ffdda7b2c920) Merge pull request #288 from WISE-Developers/dev — *Franco Nogarin, 11:30*
+- [`72acc79`](https://github.com/WISE-Developers/project_nomad/commit/72acc79ca5ff0bdcc9e80569472a35b5c70d76a3) chore: dev build 7 [skip ci] — *github-actions[bot], 17:05*
+- [`62cb2fc`](https://github.com/WISE-Developers/project_nomad/commit/62cb2fc18ec0da0e7d4fa4e1debe83879eca020d) Merge #283 legend epic: day-keyed viridis arrival, full customization + in-process perf — *Franco Nogarin, 11:04*
+- [`5471b0d`](https://github.com/WISE-Developers/project_nomad/commit/5471b0d197bab38c3f58b70f13135d914f64d430) perf(#283): render arrival tiles in-process — interactions ~60-100x faster — *Franco Nogarin, 09:54*
+- [`ca85f16`](https://github.com/WISE-Developers/project_nomad/commit/ca85f16c2545789d203ba5d24d80894a7fe09d06) feat(#283): customizable arrival legend — multi-fire, breaks, ramps, recolour, highlight, a11y — *Franco Nogarin, 09:31*
+
+### 2026-06-11
+
+- [`051a422`](https://github.com/WISE-Developers/project_nomad/commit/051a42297bb78e75e7e0aeb51ebe1182a104c593) feat(#274): day-keyed viridis arrival legend + tiles, Julian-day aligned — *Franco Nogarin, 16:06*
+- [`6ec1079`](https://github.com/WISE-Developers/project_nomad/commit/6ec107903e121e7b36e617cfd85f813ef59510bd) chore: dev build 6 [skip ci] — *github-actions[bot], 16:47*
+- [`2094a65`](https://github.com/WISE-Developers/project_nomad/commit/2094a65bae52908b5436d13f7295283ed513876f) Merge #283 probability standardization + breaksMode cleanup into dev — *Franco Nogarin, 10:47*
+- [`8a73401`](https://github.com/WISE-Developers/project_nomad/commit/8a73401cd6f1b6a7168d025ef80e5f24d252a1a3) Remove dead breaksMode UI (Unit 4) — *Franco Nogarin, 10:44*
+- [`73eb93d`](https://github.com/WISE-Developers/project_nomad/commit/73eb93d1edd3d47b904c403e58852a81d1c8f923) fix(#283): hover ramp + raster tile to SLD blue low (Unit 3b) — *Franco Nogarin, 07:42*
+- [`279aca5`](https://github.com/WISE-Developers/project_nomad/commit/279aca5b57c69b633376fed723590df4ee4e82ff) feat(#283): probability contours static-only, drop dynamic/quantile (Unit 3) — *Franco Nogarin, 07:16*
+- [`8d7a671`](https://github.com/WISE-Developers/project_nomad/commit/8d7a67164a0971dcabe2d97bb74708e67276c438) feat(#283): backend static probability symbology authority (Unit 3a) — *Franco Nogarin, 07:11*
+
+### 2026-06-10
+
+- [`0255f6d`](https://github.com/WISE-Developers/project_nomad/commit/0255f6daf90f546b204e7384ff91e29a279d191e) feat(#283): single SLD-sourced probability palette, kill 3x drift (Unit 2) — *Franco Nogarin, 09:09*
+- [`ce56830`](https://github.com/WISE-Developers/project_nomad/commit/ce56830d37a6100c3fa336ae9b4a5fd6df7c684c) feat(#283): vendor FireSTARR probability SLD + fail-fast parser (Unit 1) — *Franco Nogarin, 06:51*
+
+### 2026-06-04
+
+- [`1cf3e18`](https://github.com/WISE-Developers/project_nomad/commit/1cf3e184d685d560c1529c2185c9f5708b20000f) chore: dev build 5 [skip ci] — *github-actions[bot], 21:24*
+- [`f97195b`](https://github.com/WISE-Developers/project_nomad/commit/f97195b7b1f951be975773e20db951027f1614b3) fix: scope drawing tools to the model wizard only (closes #285) — *Franco Nogarin, 15:23*
+
+### 2026-06-02
+
+- [`0901904`](https://github.com/WISE-Developers/project_nomad/commit/0901904164f7cc74c277f1f77af3ebf3fcc07377) chore: dev build 4 [skip ci] — *github-actions[bot], 19:34*
+- [`0431786`](https://github.com/WISE-Developers/project_nomad/commit/043178635c7c271354dd59382dc9295dcf30a48e) fix: timezone double-adjustment root cause (#273, closes #279 #280 #284) — *Franco Nogarin, 13:33*
+- [`48b2493`](https://github.com/WISE-Developers/project_nomad/commit/48b24939ddbc300e9fb8363e9b46f8a7d8fd5def) chore: dev build 3 [skip ci] — *github-actions[bot], 13:58*
+- [`0a664e5`](https://github.com/WISE-Developers/project_nomad/commit/0a664e5684f112d6084d347c30889f13dea82000) chore: add small logo variant, hay-river test fire data, gitignore root logs/ — *Franco Nogarin, 07:58*
+- [`f5cd48d`](https://github.com/WISE-Developers/project_nomad/commit/f5cd48dc41fcf2246fd9a2b5336c4902bea36672) chore: dev build 2 [skip ci] — *github-actions[bot], 13:50*
+- [`ea68705`](https://github.com/WISE-Developers/project_nomad/commit/ea6870502e0b7ae353b7229f873655536d4063ef) content: splash FireSTARR pin note + optimized logo — *Franco Nogarin, 07:50*
+- [`0926733`](https://github.com/WISE-Developers/project_nomad/commit/0926733250d73b29310614a3d3d01d6b5b173f95) chore: dev build 1 [skip ci] — *github-actions[bot], 13:47*
+- [`5b4ffb5`](https://github.com/WISE-Developers/project_nomad/commit/5b4ffb5a8d8317029affe285ec2d8d634124d00f) chore: bump CI actions to node24 runtime (closes #276) — *Franco Nogarin, 07:41*
+
+### 2026-05-28
+
+- [`83901d3`](https://github.com/WISE-Developers/project_nomad/commit/83901d3208c690a329265656519dc2cffe827cd4) chore: reset dev build counter after v0.10.1 [skip ci] — *github-actions[bot], 12:17*
+- [`8868ef2`](https://github.com/WISE-Developers/project_nomad/commit/8868ef2605bdcdf07b973b03574c3059e756f4aa) chore: release v0.10.1 [skip ci] — *github-actions[bot], 12:17*
+- [`c86fb6c`](https://github.com/WISE-Developers/project_nomad/commit/c86fb6c48eeb023e342abd95c5b0c399f28846e8) Merge pull request #278 from WISE-Developers/dev — *Franco Nogarin, 06:16*
+- [`6c70f78`](https://github.com/WISE-Developers/project_nomad/commit/6c70f787ab903448919e1fc4b8c8263ed78dec92) chore: dev build 1 [skip ci] — *github-actions[bot], 12:15*
+- [`3e42cc3`](https://github.com/WISE-Developers/project_nomad/commit/3e42cc3605b6875f76e28783a05d575ded15b8b1) Merge branch 'fix/firestarr-pin-known-good-digest' into dev — *Franco Nogarin, 06:14*
+- [`07b1780`](https://github.com/WISE-Developers/project_nomad/commit/07b1780977e5606eefb8c1fec59d5500885ca5a9) fix(installer): pin FireSTARR digest in sibling installers + add --demo — *Franco Nogarin, 06:14*
+
+### 2026-05-27
+
+- [`87c3c5b`](https://github.com/WISE-Developers/project_nomad/commit/87c3c5bff4ca59395b79379e909063bb942e1766) fix(installer): pin FireSTARR docker default to verified-good v0.9.11 digest — *Franco Nogarin, 20:43*
+- [`f9caf41`](https://github.com/WISE-Developers/project_nomad/commit/f9caf41aeab91e21de0219b839c73f9af3caacc4) chore: reset dev build counter after v0.10.0 [skip ci] — *github-actions[bot], 15:44*
+- [`072c834`](https://github.com/WISE-Developers/project_nomad/commit/072c834b62f141fdf3d183c8706cb8ebaabd8ae9) chore: release v0.10.0 [skip ci] — *github-actions[bot], 15:43*
+- [`1a74260`](https://github.com/WISE-Developers/project_nomad/commit/1a742600d4fdc0efc9a05464d2fa5c0ccd08c628) Merge pull request #277 from WISE-Developers/dev — *Franco Nogarin, 09:43*
+- [`0822823`](https://github.com/WISE-Developers/project_nomad/commit/0822823b23a65cb52873e0cb7aa6ba1664d78dc0) chore: dev build 16 [skip ci] — *github-actions[bot], 15:30*
+- [`a6a960d`](https://github.com/WISE-Developers/project_nomad/commit/a6a960db26fec9ff61787230a5e1ff619e043590) fix(splash): use git tag commit date as release date, not build date (#275) — *Franco Nogarin, 09:30*
+- [`8ee17c2`](https://github.com/WISE-Developers/project_nomad/commit/8ee17c2bf8a6e81535a5d0aa72fbe35fbf4a3bd9) chore: dev build 15 [skip ci] — *github-actions[bot], 15:24*
+- [`a1d4876`](https://github.com/WISE-Developers/project_nomad/commit/a1d487632af41192b28229584b08beee17e7d449) feat(splash): show version, build date, and release link in modal footer (#275) — *Franco Nogarin, 09:23*
+- [`1151f73`](https://github.com/WISE-Developers/project_nomad/commit/1151f73734d5116660f3ec9489599c0c3d22a8aa) chore: dev build 14 [skip ci] — *github-actions[bot], 15:20*
+- [`7c882a6`](https://github.com/WISE-Developers/project_nomad/commit/7c882a6a2c2191ce745d95ba142e440b4c795c02) style(splash): center the modal title (#275) — *Franco Nogarin, 09:19*
+- [`f5aba97`](https://github.com/WISE-Developers/project_nomad/commit/f5aba97653d84d644ab5f821b19c103f77f7836b) chore: dev build 13 [skip ci] — *github-actions[bot], 15:17*
+- [`6f45f4f`](https://github.com/WISE-Developers/project_nomad/commit/6f45f4fef04ffe88eb57021527011ae7f99c0832) feat(splash): add Nomad logo to default splash content (#275) — *Franco Nogarin, 09:16*
+- [`4488433`](https://github.com/WISE-Developers/project_nomad/commit/44884334feefe08a5072be6964d68d283763956d) chore: dev build 12 [skip ci] — *github-actions[bot], 15:11*
+- [`12eabb4`](https://github.com/WISE-Developers/project_nomad/commit/12eabb4f71f835fb8333907f7c13992cf3922677) Merge branch 'fix/275-splash-logo-radius' into dev — *Franco Nogarin, 09:10*
+- [`8c30836`](https://github.com/WISE-Developers/project_nomad/commit/8c3083610c9b5d2c2e1390d8ca7b2324e5940a85) style(splash): round modal image corners to match login screen (#275) — *Franco Nogarin, 09:10*
+- [`6d92ce8`](https://github.com/WISE-Developers/project_nomad/commit/6d92ce84470675923f65930555865f9e89c41247) chore: dev build 11 [skip ci] — *github-actions[bot], 15:04*
+- [`2b69f4c`](https://github.com/WISE-Developers/project_nomad/commit/2b69f4ca7b403748f95f162ab19c5fa01d342102) Merge branch 'feat/275-splash-logo' into dev — *Franco Nogarin, 09:04*
+- [`1c59c9e`](https://github.com/WISE-Developers/project_nomad/commit/1c59c9eef67226140baf9f3c1e91502b5d569ec7) feat(splash): show Nomad logo at the top of the default splash (#275) — *Franco Nogarin, 09:04*
+- [`5633ce1`](https://github.com/WISE-Developers/project_nomad/commit/5633ce19587bebb222cab1c4ea77aab18e7a8658) chore: dev build 10 [skip ci] — *github-actions[bot], 14:24*
+- [`5298e8e`](https://github.com/WISE-Developers/project_nomad/commit/5298e8eb01d8de0612d26ba95d0d92c95c5b19d0) Merge branch 'fix/275-splash-typography' into dev — *Franco Nogarin, 08:24*
+- [`37852ab`](https://github.com/WISE-Developers/project_nomad/commit/37852ab5a8c8f5eea0d0f1cd60fb1325520ac1b1) style(splash): deterministic type scale for modal content (#275) — *Franco Nogarin, 08:24*
+- [`13543cf`](https://github.com/WISE-Developers/project_nomad/commit/13543cf42fe0cf7a2dec0e3bdf18b249dd5f840e) chore: dev build 9 [skip ci] — *github-actions[bot], 14:00*
+- [`dc72a13`](https://github.com/WISE-Developers/project_nomad/commit/dc72a13e0c52ed8d0e793f602067185b199325d7) Merge branch 'fix/275-remove-splash-version' into dev — *Franco Nogarin, 07:59*
+- [`acd506a`](https://github.com/WISE-Developers/project_nomad/commit/acd506aa5ea5b353ce3aa874cb26bf326efdcae9) refactor(splash): remove vestigial 'version' frontmatter field (#275) — *Franco Nogarin, 07:59*
+- [`7326156`](https://github.com/WISE-Developers/project_nomad/commit/7326156bb0dc0e78ce8388e61d2efa96eedc0659) chore: dev build 8 [skip ci] — *github-actions[bot], 13:53*
+- [`67bef98`](https://github.com/WISE-Developers/project_nomad/commit/67bef98478820c38758f2005acc6164fb99bd07e) Merge branch 'fix/275-splash-always-show' into dev — *Franco Nogarin, 07:53*
+- [`5f43226`](https://github.com/WISE-Developers/project_nomad/commit/5f43226ca410e9abe219e874d9d4c739c7d35387) fix(splash): always show on app load, dismiss is per-load only (#275) — *Franco Nogarin, 07:53*
+- [`bb732f0`](https://github.com/WISE-Developers/project_nomad/commit/bb732f06cacff0ec0d57e594b355daf0b2d9a18a) chore: dev build 7 [skip ci] — *github-actions[bot], 13:03*
+- [`4ded9aa`](https://github.com/WISE-Developers/project_nomad/commit/4ded9aae48afc98e9549da0a174a5befd88ecd10) Merge branch 'fix/275-splash-no-data-path' into dev — *Franco Nogarin, 07:03*
+- [`9c2efe3`](https://github.com/WISE-Developers/project_nomad/commit/9c2efe3848522f8cbfa4a981129fc421d33d275e) fix(splash): stop deriving splash path from NOMAD_DATA_PATH (#275) — *Franco Nogarin, 07:03*
+- [`c7045fd`](https://github.com/WISE-Developers/project_nomad/commit/c7045fde01bdb21b705d4a684490063ca1802686) chore: dev build 6 [skip ci] — *github-actions[bot], 12:50*
+- [`d775326`](https://github.com/WISE-Developers/project_nomad/commit/d77532634a8b93c5cbc1535fa5a6a01bfea77bd8) Merge branch 'fix/275-splash-default-fallback' into dev — *Franco Nogarin, 06:46*
+- [`cc446f5`](https://github.com/WISE-Developers/project_nomad/commit/cc446f5d63cc80f2c4f140c8de89e82c1a812583) Merge branch 'feature/275-splash-frontend' into dev — *Franco Nogarin, 06:46*
+- [`83ca2b6`](https://github.com/WISE-Developers/project_nomad/commit/83ca2b6a650bf07e6bb042805dfaa3504c4f589f) Merge branch 'feature/275-splash-backend' into dev — *Franco Nogarin, 06:46*
+- [`782e306`](https://github.com/WISE-Developers/project_nomad/commit/782e306f0e90a18b8d460a6eb4dea3dfe13e8df0) fix(splash): fall back to bundled default when configured file unreadable (#275) — *Franco Nogarin, 06:45*
+- [`d27a349`](https://github.com/WISE-Developers/project_nomad/commit/d27a34983989e04b20e4ddc3c31e97083b8812d8) feat(splash): mount ContentSplashGate in App after auth gate (#275) — *Franco Nogarin, 06:37*
+- [`cc6bf4b`](https://github.com/WISE-Developers/project_nomad/commit/cc6bf4bb46282566dbf1ddbe73cd7c9d7db6dffd) feat(splash): add useSplash hook with version gating and fail-closed errors (#275) — *Franco Nogarin, 06:36*
+- [`daed1a3`](https://github.com/WISE-Developers/project_nomad/commit/daed1a3e5290c5ea6393b7c2e7ec8e3dbe7995f2) feat(splash): add SplashModal component with markdown body and dismiss (#275) — *Franco Nogarin, 06:35*
+- [`5b55753`](https://github.com/WISE-Developers/project_nomad/commit/5b5575316a23e335b75efafdf0a513543f247ed9) build(splash): add react-markdown for content splash rendering (#275) — *Franco Nogarin, 06:35*
+- [`a3059cb`](https://github.com/WISE-Developers/project_nomad/commit/a3059cb3a11c54512c1587dc17d1bd80e1a46872) feat(splash): add GET /api/v1/splash endpoint reading markdown file (#275) — *Franco Nogarin, 06:32*
+- [`d3ea255`](https://github.com/WISE-Developers/project_nomad/commit/d3ea255f650a1741f1edc2445cbdd1bb6f97949c) feat(splash): add resolveSplashPath with env precedence rules (#275) — *Franco Nogarin, 06:30*
+- [`147b401`](https://github.com/WISE-Developers/project_nomad/commit/147b40119c3e5a306874653541b373a619d791cd) test(splash): cover frontmatter validation edge cases (#275) — *Franco Nogarin, 06:30*
+- [`0720a5a`](https://github.com/WISE-Developers/project_nomad/commit/0720a5a0020c1659d1b40b6b18ac097d4f72f0de) feat(splash): add parseSplashFile with zero-dep YAML frontmatter parser (#275) — *Franco Nogarin, 06:29*
+
+### 2026-05-26
+
+- [`cdb3ea3`](https://github.com/WISE-Developers/project_nomad/commit/cdb3ea3541c4fe454beba2e5d11832f5b2e3551e) chore: dev build 5 [skip ci] — *github-actions[bot], 16:13*
+- [`4d87df7`](https://github.com/WISE-Developers/project_nomad/commit/4d87df7122d6c90ae1ac2e43852bd9414daf63f2) Merge branch 'fix/perimeter-coord-precision' into dev — *Franco Nogarin, 10:13*
+- [`543b9a4`](https://github.com/WISE-Developers/project_nomad/commit/543b9a43b4ca3f916ec386aad05f89a8d0c3b991) fix(perimeters): round coords to 9 decimals so TerraDraw accepts them — *Franco Nogarin, 10:12*
+- [`032b076`](https://github.com/WISE-Developers/project_nomad/commit/032b076ccaf88adc1a7c53631d7a80b4a0d641ba) chore: dev build 4 [skip ci] — *github-actions[bot], 15:44*
+- [`6727f9d`](https://github.com/WISE-Developers/project_nomad/commit/6727f9d23d09f203d8dfe9b58b46ba250de0eb80) Merge branch 'fix/268-shp-single-file-error' into dev — *Franco Nogarin, 09:43*
+- [`4e529e4`](https://github.com/WISE-Developers/project_nomad/commit/4e529e421082ebe7a8165a40ad24d094c74d4200) fix(perimeters): clearer error when a single .shp is selected without sidecars (#268) — *Franco Nogarin, 09:43*
+- [`8eab500`](https://github.com/WISE-Developers/project_nomad/commit/8eab500fa6f7532f6b5ea2bd8a7781c70d75730e) chore: dev build 3 [skip ci] — *github-actions[bot], 14:36*
+- [`b9b3e61`](https://github.com/WISE-Developers/project_nomad/commit/b9b3e61c7dbc754856f78737e8c98d8ae31b6c7c) Merge branch 'feature/268-shapefile-ui' into dev — *Franco Nogarin, 08:35*
+- [`c5151fc`](https://github.com/WISE-Developers/project_nomad/commit/c5151fcb6564fdd4d973d9cd481e0140a76ef3ff) Merge branch 'feature/269-shapefile-import' into dev — *Franco Nogarin, 08:35*
+- [`d45a836`](https://github.com/WISE-Developers/project_nomad/commit/d45a836fa5fedd8e98dc88795b16743ba1f35bda) feat(perimeters): support shapefile upload in GeometryUpload (#268) — *Franco Nogarin, 06:22*
+- [`bf46041`](https://github.com/WISE-Developers/project_nomad/commit/bf460419ee4321d60eb4e5b7f7ac829903cf4d9b) build(perimeters): add jszip for client-side shapefile bundling (#268) — *Franco Nogarin, 06:22*
+- [`d1d32a0`](https://github.com/WISE-Developers/project_nomad/commit/d1d32a062532b9082621df8aabbc299f8345e0a6) refactor(perimeters): wire shapefile through format dispatcher (#269) — *Franco Nogarin, 05:36*
+- [`233a4a2`](https://github.com/WISE-Developers/project_nomad/commit/233a4a272216bde2c0669bf4c5b9ea03f22fb0a6) feat(perimeters): validate shapefile coordinates fall in WGS84 range (#269) — *Franco Nogarin, 05:35*
+- [`499a815`](https://github.com/WISE-Developers/project_nomad/commit/499a81520a5ba7d20861ad9741028a1857dd5ac4) feat(perimeters): reject non-polygon shapefile geometries (#269) — *Franco Nogarin, 05:34*
+- [`3aaa4fd`](https://github.com/WISE-Developers/project_nomad/commit/3aaa4fd77fc3950e5c79acde1ec9125f5f44d955) feat(perimeters): require readable CRS from shapefile .prj (#269) — *Franco Nogarin, 05:33*
+- [`eceb0e4`](https://github.com/WISE-Developers/project_nomad/commit/eceb0e4708ee69105d902e5ddb73c4d36251b0ba) feat(perimeters): parse shapefile happy path with gdal-async (#269) — *Franco Nogarin, 05:33*
+- [`a464bbf`](https://github.com/WISE-Developers/project_nomad/commit/a464bbfb70861be12e30debbafb0c415ba5e9a3c) test(perimeters): cover sidecar presence for raw multi-file shapefile input (#269) — *Franco Nogarin, 05:30*
+- [`cdb704f`](https://github.com/WISE-Developers/project_nomad/commit/cdb704f8149a826cfb20021f521694ab327c0c6b) feat(perimeters): validate shapefile sidecars from zip bundle (#269) — *Franco Nogarin, 05:30*
+- [`cba81e7`](https://github.com/WISE-Developers/project_nomad/commit/cba81e78c2d4fb82a2192feed77ff8e48ee481ef) refactor(perimeters): add shapefile parser module shell (#269) — *Franco Nogarin, 05:29*
+
+### 2026-05-14
+
+- [`e5e47d7`](https://github.com/WISE-Developers/project_nomad/commit/e5e47d7a5190b55f6c831a1a9c7f758049fb6a05) chore: dev build 2 [skip ci] — *github-actions[bot], 11:53*
+- [`b4a9093`](https://github.com/WISE-Developers/project_nomad/commit/b4a90936a3b754a22602509f04f86153de202131) fix(perimeters): surface underlying parse-error hints in validation messages (#267) — *Franco Nogarin, 05:52*
+- [`0c7a670`](https://github.com/WISE-Developers/project_nomad/commit/0c7a6703ceb7685b507fab7b6d7506c7b7a2e2d5) chore: dev build 1 [skip ci] — *github-actions[bot], 11:29*
+- [`900a274`](https://github.com/WISE-Developers/project_nomad/commit/900a2742d177410484f4c6794abc33618ae0d0b5) refactor(perimeters): remove obsolete client-side parsers (#267) — *Franco Nogarin, 05:12*
+- [`be21ac7`](https://github.com/WISE-Developers/project_nomad/commit/be21ac74e5d95394598f793e494050f56b7b769e) feat(perimeters): GeometryUpload uses server-side validation (#267) — *Franco Nogarin, 05:10*
+- [`0340d47`](https://github.com/WISE-Developers/project_nomad/commit/0340d47547236339f8a68d79954d2ddd7fa397ef) refactor(perimeters): wire KML through unified endpoint (#267) — *Franco Nogarin, 05:08*
+- [`843aa76`](https://github.com/WISE-Developers/project_nomad/commit/843aa7646257675c21635febcea5114c0e7889d4) feat(perimeters): add POST /api/v1/perimeters/import endpoint (#267) — *Franco Nogarin, 05:08*
+- [`4bcbe49`](https://github.com/WISE-Developers/project_nomad/commit/4bcbe4959bfa9cf3c67a1a899956d062b8ad0417) refactor(perimeters): add format dispatcher (#267) — *Franco Nogarin, 05:05*
+- [`15fae39`](https://github.com/WISE-Developers/project_nomad/commit/15fae3962580b06b9c4ccabaa709e8973b7f533b) refactor(perimeters): port KML structural validation from frontend (#267) — *Franco Nogarin, 05:04*
+- [`32bf322`](https://github.com/WISE-Developers/project_nomad/commit/32bf32288a45afa3b6ccb6ffd034c9a88c90201f) refactor(perimeters): add server-side KML parser (happy path) (#267) — *Franco Nogarin, 05:03*
+- [`4a6a4ac`](https://github.com/WISE-Developers/project_nomad/commit/4a6a4ac47a60d667715605dee26832ccfa5dd4a7) refactor(perimeters): port GeoJSON structural validation from frontend (#267) — *Franco Nogarin, 05:01*
+- [`c6639b0`](https://github.com/WISE-Developers/project_nomad/commit/c6639b05c28f0ab2dbade0a854be478abab3d2f9) refactor(perimeters): reject malformed JSON in GeoJSON parser (#267) — *Franco Nogarin, 05:00*
+
+### 2026-05-13
+
+- [`8473c8d`](https://github.com/WISE-Developers/project_nomad/commit/8473c8d361dd56bda8038c20cafe148a4c090071) refactor(perimeters): add server-side GeoJSON parser (happy path) (#267) — *Franco Nogarin, 12:24*
+- [`f01aed1`](https://github.com/WISE-Developers/project_nomad/commit/f01aed1a6170f72dfa56ba2abbad647817a22c5c) chore: reset dev build counter after v0.9.2 [skip ci] — *github-actions[bot], 13:08*
+- [`e6c8620`](https://github.com/WISE-Developers/project_nomad/commit/e6c862080d38d24686fc41047c484e2286c055e7) chore: release v0.9.2 [skip ci] — *github-actions[bot], 13:07*
+- [`4caa9a4`](https://github.com/WISE-Developers/project_nomad/commit/4caa9a44797d880a2b755ff391fdf1b6be9ced20) Merge pull request #266 from WISE-Developers/dev — *Franco Nogarin, 07:07*
+- [`62d5cc5`](https://github.com/WISE-Developers/project_nomad/commit/62d5cc5679a5589380b0bbfa13f126fe634c2468) chore: dev build 1 [skip ci] — *github-actions[bot], 13:06*
+- [`c32b371`](https://github.com/WISE-Developers/project_nomad/commit/c32b371326b1b2e938561e36b6d81ef716857869) fix(arrival-raster): shift bucket thresholds to FireSTARR 0-indexed Julian (#261) — *Franco Nogarin, 07:05*
+
+### 2026-05-03
+
+- [`760181a`](https://github.com/WISE-Developers/project_nomad/commit/760181a38c82f0607b1da718f225d047da319fed) chore: reset dev build counter after v0.9.1 [skip ci] — *github-actions[bot], 15:45*
+- [`4c7d12e`](https://github.com/WISE-Developers/project_nomad/commit/4c7d12e1ee998b6b0fe6c87ff5a70356e90b5c47) chore: release v0.9.1 [skip ci] — *github-actions[bot], 15:45*
+- [`70663f3`](https://github.com/WISE-Developers/project_nomad/commit/70663f3959ee2146329ff859a5cbc7922686e4bf) Merge pull request #264 from WISE-Developers/dev — *Franco Nogarin, 09:44*
+- [`5246745`](https://github.com/WISE-Developers/project_nomad/commit/52467454d90004d2199481ea397f0cb70f03a4d0) chore: dev build 1 [skip ci] — *github-actions[bot], 15:29*
+- [`524a1ad`](https://github.com/WISE-Developers/project_nomad/commit/524a1adfc31fea55db7c8b21fc76a813cdb38493) Merge pull request #263 from WISE-Developers/fix/em3-468-rnd-bounds — *Franco Nogarin, 09:29*
+- [`3e5608c`](https://github.com/WISE-Developers/project_nomad/commit/3e5608cffa26cce1cc39a81d7dd73b217109b3ff) fix(rnd): topGutter prop + viewport-aware bounds for floating panels — *Franco Nogarin, 09:28*
+
+### 2026-05-01
+
+- [`9390c26`](https://github.com/WISE-Developers/project_nomad/commit/9390c26e1c92ad86342f5dfefd6faed8addad7ac) chore: reset dev build counter after v0.9.0 [skip ci] — *github-actions[bot], 17:55*
+- [`7a2753d`](https://github.com/WISE-Developers/project_nomad/commit/7a2753d4440080caf77737c11eb4364462ce9a30) chore: release v0.9.0 [skip ci] — *github-actions[bot], 17:54*
+- [`bb1368d`](https://github.com/WISE-Developers/project_nomad/commit/bb1368d23a00f9b9bc5278fb71970bf845cda609) Merge pull request #260 from WISE-Developers/dev — *Franco Nogarin, 11:54*
+- [`4691af3`](https://github.com/WISE-Developers/project_nomad/commit/4691af3a0d40e435e78eba53586f55c740e90ffe) chore: dev build 6 [skip ci] — *github-actions[bot], 17:46*
+- [`ce9b303`](https://github.com/WISE-Developers/project_nomad/commit/ce9b303637632fb9153a0052816d4e4584bf6d49) fix(installer-metal): relax GDAL_DATA probe to detect OSGeo4W share dir — *Franco Nogarin, 11:46*
+- [`7af9a1d`](https://github.com/WISE-Developers/project_nomad/commit/7af9a1d67b839d7788b548893062768ee3439356) chore: dev build 5 [skip ci] — *github-actions[bot], 17:06*
+- [`9d4940b`](https://github.com/WISE-Developers/project_nomad/commit/9d4940b9839f01a38cf71ba30edc5fb91fdac771) fix(installer): write GDAL_DATA/PROJ_DATA/PROJ_LIB to .env (#240) — *Franco Nogarin, 11:06*
+- [`4bfd465`](https://github.com/WISE-Developers/project_nomad/commit/4bfd4655ae998a253982d885b5884eaae7b5c8b8) chore: dev build 4 [skip ci] — *github-actions[bot], 16:25*
+- [`9293ead`](https://github.com/WISE-Developers/project_nomad/commit/9293ead69f2eb770166126d6d190c5db5a08bad8) Merge feat/240-bare-metal-installer into dev (closes #240) — *Franco Nogarin, 10:24*
+- [`c044868`](https://github.com/WISE-Developers/project_nomad/commit/c0448682dc764813bfd80cf03e98237d82c26f1c) Merge fix/windows-absolute-path-resolve into dev — *Franco Nogarin, 10:24*
+- [`090ddc6`](https://github.com/WISE-Developers/project_nomad/commit/090ddc6409e47d133cf58fe37ff6481526309abf) fix(installer): default Version to "latest" + accept branch refs (#240) — *Franco Nogarin, 10:24*
+- [`155f110`](https://github.com/WISE-Developers/project_nomad/commit/155f1104bdb9af1b2abf2e1d20ea87c270ebc5b7) fix(firestarr): cross-platform absolute-path detection for FIRESTARR_DATASET_PATH — *Franco Nogarin, 10:15*
+- [`9a262cd`](https://github.com/WISE-Developers/project_nomad/commit/9a262cde8eec3355f677af061650deeba3ea87a6) fix(installer): bare-metal port/URL bugs + interactive prompts (#240) — *Franco Nogarin, 10:06*
+- [`aea1e62`](https://github.com/WISE-Developers/project_nomad/commit/aea1e629c939c8d875190d99aab897772a719fa5) feat(installer): Windows bare-metal installer for #240 — *Franco Nogarin, 09:48*
+- [`0949d02`](https://github.com/WISE-Developers/project_nomad/commit/0949d02c3cbbe330851d8d1c869c2326395ba9a3) chore: dev build 3 [skip ci] — *github-actions[bot], 15:32*
+- [`c11de49`](https://github.com/WISE-Developers/project_nomad/commit/c11de494fcc9f2da8838261fd149227da0f1317b) Merge fix/227-installer-improvements into dev (closes #227) — *Franco Nogarin, 09:32*
+- [`aefbfc3`](https://github.com/WISE-Developers/project_nomad/commit/aefbfc3af71189b3d81b1f786f3789f84adaafe6) fix(installer): force UTF-8 console output so glyphs render on Windows — *Franco Nogarin, 09:32*
+- [`2f50f61`](https://github.com/WISE-Developers/project_nomad/commit/2f50f613b71c59d9579b9c7308b1a192fe0e5759) fix(installer): harden Windows Docker installer per #227 feedback — *Franco Nogarin, 08:53*
+- [`6baf2c0`](https://github.com/WISE-Developers/project_nomad/commit/6baf2c001d5aa807e46c01f4072a394e88e0320f) chore: dev build 2 [skip ci] — *github-actions[bot], 13:35*
+- [`dfce9c4`](https://github.com/WISE-Developers/project_nomad/commit/dfce9c4f8ddc8e9d2802e5f0d1718980a0ff3c83) Merge docs/241-weather-csv-format into dev (closes #241) — *Franco Nogarin, 07:35*
+- [`d24402b`](https://github.com/WISE-Developers/project_nomad/commit/d24402b1d6ddb767836628c6e112a62055d77af0) docs(weather): document FireSTARR CSV format with example (closes #241) — *Franco Nogarin, 07:27*
+
+### 2026-04-30
+
+- [`2412944`](https://github.com/WISE-Developers/project_nomad/commit/24129449f8faa3d6d1be6e3b9f54992041c1093f) chore: dev build 1 [skip ci] — *github-actions[bot], 23:20*
+- [`c9505e0`](https://github.com/WISE-Developers/project_nomad/commit/c9505e0c8416c299a853d955d893d7ad0469836c) Merge fix/export-zip-streaming into dev (closes #259) — *Franco Nogarin, 17:19*
+- [`5baa10a`](https://github.com/WISE-Developers/project_nomad/commit/5baa10a7f7894930d4ff073f6b5a118fa244e761) fix(export): surface archiver failures in /exports/files — *Franco Nogarin, 17:12*
 
 ### 2026-04-27
 
+- [`8ecf5e9`](https://github.com/WISE-Developers/project_nomad/commit/8ecf5e95db82d62209adc55da03b105f189a1984) chore: reset dev build counter after v0.8.2 [skip ci] — *github-actions[bot], 15:12*
+- [`63e14bc`](https://github.com/WISE-Developers/project_nomad/commit/63e14bcbbabef16dd5c0312de8cc2a4298ef4bba) chore: release v0.8.2 [skip ci] — *github-actions[bot], 15:12*
 - [`d1b1e73`](https://github.com/WISE-Developers/project_nomad/commit/d1b1e7384d21ba94849c94fa22b59c38b0d5a104) Merge pull request #256 from WISE-Developers/dev — *Franco Nogarin, 09:11*
 - [`b9fe3bf`](https://github.com/WISE-Developers/project_nomad/commit/b9fe3bf91caaedffd2c533fec50731f9e2e80dca) chore: dev build 1 [skip ci] — *github-actions[bot], 15:08*
 - [`fa56e6d`](https://github.com/WISE-Developers/project_nomad/commit/fa56e6d4e590832e0cc03f09bcddb1c4e34f2961) fix(animation): drop `-s_srs` — let GPKG carry the SRS through to ogr2ogr — *Franco Nogarin, 09:08*

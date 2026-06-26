@@ -12,7 +12,8 @@ import { asyncHandler } from '../../middleware/index.js';
 import { NotFoundError } from '../../../domain/errors/index.js';
 import { createModelResultId, OutputFormat } from '../../../domain/entities/index.js';
 import { getModelResultsService } from '../../../application/services/index.js';
-import { getFireSTARREngine, generateContours, generateRasterTile, getRasterBounds, type BreaksMode, ContourError } from '../../../infrastructure/firestarr/index.js';
+import { generateContours, generateRasterTile, getRasterBounds, ContourError } from '../../../infrastructure/firestarr/index.js';
+import { getEngine } from '../../../infrastructure/engines/index.js';
 import { resolveResultFilePath } from '../../../infrastructure/firestarr/FireSTARRInputGenerator.js';
 import { EngineError } from '../../../domain/errors/index.js';
 import { EngineType } from '../../../domain/entities/index.js';
@@ -33,16 +34,6 @@ const router = Router();
  *         schema:
  *           type: string
  *         description: Result ID
- *       - in: query
- *         name: mode
- *         schema:
- *           type: string
- *           enum: [static, dynamic]
- *           default: dynamic
- *         description: |
- *           Breaks mode for color classification:
- *           - static: Fixed 10% intervals (FireSTARR standard symbology)
- *           - dynamic: Quantile breaks calculated from data
  *     responses:
  *       200:
  *         description: GeoJSON FeatureCollection of contours
@@ -63,14 +54,10 @@ router.get(
   '/results/:resultId/preview',
   asyncHandler(async (req, res) => {
     const { resultId } = req.params;
-    const { mode = 'dynamic' } = req.query;
     const typedResultId = createModelResultId(resultId);
 
-    // Validate mode
-    const breaksMode: BreaksMode = mode === 'static' ? 'static' : 'dynamic';
-
     // Get results service
-    const engine = getFireSTARREngine();
+    const engine = getEngine(EngineType.FireSTARR);
     const resultsService = getModelResultsService(engine);
 
     // Get result
@@ -88,10 +75,10 @@ router.get(
       throw new NotFoundError('Result file', resultId);
     }
 
-    // Generate contours from GeoTIFF with specified mode
+    // Generate contours from GeoTIFF (standardized FireSTARR SLD symbology)
     let contours;
     try {
-      contours = await generateContours(filePath, breaksMode);
+      contours = await generateContours(filePath);
     } catch (err) {
       if (err instanceof ContourError) {
         throw EngineError.outputFailed(
@@ -182,7 +169,7 @@ router.get(
     const typedResultId = createModelResultId(resultId);
 
     // Get results service
-    const engine = getFireSTARREngine();
+    const engine = getEngine(EngineType.FireSTARR);
     const resultsService = getModelResultsService(engine);
 
     // Get result
@@ -272,7 +259,7 @@ router.get(
     const typedResultId = createModelResultId(resultId);
 
     // Get results service
-    const engine = getFireSTARREngine();
+    const engine = getEngine(EngineType.FireSTARR);
     const resultsService = getModelResultsService(engine);
 
     // Get result
@@ -312,7 +299,7 @@ router.get(
     const typedResultId = createModelResultId(resultId);
 
     // Get results service
-    const engine = getFireSTARREngine();
+    const engine = getEngine(EngineType.FireSTARR);
     const resultsService = getModelResultsService(engine);
 
     // Get result

@@ -5,7 +5,7 @@
  * Orchestrates Docker execution, input generation, and output parsing.
  */
 
-import { join } from 'path';
+import { join, posix, win32 } from 'path';
 import { existsSync } from 'fs';
 import {
   IFireModelingEngine,
@@ -16,6 +16,7 @@ import {
 import { IContainerExecutor, OutputCallback } from '../../application/interfaces/IContainerExecutor.js';
 import { IInputGenerator, InputGenerationResult } from '../../application/interfaces/IInputGenerator.js';
 import { IOutputParser, ParsedOutput } from '../../application/interfaces/IOutputParser.js';
+import type { IWorkspaceAwareEngine } from '../../application/interfaces/IWorkspaceAwareEngine.js';
 import {
   FireModel,
   type FireModelId,
@@ -74,7 +75,7 @@ interface ExecutionState {
  * - Output parsing (probability TIFs)
  * - Status tracking and progress reporting
  */
-export class FireSTARREngine implements IFireModelingEngine {
+export class FireSTARREngine implements IFireModelingEngine, IWorkspaceAwareEngine {
   private readonly executor: IContainerExecutor;
   private readonly inputGenerator: IInputGenerator<FireSTARRParams>;
   private readonly outputParser: IOutputParser<ParsedOutput[]>;
@@ -325,9 +326,11 @@ export class FireSTARREngine implements IFireModelingEngine {
       logger.warn('FIRESTARR_DATASET_PATH not set', 'FireSTARR');
       return null;
     }
-    // Resolve paths from project root (parent of backend dir) to match InputGenerator
+    // Resolve paths from project root (parent of backend dir) to match InputGenerator.
+    // Cross-platform: a Windows absolute path like C:\... is recognised on POSIX too.
     const projectRoot = join(process.cwd(), '..');
-    const resolvedDatasetPath = datasetPath.startsWith('/') ? datasetPath : join(projectRoot, datasetPath);
+    const isAbsolute = posix.isAbsolute(datasetPath) || win32.isAbsolute(datasetPath);
+    const resolvedDatasetPath = isAbsolute ? datasetPath : join(projectRoot, datasetPath);
     const standardPath = join(resolvedDatasetPath, 'sims', modelId);
     if (existsSync(standardPath)) {
       return standardPath;
@@ -598,10 +601,12 @@ export class FireSTARREngine implements IFireModelingEngine {
       // Use pre-resolved weather data
       weatherPoints = options.weatherData;
     } else if (options.weatherConfig) {
-      // Resolve weather from config
+      // Resolve weather from config. Forward the simulation IANA timezone so
+      // bare-timestamp CSV rows are parsed in the sim's zone, not the server's
+      // (refs #273).
       const weatherService = getWeatherService();
       weatherPoints = await weatherService.resolveWeather(
-        options.weatherConfig,
+        { ...options.weatherConfig, timezone: options.timezone },
         { latitude, longitude },
         { start: options.timeRange.start, end: options.timeRange.end }
       );
@@ -631,7 +636,8 @@ export class FireSTARREngine implements IFireModelingEngine {
     // Use weather data's source year, not the user-selected year (#147)
     // FireSTARR needs the date to match the weather data's actual year
     const weatherYear = firstPoint.datetime.getFullYear();
-    const startDate = new Date(options.timeRange.start);
+    // Defensive copy — setFullYear below mutates this Date.
+    const startDate = new Date(options.timeRange.start.getTime());
     startDate.setFullYear(weatherYear);
 
     // Calculate output date offsets based on simulation duration
