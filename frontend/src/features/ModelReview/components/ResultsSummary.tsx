@@ -6,6 +6,8 @@
 
 import React from 'react';
 import type { ExecutionSummary, ExecutionState, ModelInputs, OutputConfig } from '../types';
+import { FuelVintageNotice } from '../../../shared/components/FuelVintageNotice';
+import { recordedToResolved } from '../../../shared/utils/fuelVintage';
 
 /**
  * Props for ResultsSummary
@@ -102,6 +104,14 @@ export function ResultsSummary({
   onAddIgnitionToMap,
 }: ResultsSummaryProps) {
   const ignition = inputs?.ignition;
+
+  // The fuel vintage this run ACTUALLY used, as recorded when it ran (#331).
+  //
+  // This used to call useFuelVintage(), which re-resolved the vintage when the
+  // page was viewed — so installing a fuel year later retroactively rewrote
+  // what past runs claimed. A completed run is a record of what happened, so
+  // the results view reads the record and never re-resolves.
+  const fuelVintage = inputs?.fuelVintage;
   const statusInfo = getStatusInfo(summary.status);
   const isInProgress = ['queued', 'initializing', 'running'].includes(summary.status);
   const simLabel = outputConfig?.outputMode === 'deterministic'
@@ -337,6 +347,26 @@ export function ResultsSummary({
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Fuel vintage actually used for this run (#319, recorded per #331).
+          Rendered unconditionally: a run with NO record must say so rather than
+          silently omitting the row, which reads as "nothing to report". */}
+      {(
+        <div style={{
+          marginTop: '16px',
+          padding: '12px',
+          border: '1px solid #e0e0e0',
+          borderRadius: '6px',
+        }}>
+          {fuelVintage ? (
+            <FuelVintageNotice resolved={recordedToResolved(fuelVintage)} label="Fuel vintage used" />
+          ) : (
+            <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+              Fuel vintage: not recorded — this model ran before Nomad began recording it.
+            </div>
+          )}
         </div>
       )}
 

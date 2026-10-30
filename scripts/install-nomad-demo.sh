@@ -57,7 +57,7 @@ ENV_EXAMPLE="$PROJECT_DIR/.env.example"
 # Keep these in sync with scripts/install_nomad_setup.sh.
 FIRESTARR_REGISTRY="ghcr.io/cwfmf/firestarr-cpp"
 FIRESTARR_IMAGE_NAME="firestarr"
-FIRESTARR_IMAGE_TAG="${FIRESTARR_IMAGE_TAG:-sha256:b4f8ca8b2ced7c3424191d28e8781d4c766e2664120ecbcb63591811820f257d}"
+FIRESTARR_IMAGE_TAG="${FIRESTARR_IMAGE_TAG:-main-latest}"
 FIRESTARR_IMAGE_TAG_ARM64="${FIRESTARR_IMAGE_TAG_ARM64:-main-latest}"
 
 # Build a fully-qualified image reference. Treats values starting with
@@ -129,6 +129,10 @@ NOMAD_DATA_PATH="${NOMAD_DATA_PATH:-$FIRESTARR_DATASET_PATH}"
 NOMAD_FRONTEND_HOST_PORT="${NOMAD_FRONTEND_HOST_PORT:-3901}"
 NOMAD_BACKEND_HOST_PORT="${NOMAD_BACKEND_HOST_PORT:-4901}"
 NOMAD_SERVER_HOSTNAME="${NOMAD_SERVER_HOSTNAME:-$(hostname -f 2>/dev/null || hostname 2>/dev/null || echo localhost)}"
+# IANA zone used to stamp local timestamps in the usage log. REQUIRED by the
+# backend - it will not start without it. The demo install is non-interactive,
+# so this comes from the environment or falls back to Mountain time.
+NOMAD_HOME_TIMEZONE="${NOMAD_HOME_TIMEZONE:-America/Edmonton}"
 DATASET_INSTALL_MODE="download"
 
 info "FIRESTARR_DATASET_PATH = $FIRESTARR_DATASET_PATH"
@@ -198,14 +202,21 @@ update_env_value "NOMAD_DATA_PATH"          "$NOMAD_DATA_PATH"
 update_env_value "NOMAD_FRONTEND_HOST_PORT" "$NOMAD_FRONTEND_HOST_PORT"
 update_env_value "NOMAD_BACKEND_HOST_PORT"  "$NOMAD_BACKEND_HOST_PORT"
 update_env_value "NOMAD_SERVER_HOSTNAME"    "$NOMAD_SERVER_HOSTNAME"
+update_env_value "NOMAD_HOME_TIMEZONE"      "$NOMAD_HOME_TIMEZONE"
+update_env_value "NOMAD_USAGE_LOG_PATH"     "/appl/data/usage/usage.jsonl"
+update_env_value "NOMAD_USAGE_LOG_MAX_BYTES" "52428800"
 update_env_value "VITE_API_BASE_URL"        "http://${NOMAD_SERVER_HOSTNAME}:${NOMAD_BACKEND_HOST_PORT}"
 update_env_value "VITE_API_PORT"            "$NOMAD_BACKEND_HOST_PORT"
 update_env_value "FIRESTARR_IMAGE"          "$FIRESTARR_IMAGE"
 
 # ---- Step 8: dataset install (idempotent via marker) ------------------
 MARKER="$FIRESTARR_DATASET_PATH/.dataset_source"
-SRC=$(grep -E '^FIRESTARR_DATASET_SOURCE=' "$ENV_EXAMPLE" | head -1 | sed -E 's|^FIRESTARR_DATASET_SOURCE=||')
-[ -n "$SRC" ] || fail "FIRESTARR_DATASET_SOURCE missing from .env.example"
+# Prefer the year-picker index (the .env.example default since #322); fall back
+# to a single fixed source if an operator has configured one instead. The
+# marker only needs to be a stable identity for "what is installed".
+SRC=$(grep -E '^FIRESTARR_DATASET_INDEX=' "$ENV_EXAMPLE" | head -1 | sed -E 's|^FIRESTARR_DATASET_INDEX=||')
+[ -n "$SRC" ] || SRC=$(grep -E '^FIRESTARR_DATASET_SOURCE=' "$ENV_EXAMPLE" | head -1 | sed -E 's|^FIRESTARR_DATASET_SOURCE=||')
+[ -n "$SRC" ] || fail "no FIRESTARR_DATASET_INDEX or FIRESTARR_DATASET_SOURCE in .env.example"
 
 step "FireSTARR dataset (idempotent)"
 need_dl=false

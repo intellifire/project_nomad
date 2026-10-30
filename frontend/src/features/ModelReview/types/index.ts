@@ -83,6 +83,27 @@ export interface ModelInputs {
   weatherCsvPath?: string;
   /** Weather CSV download URL */
   weatherDownloadUrl?: string;
+  /**
+   * Date the model was simulated FOR, ISO-8601 (#319).
+   * Not the execution time — fuel vintage is selected by the modelled year.
+   * Absent when nothing on disk records it.
+   */
+  modelStartDate?: string;
+  /**
+   * The fuel vintage the run actually used, recorded when it ran (#331).
+   *
+   * Absent for runs predating the recording. The results view must display
+   * "not recorded" in that case rather than re-resolving: installing a fuel
+   * year later must not rewrite what a past run claims to have used.
+   */
+  fuelVintage?: {
+    requestedYear: number;
+    vintage: string;
+    matchedRequestedYear: boolean;
+    usedFallback: boolean;
+    gridPath?: string;
+    recordedAt?: string;
+  };
 }
 
 /**

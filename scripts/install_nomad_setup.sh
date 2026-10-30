@@ -17,20 +17,23 @@ INSTALLER_VERSION="2.1.1"
 
 # FireSTARR image and binary source configuration
 #
-# Docker default is pinned by digest to a verified-working build (v0.9.11,
-# revision 7070574b46, published 2026-05-13 on the main channel). FireSTARR
-# v0.9.12-alpha-2 introduced an x/y transpose regression that places every
-# output at a consistent geographic offset from the input ignition — see
-# https://github.com/CWFMF/firestarr-cpp/issues/17. Bump this digest when
-# the upstream fix is verified.
+# Both architectures track `main-latest`, the house convention.
 #
-# ARM64 docker is left on `main-latest` (rolling) because most ARM64 users
-# run metal mode; binary release tag is unchanged.
+# x86_64 was temporarily pinned by digest to dodge the v0.9.12-alpha-2 x/y
+# transpose regression (CWFMF/firestarr-cpp#17). That issue was closed fixed
+# on 2026-05-28, and the pin was verified obsolete on 2026-08-05: v0.9.14
+# (main-latest) produced byte-identical model output to the known-good
+# v0.9.11 build on identical inputs — 47 simulations, all three days.
+#
+# The pinned digest had also stopped resolving in GHCR, so a fresh x86_64
+# Docker install could not pull an engine at all and every model run failed
+# with exit 1. Temporary pins need an expiry; this one outlived its cause by
+# ten weeks.
 #
 # See: https://github.com/WISE-Developers/project_nomad/issues/184
 FIRESTARR_REGISTRY="ghcr.io/cwfmf/firestarr-cpp"
 FIRESTARR_IMAGE_NAME="firestarr"
-FIRESTARR_IMAGE_TAG="${FIRESTARR_IMAGE_TAG:-sha256:b4f8ca8b2ced7c3424191d28e8781d4c766e2664120ecbcb63591811820f257d}"
+FIRESTARR_IMAGE_TAG="${FIRESTARR_IMAGE_TAG:-main-latest}"
 FIRESTARR_IMAGE_TAG_ARM64="${FIRESTARR_IMAGE_TAG_ARM64:-main-latest}"
 FIRESTARR_BINARY_RELEASE_TAG="${FIRESTARR_BINARY_RELEASE_TAG:-unstable-latest}"
 
@@ -59,6 +62,45 @@ ENV_EXAMPLE="$PROJECT_DIR/.env.example"
 
 # Dry run mode
 DRY_RUN=false
+
+# Home time zone (#332)
+#
+# IANA zone used to stamp local timestamps in the usage log so they read as
+# wall-clock time for the people on shift. The backend is fail-fast on this: it
+# will not start if the key is missing or invalid, because the container's own
+# clock is UTC and a fallback would record every local time silently wrong.
+#
+# An environment value pre-fills the answer; the operator can override it. With
+# no tty the same default is taken silently, so a piped install cannot hang and
+# cannot pick a different zone than an attended one would.
+NOMAD_HOME_TIMEZONE="${NOMAD_HOME_TIMEZONE:-America/Edmonton}"
+
+if [ -t 0 ] && [ "$DRY_RUN" != true ]; then
+    echo ""
+    echo "  Home time zone"
+    echo "  Usage log entries are stamped with local wall-clock time using this zone."
+    echo "  Use an IANA zone name, e.g. America/Edmonton, America/Winnipeg, America/Toronto."
+    read -p "  Time zone [$NOMAD_HOME_TIMEZONE]: " _tz_reply
+    if [ -n "$_tz_reply" ]; then
+        NOMAD_HOME_TIMEZONE="$_tz_reply"
+    fi
+fi
+
+# Validate here, so a typo fails next to the mistake rather than at first boot.
+case "$NOMAD_HOME_TIMEZONE" in
+    [+-]*)
+        echo "ERROR: NOMAD_HOME_TIMEZONE is \"$NOMAD_HOME_TIMEZONE\", a fixed UTC offset." >&2
+        echo "       A fixed offset cannot observe DST. Use an IANA zone name," >&2
+        echo "       for example America/Edmonton." >&2
+        exit 1
+        ;;
+    */*) ;;
+    *)
+        echo "ERROR: NOMAD_HOME_TIMEZONE is \"$NOMAD_HOME_TIMEZONE\", which is not an" >&2
+        echo "       IANA zone name. Expected Area/Location, for example America/Edmonton." >&2
+        exit 1
+        ;;
+esac
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -483,8 +525,25 @@ step2_infrastructure() {
 
 # Prompt user for dataset source - use existing or download new
 prompt_dataset_source() {
+    # Index mode: FIRESTARR_DATASET_INDEX names a dataset index, so the source
+    # is already decided and install-firestarr-dataset.sh's year picker chooses
+    # which year(s) to install. Skip the source menu - asking here would prompt
+    # the user for a source twice. The path prompts below still run: the year
+    # picker never asks where the archives land, and install-firestarr-dataset.sh
+    # exits 1 without FIRESTARR_DATASET_PATH.
+    if [ -n "${FIRESTARR_DATASET_INDEX:-}" ]; then
+        echo -e "${CYAN}FireSTARR Dataset${NC}"
+        echo "    Source is configured by dataset index:"
+        echo "      $FIRESTARR_DATASET_INDEX"
+        echo "    You'll choose which fuel year(s) to install during setup."
+        echo ""
+        prompt_new_dataset_path
+        DATASET_INSTALL_MODE="download"
+        return
+    fi
+
     echo -e "${CYAN}FireSTARR Dataset${NC}"
-    echo "    The dataset includes fuel grids, DEM data (~50GB)."
+    echo "    The dataset includes fuel grids and DEM data (about 3 GB per fuel year)."
     echo ""
     echo -e "    ${GREEN}1) Use existing dataset${NC}"
     echo "       Point to an already-installed FireSTARR dataset"
@@ -570,7 +629,7 @@ prompt_existing_dataset() {
 prompt_new_dataset_path() {
     echo ""
     echo -e "${CYAN}Dataset Archive Download Folder${NC}"
-    echo "    Where to save the downloaded archive file (~50GB)."
+    echo "    Where to save the downloaded archive files (about 3 GB per fuel year)."
     echo "    The archive is preserved for future reinstalls."
     echo ""
 
@@ -1709,9 +1768,96 @@ check_git_autocrlf() {
 # .env Generation
 # ============================================
 
+assert_no_placeholders_in_env() {
+    # Fail the install if a shipped placeholder that this install DEPENDS ON
+    # survived into .env (#343).
+    #
+    # The original incident reported SUCCESS while pointing the dataset
+    # downloader at /absolute/path/to/firestarr_data. An install that finishes
+    # with a placeholder in a key it actually uses has not finished.
+    #
+    # But .env.example ships 14 OAuth placeholders, and OAuth is optional —
+    # inert unless NOMAD_AUTH_MODE=oauth. Blocking on those would fail nearly
+    # every install. Found on sulu against the real .env.example; an earlier
+    # version of this check did exactly that. So placeholders are split:
+    # blocking for keys in use, advisory for keys that are not.
+    local blocking=()
+    local advisory=()
+    local line key value auth_mode
+
+    auth_mode="$(grep -m1 -E "^NOMAD_AUTH_MODE=" "$ENV_FILE" 2>/dev/null | cut -d= -f2- || true)"
+
+    while IFS= read -r line; do
+        case "$line" in
+            \#*|"") continue ;;
+        esac
+
+        key="${line%%=*}"
+        value="${line#*=}"
+        [ -n "$value" ] || continue
+        is_placeholder_value "$value" || continue
+
+        case "$key" in
+            NOMAD_OAUTH_*)
+                # Only matters when the deployment actually authenticates this way.
+                if [ "$auth_mode" = "oauth" ]; then
+                    blocking+=("${key}=${value}")
+                else
+                    advisory+=("${key}=${value}")
+                fi
+                ;;
+            *)
+                blocking+=("${key}=${value}")
+                ;;
+        esac
+    done < "$ENV_FILE"
+
+    if [ "${#advisory[@]}" -gt 0 ]; then
+        print_info "${#advisory[@]} optional placeholder(s) left unset (OAuth is not in use) — fine to ignore."
+    fi
+
+    if [ "${#blocking[@]}" -gt 0 ]; then
+        print_error "Configuration incomplete — these hold shipped placeholders and this install uses them:"
+        for line in "${blocking[@]}"; do
+            print_error "    $line"
+        done
+        print_error "Set them in $ENV_FILE and re-run. Nothing was left half-configured silently."
+        return 1
+    fi
+
+    return 0
+}
+
+is_placeholder_value() {
+    # True when a value is one of OUR shipped placeholders rather than something
+    # an operator chose (#343).
+    #
+    # .env.example ships non-empty placeholders, and the installer copies it to
+    # .env before writing any key. The #292 rule below ("never overwrite an
+    # existing non-empty value") could not tell the two apart, so it preserved
+    # the placeholder and discarded the answer given at the prompt. 5.5 GB of
+    # fuel rasters landed in a literal /absolute/path/to/firestarr_data.
+    #
+    # Anchored patterns only: a genuine path like /home/yourname/data or an
+    # agency id like changeme-inc must NOT be mistaken for a placeholder.
+    local value="$1"
+
+    case "$value" in
+        /absolute/path/to/*)      return 0 ;;
+        /path/to/*)               return 0 ;;
+        your-*)                   return 0 ;;
+        changeme|CHANGEME)        return 0 ;;
+        yourdomain.com|example.com) return 0 ;;
+        xxx|XXX|TODO|TBD)         return 0 ;;
+    esac
+
+    return 1
+}
+
 update_env_value() {
     local key="$1"
     local value="$2"
+    local existing_value
 
     if [ "$DRY_RUN" = true ]; then
         print_dry_run "Would set $key=$value"
@@ -1721,9 +1867,18 @@ update_env_value() {
     # Preserve an existing, non-empty value — never overwrite a user's .env.
     # (#292 demo lesson: the installer clobbered a manually-set host port on
     # re-run, which broke the Cloudflare tunnel. Set-if-absent only.)
+    #
+    # EXCEPT a placeholder we shipped ourselves (#343): that is not an operator
+    # value, and preserving it silently discards the answer they just gave.
     if grep -qE "^${key}=.+" "$ENV_FILE" 2>/dev/null; then
-        print_info "Keeping existing ${key} (not overwriting)"
-        return 0
+        existing_value="$(grep -m1 -E "^${key}=" "$ENV_FILE" | cut -d= -f2-)"
+
+        if is_placeholder_value "$existing_value"; then
+            print_warning "Replacing placeholder ${key}=${existing_value}"
+        else
+            print_info "Keeping existing ${key} (not overwriting)"
+            return 0
+        fi
     fi
 
     if grep -qE "^${key}=" "$ENV_FILE" 2>/dev/null; then
@@ -1771,6 +1926,17 @@ generate_env_file() {
 
     # Update values based on wizard selections
     update_env_value "NOMAD_DEPLOYMENT_MODE" "$NOMAD_DEPLOYMENT_MODE"
+    update_env_value "NOMAD_HOME_TIMEZONE" "$NOMAD_HOME_TIMEZONE"
+    # Usage log (#332). Both keys are REQUIRED - the backend will not start
+    # without them. The path MUST be on a mounted volume: a path outside a mount
+    # lives on the container overlay and is destroyed on every recreate, and the
+    # writes succeed, so the loss is silent.
+    if [ "$FIRESTARR_EXECUTION_MODE" = "binary" ]; then
+        update_env_value "NOMAD_USAGE_LOG_PATH" "${FIRESTARR_DATASET_PATH}/usage/usage.jsonl"
+    else
+        update_env_value "NOMAD_USAGE_LOG_PATH" "/appl/data/usage/usage.jsonl"
+    fi
+    update_env_value "NOMAD_USAGE_LOG_MAX_BYTES" "52428800"
     update_env_value "FIRESTARR_DATASET_PATH" "$FIRESTARR_DATASET_PATH"
     update_env_value "FIRESTARR_EXECUTION_MODE" "$FIRESTARR_EXECUTION_MODE"
 
@@ -1807,6 +1973,54 @@ generate_env_file() {
     if [ "$NOMAD_INFRA" = "docker" ] && [ -n "$NOMAD_SERVER_HOSTNAME" ] && [ -n "$NOMAD_BACKEND_HOST_PORT" ]; then
         update_env_value "VITE_API_BASE_URL" "http://${NOMAD_SERVER_HOSTNAME}:${NOMAD_BACKEND_HOST_PORT}"
         update_env_value "VITE_API_PORT" "$NOMAD_BACKEND_HOST_PORT"
+    fi
+
+    # --- Crash & error reporting consent (Sentry, #313) ---
+    # OFF by default. Only on explicit opt-in do we inject CIFFC's Sentry DSNs,
+    # which the frontend build bakes in (VITE_SENTRY_DSN) and the backend reads
+    # at runtime (SENTRY_DSN). No DSN => the app never phones home. The frontend
+    # DSN is public (ships in the browser bundle); the backend DSN is server-side.
+    SENTRY_FRONTEND_DSN_CIFFC="https://1260ee8a9108d645b99331926186fe9b@o4511356192751616.ingest.us.sentry.io/4511570358894592"
+    SENTRY_BACKEND_DSN_CIFFC="https://ae5f37e92bcaa761abe6f8856708684c@o4511356192751616.ingest.us.sentry.io/4511808188907520"
+
+    SENTRY_OPT_IN="no"
+    if [ -n "$NOMAD_ERROR_REPORTING" ]; then
+        # Non-interactive override for headless installs: NOMAD_ERROR_REPORTING=true
+        case "$(printf '%s' "$NOMAD_ERROR_REPORTING" | tr '[:upper:]' '[:lower:]')" in
+            true|yes|y|1) SENTRY_OPT_IN="yes" ;;
+        esac
+    elif [ -t 0 ] && [ "$DRY_RUN" != true ]; then
+        echo ""
+        echo "  Crash & error reporting"
+        echo "  Nomad can report crashes and errors to the development team to help fix"
+        echo "  bugs. Reports are scrubbed of personal data before sending. This is"
+        echo "  optional and can be turned off later by clearing the DSNs in .env."
+        read -p "  Allow Nomad to report crashes and errors? [y/N] " -n 1 -r
+        echo ""
+        if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+            SENTRY_OPT_IN="yes"
+        fi
+    fi
+
+    if [ "$SENTRY_OPT_IN" = "yes" ]; then
+        update_env_value "VITE_SENTRY_DSN" "$SENTRY_FRONTEND_DSN_CIFFC"
+        update_env_value "SENTRY_DSN" "$SENTRY_BACKEND_DSN_CIFFC"
+        print_success "Crash & error reporting ENABLED (Sentry)"
+    else
+        # Honor the opt-out even on re-install: blank any existing DSNs so a prior
+        # opt-in cannot keep phoning home after the user changes their mind.
+        if [ "$DRY_RUN" != true ]; then
+            for _k in VITE_SENTRY_DSN SENTRY_DSN; do
+                if grep -qE "^${_k}=.+" "$ENV_FILE" 2>/dev/null; then
+                    if [[ "$OSTYPE" == "darwin"* ]]; then
+                        sed -i '' "s|^${_k}=.*|${_k}=|" "$ENV_FILE"
+                    else
+                        sed -i "s|^${_k}=.*|${_k}=|" "$ENV_FILE"
+                    fi
+                fi
+            done
+        fi
+        print_info "Crash & error reporting disabled (no data will be sent)"
     fi
 
     if [ -n "$NOMAD_AGENCY_ID" ]; then
@@ -2218,6 +2432,19 @@ main() {
 
     # Verification
     verify_installation
+
+    # No shipped placeholder may survive into .env (#343). The original
+    # incident reported success while pointing the downloader at
+    # /absolute/path/to/firestarr_data, so "complete" has to mean configured.
+    if [ "$DRY_RUN" != true ]; then
+        if ! assert_no_placeholders_in_env; then
+            echo ""
+            echo -e "${BLUE}════════════════════════════════════════════════════════════${NC}"
+            print_error "Project Nomad setup did NOT complete"
+            echo -e "${BLUE}════════════════════════════════════════════════════════════${NC}"
+            exit 1
+        fi
+    fi
 
     echo ""
     echo -e "${BLUE}════════════════════════════════════════════════════════════${NC}"

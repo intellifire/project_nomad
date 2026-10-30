@@ -4,10 +4,319 @@ Auto-generated from git history. Do not edit manually.
 
 ---
 
-## v0.11.5
+## v0.19.0
+
+### 2026-09-25
+
+- [`070e09b`](https://github.com/WISE-Developers/project_nomad/commit/070e09ba0c29677427548781e0008d99a08f15aa) Merge pull request #388 from WISE-Developers/dev — *Franco Nogarin, 10:57*
+
+### 2026-09-24
+
+- [`187ac29`](https://github.com/WISE-Developers/project_nomad/commit/187ac29794c4ad967bb0fddee03ee69661bcdae1) chore: dev v0.18.12 [skip ci] — *github-actions[bot], 15:49*
+- [`e6e8d86`](https://github.com/WISE-Developers/project_nomad/commit/e6e8d86c07f678db2e017383d431ed9e6ee7d754) Merge branch 'fix/384-vitest-advisory-floor' into dev — *Franco Nogarin, 09:48*
+- [`6f4cc00`](https://github.com/WISE-Developers/project_nomad/commit/6f4cc00ae6654a8f8b8d9dda0bcd0cc4fe9fdf93) fix: clear vitest CRITICAL and vite HIGH by bumping to the advisory floors — *Franco Nogarin, 09:48*
+- [`c2b6907`](https://github.com/WISE-Developers/project_nomad/commit/c2b6907075576dab0112646389e4d16885dd67b3) chore: dev v0.18.11 [skip ci] — *github-actions[bot], 14:07*
+- [`e401f62`](https://github.com/WISE-Developers/project_nomad/commit/e401f62386af05aa46fd255f8bf42be728f5eed4) Merge remote-tracking branch 'origin/dev' into dev — *Franco Nogarin, 08:06*
+- [`c4d75c1`](https://github.com/WISE-Developers/project_nomad/commit/c4d75c1769200c8d06d168f52a75aac16e08b361) Merge branch 'fix/373-docker-crontab' into dev — *Franco Nogarin, 08:06*
+- [`7179699`](https://github.com/WISE-Developers/project_nomad/commit/7179699b319e9a7e56031f9890b6995e687ed0be) Delete .docker/, which nothing builds and nothing could build (closes #373) — *Franco Nogarin, 08:06*
+- [`1c14fcc`](https://github.com/WISE-Developers/project_nomad/commit/1c14fcc73cac9b29995ffcdae03d5ffe36975233) Merge branch 'fix/376-firestarr-tag' into dev — *Franco Nogarin, 07:49*
+- [`128957a`](https://github.com/WISE-Developers/project_nomad/commit/128957a10a946a85b16711b6b2a1baf642a7bb0a) Point .env.example at a FireSTARR image tag that exists (closes #376) — *Franco Nogarin, 07:49*
+
+### 2026-09-23
+
+- [`b03502f`](https://github.com/WISE-Developers/project_nomad/commit/b03502f97db824bdc7dda2443d1f26bf7c892d1f) chore: dev v0.18.10 [skip ci] — *github-actions[bot], 17:48*
+- [`9460a37`](https://github.com/WISE-Developers/project_nomad/commit/9460a3705c77cbdca923b81bbca6fc14e093dc2b) Merge remote-tracking branch 'origin/dev' into dev — *Franco Nogarin, 11:48*
+- [`0964099`](https://github.com/WISE-Developers/project_nomad/commit/0964099da6d324fe2e80d13bd516e3efe992153f) Merge branch 'fix/379-tar-nodegyp' into dev — *Franco Nogarin, 11:48*
+- [`0e0f5e0`](https://github.com/WISE-Developers/project_nomad/commit/0e0f5e04e1e1343b2f8654518fede20755fa12ce) Drop node-gyp and the hoisted tar from the production image (refs #379) — *Franco Nogarin, 11:48*
+- [`172e1c6`](https://github.com/WISE-Developers/project_nomad/commit/172e1c6ddb34ced7568f2b395543b8469854a865) chore: dev v0.18.9 [skip ci] — *github-actions[bot], 16:41*
+- [`4cde422`](https://github.com/WISE-Developers/project_nomad/commit/4cde42208919d8c91e617aab55401b6d32e654fc) Merge remote-tracking branch 'origin/dev' into dev — *Franco Nogarin, 10:41*
+- [`aaa981e`](https://github.com/WISE-Developers/project_nomad/commit/aaa981eeb22ca94bf69f9ce0ed95e4965f8b2496) Merge branch 'fix/382-prod-image-dev-tree' into dev — *Franco Nogarin, 10:41*
+- [`b31befc`](https://github.com/WISE-Developers/project_nomad/commit/b31befc5d5103e169d7712d27a179e9203ec2f83) Stop shipping the dev dependency tree in the production image (refs #382) — *Franco Nogarin, 10:41*
+- [`c247e09`](https://github.com/WISE-Developers/project_nomad/commit/c247e091902270a569aed273ac9f8a9daff2e875) chore: dev v0.18.8 [skip ci] — *github-actions[bot], 15:25*
+- [`84c1357`](https://github.com/WISE-Developers/project_nomad/commit/84c13570959de9a9dc115103c10b66c85fbe97dd) Merge remote-tracking branch 'origin/dev' into dev — *Franco Nogarin, 09:24*
+- [`f9249b5`](https://github.com/WISE-Developers/project_nomad/commit/f9249b5ea777486f5b57ed57ae8289ea21750092) Merge branch 'fix/380-trusted-origins' into dev — *Franco Nogarin, 09:23*
+- [`ce137ca`](https://github.com/WISE-Developers/project_nomad/commit/ce137ca6c75f3100bf776334761d9cba2f24bd58) Make trusted origins configurable, and show a rejected sign-in (closes #380) — *Franco Nogarin, 09:23*
+- [`d078259`](https://github.com/WISE-Developers/project_nomad/commit/d07825909e3e9976f0a086c6fcbcc2390f8d4b29) chore: dev v0.18.7 [skip ci] — *github-actions[bot], 14:27*
+- [`9ed66c7`](https://github.com/WISE-Developers/project_nomad/commit/9ed66c7b67e2476278cadb88ded884f59f94102c) Merge remote-tracking branch 'origin/dev' into dev — *Franco Nogarin, 08:25*
+- [`f1e6ed6`](https://github.com/WISE-Developers/project_nomad/commit/f1e6ed65f7ed6a92f0f3a6829f41d15c5c54997b) Merge branch 'fix/377-adm-zip' into dev — *Franco Nogarin, 08:25*
+- [`2781110`](https://github.com/WISE-Developers/project_nomad/commit/2781110f8f455c51140c272c911397cbca15a417) Raise adm-zip past its advisory ceiling (closes #377) — *Franco Nogarin, 08:25*
+- [`bdab425`](https://github.com/WISE-Developers/project_nomad/commit/bdab4258d690f96d5bf39f8c1be1eafa62e264e2) Merge branch 'fix/378-multer-dos' into dev — *Franco Nogarin, 08:23*
+- [`954de2e`](https://github.com/WISE-Developers/project_nomad/commit/954de2e3a6a80b29b74dc218b88bb29160ddd93a) Raise multer past its advisory ceiling (closes #378) — *Franco Nogarin, 08:23*
+- [`97f451d`](https://github.com/WISE-Developers/project_nomad/commit/97f451d97291486f4ca408ba54adadb903d47075) chore: dev v0.18.6 [skip ci] — *github-actions[bot], 14:03*
+- [`a362be5`](https://github.com/WISE-Developers/project_nomad/commit/a362be547f7ab64b4ba38f3c491e1bdc71fda9d4) Merge branch 'feat/318-offline-bundle-builder' into dev — *Franco Nogarin, 08:02*
+- [`f3e4341`](https://github.com/WISE-Developers/project_nomad/commit/f3e43412ff69b26f97a58434852e58a12c3ea8a1) Document the build -> USB -> install workflow, and survive a dropped download (refs #318) — *Franco Nogarin, 07:23*
+- [`757ee1b`](https://github.com/WISE-Developers/project_nomad/commit/757ee1b76370f7d49c9de4f5223fe998ad4b3ba2) Add the launcher, and make the bundle actually start (refs #318) — *Franco Nogarin, 06:48*
+
+### 2026-09-22
+
+- [`873be7d`](https://github.com/WISE-Developers/project_nomad/commit/873be7d3d17bb9d68564976f194c1979529ef47e) Assemble the application payload into the bundle (refs #318) — *Franco Nogarin, 10:51*
+- [`6d01df4`](https://github.com/WISE-Developers/project_nomad/commit/6d01df45b263376531e6d3b1c4367673ea7d4485) Fetch native addons for the target ABI, not the build host (refs #318) — *Franco Nogarin, 10:42*
+- [`3ed69cd`](https://github.com/WISE-Developers/project_nomad/commit/3ed69cd7b5b68d7c3a585c8a39899c892578bfbb) Assemble the portable tree and the .env that ships in it (refs #318) — *Franco Nogarin, 10:21*
+- [`bff4ff9`](https://github.com/WISE-Developers/project_nomad/commit/bff4ff9d65cc9ce94648a8308c63797b76caab5b) Acquire and verify pinned inputs for the offline bundle (refs #318) — *Franco Nogarin, 10:11*
+- [`7213b93`](https://github.com/WISE-Developers/project_nomad/commit/7213b9361c294e296444cdea7bdd322e6856a191) chore: dev v0.18.5 [skip ci] — *github-actions[bot], 15:27*
+- [`6dd08b1`](https://github.com/WISE-Developers/project_nomad/commit/6dd08b1fe2214ecbb1b1219b0766007a80dae603) Merge branch 'fix/375-better-auth-critical' into dev — *Franco Nogarin, 09:26*
+- [`9383fe7`](https://github.com/WISE-Developers/project_nomad/commit/9383fe70a0fccdb0b5298135bdf3dc53272d07f0) Raise better-auth past its advisory ceiling (closes #375) — *Franco Nogarin, 09:26*
+- [`98c6b3b`](https://github.com/WISE-Developers/project_nomad/commit/98c6b3b62565237145f81b5e1d92079402de521a) chore: dev v0.18.4 [skip ci] — *github-actions[bot], 14:59*
+- [`3b2b902`](https://github.com/WISE-Developers/project_nomad/commit/3b2b9029a800f1e370238e54ec6173b66835fdd1) Merge origin/dev (v0.18.3) into dev — *Franco Nogarin, 08:58*
+- [`8dff505`](https://github.com/WISE-Developers/project_nomad/commit/8dff505efe1833eec7eb7700a1ebd00cee5fc358) Merge branch 'fix/368-timezone-inferred' into dev — *Franco Nogarin, 08:55*
+- [`f214405`](https://github.com/WISE-Developers/project_nomad/commit/f214405feec12981d25c394b0b6d2d8ec80a8e8b) Merge branch 'fix/365-icu-tzdata-override' into dev — *Franco Nogarin, 08:55*
+- [`b535721`](https://github.com/WISE-Developers/project_nomad/commit/b535721a129deac34d71d5964b1e87d42a6a3041) Make an inferred timezone visible and require confirmation (closes #368) — *Franco Nogarin, 07:06*
+- [`542d0cc`](https://github.com/WISE-Developers/project_nomad/commit/542d0cc2f834855102e7d48ace4d995d15a53d8c) Ship our own ICU timezone data so NWT/Alberta clocks are right (closes #365, closes #366) — *Franco Nogarin, 07:02*
+- [`4c9678d`](https://github.com/WISE-Developers/project_nomad/commit/4c9678d56f0cb311ae70701d09affa69b833e14b) chore: dev v0.18.3 [skip ci] — *github-actions[bot], 12:49*
+- [`698debe`](https://github.com/WISE-Developers/project_nomad/commit/698debe8a7e40417d63fa75ab6023fca24dc1b2d) Merge branch 'docs/ss005-23-test-fire-readme' into dev — *Franco Nogarin, 06:48*
+- [`6d1c85b`](https://github.com/WISE-Developers/project_nomad/commit/6d1c85bb79511e69b6f1cdbae489c25062b4220a) Merge branch 'fix/372-maplibre-6-cve' into dev — *Franco Nogarin, 06:48*
+- [`17acee8`](https://github.com/WISE-Developers/project_nomad/commit/17acee8223b938a9443c0e02ff9f324147020f3b) Document the SS005-23 test fire's weather files — *Franco Nogarin, 05:57*
+
+### 2026-09-21
+
+- [`e2ca063`](https://github.com/WISE-Developers/project_nomad/commit/e2ca06315f74c98f8641fcb0c4219ed03aeaf274) Give maplibre 6 a worker URL that Vite actually emits (refs #372) — *Franco Nogarin, 13:11*
+- [`1b67576`](https://github.com/WISE-Developers/project_nomad/commit/1b67576a39291cbd6f186c2b9f5a050b6b53bdfe) Upgrade maplibre-gl 5.24.0 -> 6.10.0 to clear CVE GHSA-jrc7-96c5-q579 (refs #372) — *Franco Nogarin, 10:22*
+- [`98c5c51`](https://github.com/WISE-Developers/project_nomad/commit/98c5c51db1ec924d92eec1357a7906e6eca3f6f0) chore: dev v0.18.2 [skip ci] — *github-actions[bot], 15:13*
+- [`c95eb7f`](https://github.com/WISE-Developers/project_nomad/commit/c95eb7f9a306c403e5ae970d11b647109e529861) Merge remote-tracking branch 'origin/dev' into dev — *Franco Nogarin, 09:12*
+- [`667d1a0`](https://github.com/WISE-Developers/project_nomad/commit/667d1a0f1f95a96339c6542152ea8287cfb7dc3e) Merge branch 'fix/374-offset-at-reading-time' into dev — *Franco Nogarin, 09:11*
+- [`7a00d28`](https://github.com/WISE-Developers/project_nomad/commit/7a00d2855ca3687d8d77622169484f6c061766d5) Judge a weather file's UTC signature by the reading's own date (closes #374) — *Franco Nogarin, 09:11*
+- [`84e899d`](https://github.com/WISE-Developers/project_nomad/commit/84e899db3a78e0ad86e9a652ca12f79b278c7586) chore: dev v0.18.1 [skip ci] — *github-actions[bot], 14:59*
+- [`9869a1a`](https://github.com/WISE-Developers/project_nomad/commit/9869a1acaa0f360c5095d0f4dd660cb1f016e508) Merge branch 'fix/371-log-timestamp-zone' into dev — *Franco Nogarin, 08:57*
+- [`f1ee096`](https://github.com/WISE-Developers/project_nomad/commit/f1ee09699522f97ee9b266263271f7bf66e11b9a) Merge branch 'fix/370-remove-dead-firestarr-csv' into dev — *Franco Nogarin, 08:57*
+- [`173db96`](https://github.com/WISE-Developers/project_nomad/commit/173db96f8322d03aafb568921b26b2d674255bec) Merge branch 'fix/369-capture-timestamp-zone' into dev — *Franco Nogarin, 08:57*
+- [`03857fb`](https://github.com/WISE-Developers/project_nomad/commit/03857fb055df4802ce8f0bf39f23cd9c776a5e25) Merge branch 'fix/367-wizard-end-time-zone' into dev — *Franco Nogarin, 08:57*
+- [`82c892b`](https://github.com/WISE-Developers/project_nomad/commit/82c892b5601a8beff6ef2993fcc4e8e90706682b) Put an explicit UTC offset on every log timestamp (closes #371) — *Franco Nogarin, 08:40*
+- [`dcea91f`](https://github.com/WISE-Developers/project_nomad/commit/dcea91f9b3856267a59838149dbecf7fd2a9f493) Remove dead process-local CSV formatting from WeatherService (closes #370) — *Franco Nogarin, 08:26*
+- [`f7db39d`](https://github.com/WISE-Developers/project_nomad/commit/f7db39d985164e522d95b7dfed54daf06eef2aa5) Label the timezone on exported map capture timestamps (closes #369) — *Franco Nogarin, 08:21*
+- [`8baecc4`](https://github.com/WISE-Developers/project_nomad/commit/8baecc4c4e3d65fbfe84a6843e8bc756ba19fe25) Honour the model's timezone in the wizard end-time preview (closes #367) — *Franco Nogarin, 08:16*
+
+### 2026-08-20
+
+- [`74cd451`](https://github.com/WISE-Developers/project_nomad/commit/74cd451bcebe8c0a8168395ed92ced663f42ae41) chore: release v0.18.0 [skip ci] — *github-actions[bot], 16:01*
+- [`2b034b3`](https://github.com/WISE-Developers/project_nomad/commit/2b034b3f8b7cf7d74d7d127edf8a2b3d0d165d20) Merge pull request #363 from WISE-Developers/dev — *Franco Nogarin, 10:00*
+- [`4cb2ac5`](https://github.com/WISE-Developers/project_nomad/commit/4cb2ac5d342ba8e434ab624d1548fcc0484e4952) chore: dev v0.17.1 [skip ci] — *github-actions[bot], 15:28*
+- [`423ced0`](https://github.com/WISE-Developers/project_nomad/commit/423ced03ebdba0c7406aa0dcbf7575ec72fe4370) Merge chore/deploy-script: deploy procedure that cannot drift into root ownership — *Franco Nogarin, 09:28*
+- [`2e0df1f`](https://github.com/WISE-Developers/project_nomad/commit/2e0df1f96f9b10e15ecdac5770d596a61daae314) chore: add a deploy script that refuses root and repairs ownership drift — *Franco Nogarin, 09:28*
+- [`051749d`](https://github.com/WISE-Developers/project_nomad/commit/051749d1f1a91bae94ad6c946cd398806c77af7e) chore: release v0.17.0 [skip ci] — *github-actions[bot], 15:14*
+- [`abf94db`](https://github.com/WISE-Developers/project_nomad/commit/abf94db951162938abb0459d4ed387ccbbaa264d) Merge pull request #362 from WISE-Developers/dev — *Franco Nogarin, 09:13*
+- [`4654455`](https://github.com/WISE-Developers/project_nomad/commit/4654455863f5c48537976441763c261906ecf97f) chore: dev v0.16.1 [skip ci] — *github-actions[bot], 15:11*
+- [`0da5346`](https://github.com/WISE-Developers/project_nomad/commit/0da5346fd093d61abdfc860c4e6b934eb1339c15) Merge chore/splash-sprint17: demo splash reflects Sprint 17 fixes — *Franco Nogarin, 09:11*
+- [`00da8d7`](https://github.com/WISE-Developers/project_nomad/commit/00da8d7c81fc5842ee9a796ac93f977623e19f49) chore(#289): update the demo splash with what Sprint 17 fixed — *Franco Nogarin, 09:11*
+- [`6a622ec`](https://github.com/WISE-Developers/project_nomad/commit/6a622ecb487de1f914bae25a5913fe77e90ed12a) chore: release v0.16.0 [skip ci] — *github-actions[bot], 15:04*
+- [`cf9ab85`](https://github.com/WISE-Developers/project_nomad/commit/cf9ab8524bc869ecacec0520250f8e2ab7a4ae55) Merge pull request #361 from WISE-Developers/dev — *Franco Nogarin, 09:04*
+- [`f51164b`](https://github.com/WISE-Developers/project_nomad/commit/f51164bdee279852ab3a3d3f20d2533b3c81a1d5) chore: dev v0.15.1 [skip ci] — *github-actions[bot], 14:48*
+- [`30391ae`](https://github.com/WISE-Developers/project_nomad/commit/30391ae8309977c3199afc9b5540e2a9c019dc6b) Merge fix/359-flaky-usage-tests: real test timeout, scoped env stubbing — *Franco Nogarin, 08:47*
+- [`471a693`](https://github.com/WISE-Developers/project_nomad/commit/471a693244f78bb0b7318c0a90275a0621d6d988) Merge origin/dev — *Franco Nogarin, 08:47*
+- [`3125a95`](https://github.com/WISE-Developers/project_nomad/commit/3125a9535948745344be7ffb3d4f70288be213b5) fix(#359): give the suite a real test timeout — *Franco Nogarin, 08:47*
+- [`55df3ac`](https://github.com/WISE-Developers/project_nomad/commit/55df3ac8a767fbe5a6b9cad535715f8db6d1e9a9) chore: release v0.15.0 [skip ci] — *github-actions[bot], 13:38*
+- [`605a23e`](https://github.com/WISE-Developers/project_nomad/commit/605a23edc6467f50d50f3e0b071305996b761d60) Merge pull request #360 from WISE-Developers/dev — *Franco Nogarin, 07:38*
+- [`109bb18`](https://github.com/WISE-Developers/project_nomad/commit/109bb1832f12524550177a89e5a13280cabe91fe) test(#359): scope usage-test env mutation instead of mutating process.env — *Franco Nogarin, 07:36*
+- [`61cf9bf`](https://github.com/WISE-Developers/project_nomad/commit/61cf9bfed94b03a0515f4b0af1f02c1ac03e7967) chore: dev v0.14.19 [skip ci] — *github-actions[bot], 13:05*
+- [`1ab2e2c`](https://github.com/WISE-Developers/project_nomad/commit/1ab2e2c3937af5508310e64555f126a9b0813b9f) Merge origin/dev — *Franco Nogarin, 07:05*
+- [`f68b280`](https://github.com/WISE-Developers/project_nomad/commit/f68b28054ddecabde71f4b3ae2ee712d6dbde83e) fix(#340): stop rejecting runs that extend past the weather — *Franco Nogarin, 07:05*
+- [`0d211da`](https://github.com/WISE-Developers/project_nomad/commit/0d211da692864456281d9772ce74895d6c86dc5a) chore: dev v0.14.18 [skip ci] — *github-actions[bot], 11:18*
+- [`241aaa5`](https://github.com/WISE-Developers/project_nomad/commit/241aaa58c3110201eea3253dc988785508f96aeb) Merge origin/dev — *Franco Nogarin, 05:18*
+- [`dfe0abb`](https://github.com/WISE-Developers/project_nomad/commit/dfe0abb4b68b2994bd2ce0b79dd0b8dfc8838579) fix(#340,#341): say when the run outlasts its weather — *Franco Nogarin, 05:18*
+
+### 2026-08-19
+
+- [`fce28b6`](https://github.com/WISE-Developers/project_nomad/commit/fce28b67dc19055e44b710e95853656c3a97292e) chore: dev v0.14.17 [skip ci] — *github-actions[bot], 22:50*
+- [`a931ba5`](https://github.com/WISE-Developers/project_nomad/commit/a931ba5533a9a0a361e703bd39fca4d5bc287fc9) Merge origin/dev — *Franco Nogarin, 16:50*
+- [`deaa0b5`](https://github.com/WISE-Developers/project_nomad/commit/deaa0b596699e888d504a4a3312c684060965ff5) fix(#340): apply the weather contract to the simulated window, not the file — *Franco Nogarin, 16:50*
+- [`f522f3c`](https://github.com/WISE-Developers/project_nomad/commit/f522f3c73a4ea6fe2e7cbfe12ecee2301b550252) chore: dev v0.14.16 [skip ci] — *github-actions[bot], 21:38*
+- [`dc18ece`](https://github.com/WISE-Developers/project_nomad/commit/dc18ece0a05b541f0ece0c369176ca8f06653426) Merge origin/dev — *Franco Nogarin, 15:38*
+- [`e0fda36`](https://github.com/WISE-Developers/project_nomad/commit/e0fda36bd9c1715563e97d363e6500aff9d047b5) fix(#331): actually render "not recorded" for runs with no vintage record — *Franco Nogarin, 15:37*
+- [`8ad11b2`](https://github.com/WISE-Developers/project_nomad/commit/8ad11b2e05fb03a67969e3252e89d5923af9db17) chore: dev v0.14.15 [skip ci] — *github-actions[bot], 17:43*
+- [`5522ddf`](https://github.com/WISE-Developers/project_nomad/commit/5522ddff11d7c1b52e14f56ef06e66e79f515593) fix(#343): only block the install on placeholders it actually uses — *Franco Nogarin, 11:43*
+- [`8d2e4e9`](https://github.com/WISE-Developers/project_nomad/commit/8d2e4e938bd2491d76952c2899eb4380fe943fc7) chore: dev v0.14.14 [skip ci] — *github-actions[bot], 17:16*
+- [`a4219ea`](https://github.com/WISE-Developers/project_nomad/commit/a4219ea4546f30ff736adf5d91d3700a28804e90) Merge fix/343-installer-placeholders: placeholders no longer survive into .env — *Franco Nogarin, 11:16*
+- [`3a653fb`](https://github.com/WISE-Developers/project_nomad/commit/3a653fb43faf72d3653932ceff908cb4b656153d) fix(#343): treat shipped placeholders as absent, and refuse to finish with one — *Franco Nogarin, 11:16*
+- [`c652a68`](https://github.com/WISE-Developers/project_nomad/commit/c652a68fc6db0119c8a64320836f720a08700fd3) chore: dev v0.14.13 [skip ci] — *github-actions[bot], 17:13*
+- [`8137d17`](https://github.com/WISE-Developers/project_nomad/commit/8137d17e9533be1efeed041649f6aff26494691e) Merge fix/331-record-fuel-vintage: record the fuel vintage at execution time — *Franco Nogarin, 11:13*
+- [`5694e87`](https://github.com/WISE-Developers/project_nomad/commit/5694e87ab1ee35b29c357afa051e9c017df92f43) fix(#331): record the fuel vintage when the run happens, not when it is read — *Franco Nogarin, 11:13*
+- [`bbd99db`](https://github.com/WISE-Developers/project_nomad/commit/bbd99dbe80ddd0aab20f4e5857ff80d49c75e417) chore: dev v0.14.12 [skip ci] — *github-actions[bot], 16:30*
+- [`cdc2b36`](https://github.com/WISE-Developers/project_nomad/commit/cdc2b36977bbf4c5b31e5f142c8f9349c10424ba) Merge fix/330-fuel-dataset-error: report a missing fuel dataset before launching — *Franco Nogarin, 10:30*
+- [`5c39ee5`](https://github.com/WISE-Developers/project_nomad/commit/5c39ee5fcfcb7d2db3e1e55c1e0b13da3ba6afbb) fix(#330): report a missing fuel dataset instead of an exit code — *Franco Nogarin, 10:30*
+- [`a89fb3c`](https://github.com/WISE-Developers/project_nomad/commit/a89fb3c11af8522c644cde43c0afd1157d1c0e90) chore: dev v0.14.11 [skip ci] — *github-actions[bot], 16:25*
+- [`aa824d7`](https://github.com/WISE-Developers/project_nomad/commit/aa824d79b164873da9f7b3e3f7f892050b0f96e1) Merge fix/342-bounded-validation: bound weather validation reporting — *Franco Nogarin, 10:25*
+- [`e38000f`](https://github.com/WISE-Developers/project_nomad/commit/e38000f4e61f308a7c907687b77bf33ef50d0e81) fix(#342): group weather validation issues instead of one line per row — *Franco Nogarin, 10:25*
+- [`9572d78`](https://github.com/WISE-Developers/project_nomad/commit/9572d781a555d7656e9c64b087ed25e29780ae6d) chore: dev v0.14.10 [skip ci] — *github-actions[bot], 16:12*
+- [`4729991`](https://github.com/WISE-Developers/project_nomad/commit/47299919309d3847ffe00872877faa8af97a950d) Merge fix/339-341-weather-contract: validate weather against FireSTARR's input contract before running — *Franco Nogarin, 10:11*
+- [`1443351`](https://github.com/WISE-Developers/project_nomad/commit/1443351e9c25c15e0fd183dbd9526fe4b71c8dd1) fix(#339,#340,#341): check weather against FireSTARR's contract before running — *Franco Nogarin, 10:11*
+- [`0d83b32`](https://github.com/WISE-Developers/project_nomad/commit/0d83b32aba9aecdc7fc14070a8cd33d4dfdfce39) chore: dev v0.14.9 [skip ci] — *github-actions[bot], 15:43*
+- [`4450405`](https://github.com/WISE-Developers/project_nomad/commit/4450405999295930673b1d5e015e6791e1b66110) Merge fix/353-invalid-timezone: reject unresolvable timezones instead of returning null — *Franco Nogarin, 09:43*
+- [`585796a`](https://github.com/WISE-Developers/project_nomad/commit/585796ac816cf7989873cb24327b2bf8b40676c1) fix(#353): fail on an unresolvable timezone instead of returning null — *Franco Nogarin, 09:43*
+- [`b455679`](https://github.com/WISE-Developers/project_nomad/commit/b4556795b08ef36988a993241ff77554ef1fb5c0) chore: dev v0.14.8 [skip ci] — *github-actions[bot], 15:42*
+- [`78bdcdb`](https://github.com/WISE-Developers/project_nomad/commit/78bdcdb91a64c666dc1cf2b68a17b016a7d630b5) Merge fix/358-notification-hang: submission no longer waits on the notification prompt — *Franco Nogarin, 09:41*
+- [`47f1b09`](https://github.com/WISE-Developers/project_nomad/commit/47f1b097af916ad55a86371a45a42dec5bbd86d1) fix(#358): never block model submission on the notification prompt — *Franco Nogarin, 09:41*
+- [`af3a65b`](https://github.com/WISE-Developers/project_nomad/commit/af3a65bce14af7c2d2629fb0e67774dcb4bd33a9) chore: dev v0.14.7 [skip ci] — *github-actions[bot], 15:37*
+- [`98a39e5`](https://github.com/WISE-Developers/project_nomad/commit/98a39e56429986a6156d2625b87a440ae46da40c) Merge fix/357-nan-upload-validation: report missing FWI values at upload — *Franco Nogarin, 09:37*
+- [`349fe58`](https://github.com/WISE-Developers/project_nomad/commit/349fe58a4237f8c971b705e804fa7678dd9ae031) fix(#357): report what the FWI columns contain, not just that they exist — *Franco Nogarin, 09:37*
+- [`2401340`](https://github.com/WISE-Developers/project_nomad/commit/24013404312b58f1f1b8170692fbd791ba80a7c2) chore: dev v0.14.6 [skip ci] — *github-actions[bot], 13:20*
+- [`eed3059`](https://github.com/WISE-Developers/project_nomad/commit/eed3059d8541251743ff152a13bbcdb76cdb42ca) Merge test/351-e2e-recovery: end-to-end regression test for daily-only CFFDRS recovery — *Franco Nogarin, 07:19*
+- [`25088ba`](https://github.com/WISE-Developers/project_nomad/commit/25088ba31b60a9aa3090e73c0bdebc5b7b5b03b1) test(#351): pin the whole daily-only recovery end to end — *Franco Nogarin, 07:19*
+- [`7904c22`](https://github.com/WISE-Developers/project_nomad/commit/7904c2246700ddaa6cf59be07bc3d84d9ce81c51) chore: dev v0.14.5 [skip ci] — *github-actions[bot], 13:02*
+- [`3172014`](https://github.com/WISE-Developers/project_nomad/commit/3172014198854b1e25bf1d233ef6847c89bcfe20) Merge fix/352-local-day-rollover: daily codes roll over locally, driven by the noon observation — *Franco Nogarin, 07:02*
+- [`b0d5efd`](https://github.com/WISE-Developers/project_nomad/commit/b0d5efd8d2ee1c985fd14ca7f205d8b85f08de04) fix(#352): roll DMC/DC over on the local day, driven by the noon observation — *Franco Nogarin, 07:02*
+- [`d8163be`](https://github.com/WISE-Developers/project_nomad/commit/d8163be7fc0489e77951be41b602b4d5ef4c4bb8) chore: dev v0.14.4 [skip ci] — *github-actions[bot], 12:55*
+- [`9d41844`](https://github.com/WISE-Developers/project_nomad/commit/9d4184417fadbb002bea7d987e522eb9bbad517a) Merge fix/354-tz-contract: state the weather timezone contract and check files against it — *Franco Nogarin, 06:55*
+- [`0f9bfdb`](https://github.com/WISE-Developers/project_nomad/commit/0f9bfdb926dab1aba34d7771d302f61b21ffde6e) fix(#354): state the weather timezone contract and check files against it — *Franco Nogarin, 06:55*
+
+### 2026-08-18
+
+- [`5ddd7b1`](https://github.com/WISE-Developers/project_nomad/commit/5ddd7b179d1e451a54a1240c6b47df0e62db7f12) chore: dev v0.14.3 [skip ci] — *github-actions[bot], 18:06*
+- [`ca35866`](https://github.com/WISE-Developers/project_nomad/commit/ca35866ff734522a90a4940b1fa70ff0f25aebcd) Merge fix/355-zoned-ignition: build the ignition instant in the model's timezone — *Franco Nogarin, 12:06*
+- [`9d15aca`](https://github.com/WISE-Developers/project_nomad/commit/9d15acadde2b045d0a9a63baa99f6b6221e588e4) fix(#355): resolve the ignition instant in the model timezone — *Franco Nogarin, 12:06*
+- [`ee7df7a`](https://github.com/WISE-Developers/project_nomad/commit/ee7df7a041658f002dbef0c28ce52f75da3c9c8e) chore: dev v0.14.2 [skip ci] — *github-actions[bot], 17:54*
+- [`5d6a92a`](https://github.com/WISE-Developers/project_nomad/commit/5d6a92a0a4d5f4c2682560e8f14df57f892f3dbe) Merge origin/dev v0.14.1 version bump — *Franco Nogarin, 11:54*
+- [`09e1596`](https://github.com/WISE-Developers/project_nomad/commit/09e1596629da83687526f29b1b1f96a64e5e0db2) Merge fix/356-latitude-guard: resolve ignition latitude rather than sending undefined — *Franco Nogarin, 11:54*
+- [`a0b5722`](https://github.com/WISE-Developers/project_nomad/commit/a0b5722b020f6f93b47f7c4f7aa3d92e992e0de6) fix(#356): resolve ignition latitude instead of letting it go undefined — *Franco Nogarin, 11:54*
+- [`0d5c2c4`](https://github.com/WISE-Developers/project_nomad/commit/0d5c2c449dc6f0d2f640a71d8f2721fde4356c1f) chore: dev v0.14.1 [skip ci] — *github-actions[bot], 17:42*
+- [`758c893`](https://github.com/WISE-Developers/project_nomad/commit/758c8935a72c25f93ddc47c83a7783d23e388f4b) Merge fix/350-351-weather-nan: NaN weather validation + daily-only CFFDRS recovery — *Franco Nogarin, 11:41*
+- [`43d02a4`](https://github.com/WISE-Developers/project_nomad/commit/43d02a44b634bd4d9a58b59614cc2389de29d7c9) feat(#351): gate wizard submit on the daily-only weather check — *Franco Nogarin, 11:40*
+- [`75ec42a`](https://github.com/WISE-Developers/project_nomad/commit/75ec42acf9077d00e69078b3a4608454276597b1) feat(#351): add POST /api/v1/models/preflight — *Franco Nogarin, 11:21*
+- [`fdd3ced`](https://github.com/WISE-Developers/project_nomad/commit/fdd3ced5e0f4614cab6df04fc772a4f975c3e8c4) fix(#351): derive the daily reading hour from the file, not from noon — *Franco Nogarin, 09:50*
+- [`e79e607`](https://github.com/WISE-Developers/project_nomad/commit/e79e6070e97c864378fbf09aceb745584d973b12) feat(#351): implement daily-only CFFDRS detection — GREEN — *Franco Nogarin, 08:39*
+- [`b32ccfd`](https://github.com/WISE-Developers/project_nomad/commit/b32ccfd661448d9657fc0dd78d13575e69438560) wip(#351): RED — daily-only CFFDRS detection contract + 15 failing tests — *Franco Nogarin, 05:22*
+- [`db764f4`](https://github.com/WISE-Developers/project_nomad/commit/db764f46a16e1db82a9f8374a6309845b876d027) fix(#350): reject non-finite values in weather validation — *Franco Nogarin, 05:22*
+
+### 2026-08-17
+
+- [`409c458`](https://github.com/WISE-Developers/project_nomad/commit/409c458e19657d365e5377fe4d243fbedc5b44f8) chore: release v0.14.0 [skip ci] — *github-actions[bot], 16:12*
+- [`600ef4b`](https://github.com/WISE-Developers/project_nomad/commit/600ef4b63ffd751f1645d94ed5d508cf7f7d6959) Merge pull request #349 from WISE-Developers/dev — *Franco Nogarin, 10:12*
+- [`f8591d1`](https://github.com/WISE-Developers/project_nomad/commit/f8591d138d9b08a5607ce8a8c31fd15a11312089) chore: dev v0.13.2 [skip ci] — *github-actions[bot], 13:37*
+- [`6bc87ee`](https://github.com/WISE-Developers/project_nomad/commit/6bc87eedc936331a06e25db1135b655fc37913af) Merge fix/348-versioning-scheme: patch on dev, minor on main — *Franco Nogarin, 07:37*
+- [`7db168a`](https://github.com/WISE-Developers/project_nomad/commit/7db168a111e2dd4945709730bcc19f55d9f5ec45) fix: implement the intended versioning scheme — *Franco Nogarin, 07:31*
+- [`2388513`](https://github.com/WISE-Developers/project_nomad/commit/238851399914bd838624e858c0e962790e5ef826) chore: reset dev build counter after v0.13.1 [skip ci] — *github-actions[bot], 13:09*
+- [`94874e1`](https://github.com/WISE-Developers/project_nomad/commit/94874e12e727a4f043e04df0888079ce982a390b) chore: release v0.13.1 [skip ci] — *github-actions[bot], 13:09*
+- [`fc6a92a`](https://github.com/WISE-Developers/project_nomad/commit/fc6a92ae2812df2a822485fdb70f41d5362074ba) Merge pull request #347 from WISE-Developers/dev — *Franco Nogarin, 07:08*
+- [`463bbad`](https://github.com/WISE-Developers/project_nomad/commit/463bbad24980a1c8932698e5d8e6bf429e2d8f28) chore: dev build 1 [skip ci] — *github-actions[bot], 11:47*
+- [`b02dd19`](https://github.com/WISE-Developers/project_nomad/commit/b02dd196b0541132e735273b65cb32f0be484ac4) Merge fix/346-identity-split: one identity per person in the usage log — *Franco Nogarin, 05:47*
+- [`8f3ad99`](https://github.com/WISE-Developers/project_nomad/commit/8f3ad99dcfb1c5ac686eea428f4e0c35d7104bf6) fix: key model ownership on email, matching display name during transition — *Franco Nogarin, 05:33*
+
+### 2026-08-16
+
+- [`7508e32`](https://github.com/WISE-Developers/project_nomad/commit/7508e32a88233d4c99a420d9a4259cf9387532f2) chore: reset dev build counter after v0.13.0 [skip ci] — *github-actions[bot], 23:18*
+- [`ae4e98b`](https://github.com/WISE-Developers/project_nomad/commit/ae4e98bdc48373ffce5979d9783d75b2e81416a6) chore: release v0.13.0 [skip ci] — *github-actions[bot], 23:18*
+- [`47dcba2`](https://github.com/WISE-Developers/project_nomad/commit/47dcba252e9368ea275d995e1e0e341b4adf25b1) Merge pull request #345 from WISE-Developers/dev — *Franco Nogarin, 17:17*
+
+### 2026-08-15
+
+- [`b0fbf4d`](https://github.com/WISE-Developers/project_nomad/commit/b0fbf4dbf8bfc17fe03c72d2aeba31530cd87860) chore: dev build 3 [skip ci] — *github-actions[bot], 12:33*
+- [`6aefd67`](https://github.com/WISE-Developers/project_nomad/commit/6aefd6789f4a5ced338bf8803323a06b4deea94a) Merge fix/version-reporting: honest version, visible logs, no silent defaults — *Franco Nogarin, 06:33*
+
+### 2026-08-14
+
+- [`e87388b`](https://github.com/WISE-Developers/project_nomad/commit/e87388b92642e9a470de95aa1f63ff8ab5bdf616) fix: remove the last silent defaults from the usage log config — *Franco Nogarin, 11:55*
+- [`b5b3979`](https://github.com/WISE-Developers/project_nomad/commit/b5b3979b6c29e1e149bd25d65103c3492e4098e5) fix: log to stdout in production, and pair every run start with its failure — *Franco Nogarin, 10:55*
+- [`842c51e`](https://github.com/WISE-Developers/project_nomad/commit/842c51e33af557ff7a4d49e5ad795e54936277d6) fix: report the real version instead of a fabricated one — *Franco Nogarin, 08:18*
+
+### 2026-08-12
+
+- [`1916ac9`](https://github.com/WISE-Developers/project_nomad/commit/1916ac90027b4dfc5bbf57997b0cc524b37cf31c) chore: dev build 2 [skip ci] — *github-actions[bot], 15:06*
+- [`a24e813`](https://github.com/WISE-Developers/project_nomad/commit/a24e8130e82434100549032dfd8ba66ccf1ba914) Merge remote-tracking branch 'origin/dev' into dev — *Franco Nogarin, 09:06*
+- [`004505a`](https://github.com/WISE-Developers/project_nomad/commit/004505a799b2eb1d194832cdb3c28a9492b0a734) Merge feat/332-usage-log: structured usage log — *Franco Nogarin, 09:06*
+- [`6bd569b`](https://github.com/WISE-Developers/project_nomad/commit/6bd569b268c9fca7c29582d4392141d6b26421ae) Merge dev: pick up CI workflow (#333) — *Franco Nogarin, 09:04*
+- [`46aded1`](https://github.com/WISE-Developers/project_nomad/commit/46aded1da7786d5ec30eaf0d3a8a9b9f50699add) chore: dev build 1 [skip ci] — *github-actions[bot], 15:04*
+- [`9d2573b`](https://github.com/WISE-Developers/project_nomad/commit/9d2573b1a2039faaeb71d9284be187f070b7d07a) Merge chore/333-ci: run all test suites in CI — *Franco Nogarin, 09:03*
+- [`0742a09`](https://github.com/WISE-Developers/project_nomad/commit/0742a09953d8b52eb614bd154c1f4c6f3dd53bcb) ci: run on every branch, not only main and dev — *Franco Nogarin, 06:52*
+- [`bd45a9b`](https://github.com/WISE-Developers/project_nomad/commit/bd45a9b3b4475287fdf98f187e3539fbbc2b19f6) ci: run backend, frontend and bash suites on every change — *Franco Nogarin, 06:51*
+- [`198c006`](https://github.com/WISE-Developers/project_nomad/commit/198c0068cb68183384c453b11784d10e22189da7) feat: GET /api/v1/usage with fail-closed bearer token auth — *Franco Nogarin, 06:41*
+- [`c8da1f8`](https://github.com/WISE-Developers/project_nomad/commit/c8da1f8b3b7672891716444865f3f6d21606f31e) feat: record model run, session and export usage events — *Franco Nogarin, 06:37*
+
+### 2026-08-11
+
+- [`fddbb6b`](https://github.com/WISE-Developers/project_nomad/commit/fddbb6b3326556b3ea2fb53a8066f677d5c0c86a) feat: emit app.started and require NOMAD_HOME_TIMEZONE at boot — *Franco Nogarin, 09:20*
+- [`3eeba68`](https://github.com/WISE-Developers/project_nomad/commit/3eeba680d1231ba8c71b9a293bb7534b6557e745) feat: JSONL usage log adapter with retention bound — *Franco Nogarin, 06:59*
+- [`8cfeacd`](https://github.com/WISE-Developers/project_nomad/commit/8cfeacdfc0bcaa3dc39b60dcb5ca453c177ea45c) feat: IUsageLogger port and usage event domain types — *Franco Nogarin, 06:24*
+- [`530ac7d`](https://github.com/WISE-Developers/project_nomad/commit/530ac7dcb6aff852449ce18b963a2020cfe94ee8) feat: NOMAD_HOME_TIMEZONE config with fail-fast validation — *Franco Nogarin, 06:10*
+- [`a0f1606`](https://github.com/WISE-Developers/project_nomad/commit/a0f1606a69ed6ebc085072e464f0693d82a501df) fix: .env.example must end with a newline — *Franco Nogarin, 05:57*
+
+### 2026-08-07
+
+- [`59c53bc`](https://github.com/WISE-Developers/project_nomad/commit/59c53bc6fa88f2087c2d3bc0db1a687231f51c93) chore: reset dev build counter after v0.12.1 [skip ci] — *github-actions[bot], 13:18*
+- [`c5c7ea8`](https://github.com/WISE-Developers/project_nomad/commit/c5c7ea82caa885fd0d7389aac45406074f6ad86a) chore: release v0.12.1 [skip ci] — *github-actions[bot], 13:17*
+- [`9d5e204`](https://github.com/WISE-Developers/project_nomad/commit/9d5e2042b16fdbe581ec433b4697638b1a827056) Merge pull request #329 from WISE-Developers/dev — *Franco Nogarin, 07:17*
+- [`0027c8b`](https://github.com/WISE-Developers/project_nomad/commit/0027c8b758e628c7cad63d653e9f39e10afdf6f0) chore: dev build 1 [skip ci] — *github-actions[bot], 13:15*
+- [`5890f24`](https://github.com/WISE-Developers/project_nomad/commit/5890f24075ca85876ef0598518077c9c4e39f6b7) fix: installers that generate .env must write a dataset source — *Franco Nogarin, 07:15*
+- [`838309e`](https://github.com/WISE-Developers/project_nomad/commit/838309ef834da308a82a430c6f08e6fe84765b24) chore: reset dev build counter after v0.12.0 [skip ci] — *github-actions[bot], 12:39*
+- [`3ebc96a`](https://github.com/WISE-Developers/project_nomad/commit/3ebc96a19a5ba31439c487e71e26ec5230eeaad7) chore: release v0.12.0 [skip ci] — *github-actions[bot], 12:38*
+- [`bea0b58`](https://github.com/WISE-Developers/project_nomad/commit/bea0b5827dd2b142a89ed648016104ffdcfc1d77) Merge pull request #328 from WISE-Developers/dev — *Franco Nogarin, 06:38*
+
+### 2026-08-05
+
+- [`de669a0`](https://github.com/WISE-Developers/project_nomad/commit/de669a0188fecaf6404d39368e8b2504b692837a) chore: dev build 9 [skip ci] — *github-actions[bot], 19:09*
+- [`48b7af9`](https://github.com/WISE-Developers/project_nomad/commit/48b7af9b13d334de13c64363630ccd27a77c33c0) Merge: remove expired FireSTARR digest pin — *Franco Nogarin, 13:09*
+- [`2e272f7`](https://github.com/WISE-Developers/project_nomad/commit/2e272f736583bf5be624deb12e0597bd0aacd624) fix: remove the expired FireSTARR digest pin — *Franco Nogarin, 13:09*
+- [`9a2a688`](https://github.com/WISE-Developers/project_nomad/commit/9a2a688ca66b1f2987eb9b17a58f10e62b982c69) chore: dev build 8 [skip ci] — *github-actions[bot], 18:49*
+- [`bf0e75a`](https://github.com/WISE-Developers/project_nomad/commit/bf0e75acd191acaf8be27a435721dc52dce2560f) Merge origin/dev — *Franco Nogarin, 12:48*
+- [`bec261e`](https://github.com/WISE-Developers/project_nomad/commit/bec261e26da15a0e65fefe4e1a0bf3f37edc40b5) fix: keep macOS metadata out of published fuel datasets — *Franco Nogarin, 12:48*
+- [`df6bdb5`](https://github.com/WISE-Developers/project_nomad/commit/df6bdb5622f536a818a922cdfe3dfcd0f782e3c5) chore: dev build 7 [skip ci] — *github-actions[bot], 18:40*
+- [`4031531`](https://github.com/WISE-Developers/project_nomad/commit/40315310d89ac079b8e4744a21880ac78d56254c) Merge origin/dev — *Franco Nogarin, 12:40*
+- [`ca08a5f`](https://github.com/WISE-Developers/project_nomad/commit/ca08a5f5badefecbcf891d584a45efb45166085f) fix: package_fuels uses the master fuel.lut, and strips macOS metadata — *Franco Nogarin, 12:40*
+- [`780efe8`](https://github.com/WISE-Developers/project_nomad/commit/780efe8eb8794bc47d186cb60b9314b08ae48338) chore: dev build 6 [skip ci] — *github-actions[bot], 18:32*
+- [`6a4a06c`](https://github.com/WISE-Developers/project_nomad/commit/6a4a06c69ff9f637266da257d1d9fbb06050a312) Merge origin/dev (build counter) — *Franco Nogarin, 12:31*
+- [`fc32134`](https://github.com/WISE-Developers/project_nomad/commit/fc321341a844839281cbc27d67157573a4e6de74) Merge #319: fuel vintage display + date-vs-vintage warning — *Franco Nogarin, 12:30*
+- [`ff0181c`](https://github.com/WISE-Developers/project_nomad/commit/ff0181c44d698996543b7e905cb14c1145d8178d) chore: dev build 5 [skip ci] — *github-actions[bot], 18:22*
+- [`7e54969`](https://github.com/WISE-Developers/project_nomad/commit/7e549695584ef4ca87b153f5092b25c22b8efdb3) Merge dataset sizing, unzip auto-install, and restored package_fuels.sh — *Franco Nogarin, 12:21*
+- [`7390b3c`](https://github.com/WISE-Developers/project_nomad/commit/7390b3cbeaa488f38a0c75301fe51c3e34e2f758) feat: restore package_fuels.sh into the repo, with COG settings — *Franco Nogarin, 12:20*
+- [`beed69e`](https://github.com/WISE-Developers/project_nomad/commit/beed69e0d66cb11323bd4c2d51f2d0a0f362fc30) fix(#319): make the fuel vintage notice legible — *Franco Nogarin, 08:43*
+
+### 2026-08-04
+
+- [`67a95a2`](https://github.com/WISE-Developers/project_nomad/commit/67a95a253cc92e6a708fb028a84ecff5ad17772a) feat: install unzip when missing instead of refusing — *Franco Nogarin, 10:33*
+
+### 2026-08-03
+
+- [`fab2822`](https://github.com/WISE-Developers/project_nomad/commit/fab2822a2de8105c867f862b34d0bd7f0caf9ea7) fix: size the dataset install from the index, not a wrong constant — *Franco Nogarin, 07:10*
+
+### 2026-08-02
+
+- [`be33e02`](https://github.com/WISE-Developers/project_nomad/commit/be33e0269d2646fbe801d9c413775edafcd1db4a) feat(#319): show fuel vintage in model setup and results — *Franco Nogarin, 08:30*
+- [`f5f144e`](https://github.com/WISE-Developers/project_nomad/commit/f5f144eaf78e00f31f67ea9aae8e8fd4f2b3eb12) feat(#319): expose the modelled start date in results inputs — *Franco Nogarin, 07:11*
+- [`864c217`](https://github.com/WISE-Developers/project_nomad/commit/864c2171c6c5d63cf9863fac89854a5d29ee3bfa) feat(#319): fuel vintage description, notice component + API client — *Franco Nogarin, 07:03*
+- [`3c4ec50`](https://github.com/WISE-Developers/project_nomad/commit/3c4ec50b641107aebc5a09a04101f9b944c397ca) feat(#319): expose installed fuel vintages over GET /api/v1/fuel-datasets — *Franco Nogarin, 06:55*
+- [`b594fd9`](https://github.com/WISE-Developers/project_nomad/commit/b594fd9959ba4a2d4952419e7f4b111d6d11ca80) feat(#319): fuel dataset catalog port + filesystem adapter — *Franco Nogarin, 06:48*
+- [`785dcca`](https://github.com/WISE-Developers/project_nomad/commit/785dcca723c5ac5616632718045fa63873d5ca85) fix(#319): validate fuel coverage against the model year, not today — *Franco Nogarin, 06:24*
+- [`52e6dc7`](https://github.com/WISE-Developers/project_nomad/commit/52e6dc7d4794b8a06df4b4de86f9e6c34379ca3d) chore: dev build 4 [skip ci] — *github-actions[bot], 11:50*
+- [`dad749f`](https://github.com/WISE-Developers/project_nomad/commit/dad749f6916aecbf9456867a9bc19d9bfb823c6a) Merge origin/dev (dev build counter) — *Franco Nogarin, 05:50*
+- [`50d228f`](https://github.com/WISE-Developers/project_nomad/commit/50d228f47da3fdd87af6b15b2191b7271e90c5eb) Merge #312 follow-up: menu installers defer to year picker + index default — *Franco Nogarin, 05:50*
+
+### 2026-07-31
+
+- [`a203c24`](https://github.com/WISE-Developers/project_nomad/commit/a203c24e9ee0c336faa0b14dc20dfb15674a3103) feat(#312): default new installs to the year-selectable fuel dataset index — *Franco Nogarin, 11:55*
+- [`ae37e20`](https://github.com/WISE-Developers/project_nomad/commit/ae37e20d6847e641fef36acff8069e02750fd832) fix(#312): menu installers defer dataset source to the year picker — *Franco Nogarin, 11:54*
+
+### 2026-07-30
+
+- [`c6d47e0`](https://github.com/WISE-Developers/project_nomad/commit/c6d47e06f99c5934d3f6a1a7a47a3867d45ceed2) chore: dev build 3 [skip ci] — *github-actions[bot], 17:09*
+- [`13d1747`](https://github.com/WISE-Developers/project_nomad/commit/13d1747d7762f9a1d4d00c46666c20e50521738f) Merge #312: year-selectable fuel dataset installer (index mode) — *Franco Nogarin, 11:09*
+- [`63db255`](https://github.com/WISE-Developers/project_nomad/commit/63db255009cca91f231a6e5488557208794880e7) feat(#312): year-selectable fuel dataset installer (index mode) — *Franco Nogarin, 08:44*
+
+### 2026-07-28
+
+- [`bde4d1c`](https://github.com/WISE-Developers/project_nomad/commit/bde4d1c78e815319ccd28a315f807ee03a68ceb2) chore: dev build 2 [skip ci] — *github-actions[bot], 11:11*
+- [`e35053c`](https://github.com/WISE-Developers/project_nomad/commit/e35053cfcec00fa2428407b01e1688567fca0ea8) Merge #313: Sentry error reporting (frontend + backend, consent-gated) — *Franco Nogarin, 05:10*
+- [`5f4c594`](https://github.com/WISE-Developers/project_nomad/commit/5f4c594da3b3f4886037ec7611a56ca45b2aa435) feat(#313): S0 consent-prompt parity for metal + headless installers — *Franco Nogarin, 05:09*
+
+### 2026-07-27
+
+- [`3fc1ca0`](https://github.com/WISE-Developers/project_nomad/commit/3fc1ca06efb6e71000d8725ccc43152bccf73b86) feat(#313): conditional Sentry source-map upload (S3) — *Franco Nogarin, 12:42*
+- [`c8177f0`](https://github.com/WISE-Developers/project_nomad/commit/c8177f0d023e0ab77837b22626e72b6bf171ccf8) feat(#313): Sentry backend integration (@sentry/node, SAN Express) — *Franco Nogarin, 11:29*
+- [`e0cd4b0`](https://github.com/WISE-Developers/project_nomad/commit/e0cd4b0ba15fac3ccb98ade10217e95edaf90a1a) fix(#313): keep Sentry default integrations (capture uncaught errors) — *Franco Nogarin, 11:17*
+- [`04cf472`](https://github.com/WISE-Developers/project_nomad/commit/04cf4723cab2cfd05805dd7393b88f9465db797c) feat(#313): install-time consent prompt for crash/error reporting — *Franco Nogarin, 11:06*
+- [`636420b`](https://github.com/WISE-Developers/project_nomad/commit/636420ba77ba3a7b2efc85e57c163afd8dbd978a) feat(#313): Sentry frontend integration (gated init + PII scrub) — *Franco Nogarin, 10:43*
+
+### 2026-07-22
+
+- [`2d80596`](https://github.com/WISE-Developers/project_nomad/commit/2d80596b19f95697c1f4b647a8a94a19ad5bc996) chore: dev build 1 [skip ci] — *github-actions[bot], 16:37*
+- [`dd3b1ec`](https://github.com/WISE-Developers/project_nomad/commit/dd3b1ec27e194b25a5193215d41c792532855153) Merge #299: CWFIS M3 hotspots + perimeters WMS layers — *Franco Nogarin, 10:36*
+- [`4d1433e`](https://github.com/WISE-Developers/project_nomad/commit/4d1433ee9910db14c6b20c4cf508cb5952f194ed) feat(#299): render CBMT above basemap but below all data layers — *Franco Nogarin, 09:19*
+- [`e72627a`](https://github.com/WISE-Developers/project_nomad/commit/e72627aff77c4fd5b8874c9ca145759e8a5fc470) fix(#299): gate hover to model rasters + darken CFS/CWFIS layer labels — *Franco Nogarin, 09:16*
+- [`56a6a27`](https://github.com/WISE-Developers/project_nomad/commit/56a6a274a62c4f897ef2185e87325ca180db2938) fix(#299): hide Hover value toggle for WMS layers — *Franco Nogarin, 09:12*
+- [`457a2a0`](https://github.com/WISE-Developers/project_nomad/commit/457a2a066543b7ea85165d01bf7128ad3c867ead) fix(#299): keep CWFIS section in has-layers view + correct WMS legend — *Franco Nogarin, 09:04*
+- [`bea7d8b`](https://github.com/WISE-Developers/project_nomad/commit/bea7d8b98c3454cf1ce004967ce217fe896cd00d) feat(#299): CWFIS Live section in LayerPanel (M3 hotspots + perimeters) — *Franco Nogarin, 08:45*
+- [`a92ef88`](https://github.com/WISE-Developers/project_nomad/commit/a92ef88a92dedb85ee9fe3a27a403d506826b1b6) feat(#299): CWFIS M3 WMS layer hook (hotspots + perimeters) — *Franco Nogarin, 08:43*
 
 ### 2026-07-09
 
+- [`7195494`](https://github.com/WISE-Developers/project_nomad/commit/71954948eaaa8bad5af36b6248c95497bc6799e2) chore: reset dev build counter after v0.11.5 [skip ci] — *github-actions[bot], 15:40*
+- [`97924b3`](https://github.com/WISE-Developers/project_nomad/commit/97924b3317151df3da5f623e9a3fa10654585b84) chore: release v0.11.5 [skip ci] — *github-actions[bot], 15:39*
 - [`cd4834e`](https://github.com/WISE-Developers/project_nomad/commit/cd4834ec2a20a8a9b8da3a2473b2f0ef3654be73) Merge pull request #314 from WISE-Developers/dev — *Franco Nogarin, 09:39*
 - [`92459ba`](https://github.com/WISE-Developers/project_nomad/commit/92459ba644ee7aaee0cd539fccc0b64dd815102e) chore: dev build 2 [skip ci] — *github-actions[bot], 13:45*
 - [`6e0e472`](https://github.com/WISE-Developers/project_nomad/commit/6e0e4724814393bd397b4deb296060a43ec9bd13) Merge fix/286-suppress-autoframe-while-drawing into dev — *Franco Nogarin, 07:45*

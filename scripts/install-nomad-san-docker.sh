@@ -50,20 +50,33 @@ print_info() { echo -e "${CYAN}ℹ${NC} $1"; }
 # Set defaults
 INSTALL_DIR="${INSTALL_DIR:-./project_nomad}"
 FIRESTARR_DATASET_PATH="${FIRESTARR_DATASET_PATH:-$HOME/firestarr_data}"
+FIRESTARR_DATASET_INDEX="${FIRESTARR_DATASET_INDEX:-https://fgmfiles.spyd.com/datasets/nomad/index.json}"
 NOMAD_PORT="${NOMAD_PORT:-4901}"
 NOMAD_FRONTEND_HOST_PORT="${NOMAD_FRONTEND_HOST_PORT:-3901}"
 NOMAD_BACKEND_HOST_PORT="${NOMAD_BACKEND_HOST_PORT:-4901}"
 NOMAD_SERVER_HOSTNAME="${NOMAD_SERVER_HOSTNAME:-localhost}"
+# IANA zone used to stamp local timestamps in the usage log. REQUIRED by the
+# backend - it will not start without it. This installer is non-interactive, so
+# the value comes from the environment or falls back to Mountain time.
+NOMAD_HOME_TIMEZONE="${NOMAD_HOME_TIMEZONE:-America/Edmonton}"
 
 # FireSTARR image configuration
 #
-# Docker default is pinned by digest to a verified-working build (v0.9.11,
-# revision 7070574b46, published 2026-05-13 on the main channel). FireSTARR
-# v0.9.12-alpha-2 introduced an x/y transpose regression — see
-# https://github.com/CWFMF/firestarr-cpp/issues/17. Bump when fixed upstream.
+# Both architectures track `main-latest`, the house convention.
+#
+# x86_64 was temporarily pinned by digest to dodge the v0.9.12-alpha-2 x/y
+# transpose regression (CWFMF/firestarr-cpp#17). That issue was closed fixed
+# on 2026-05-28, and the pin was verified obsolete on 2026-08-05: v0.9.14
+# (main-latest) produced byte-identical model output to the known-good
+# v0.9.11 build on identical inputs — 47 simulations, all three days.
+#
+# The pinned digest had also stopped resolving in GHCR, so a fresh x86_64
+# Docker install could not pull an engine at all and every model run failed
+# with exit 1. Temporary pins need an expiry; this one outlived its cause by
+# ten weeks.
 FIRESTARR_REGISTRY="${FIRESTARR_REGISTRY:-ghcr.io/cwfmf/firestarr-cpp}"
 FIRESTARR_IMAGE_NAME="${FIRESTARR_IMAGE_NAME:-firestarr}"
-FIRESTARR_IMAGE_TAG="${FIRESTARR_IMAGE_TAG:-sha256:b4f8ca8b2ced7c3424191d28e8781d4c766e2664120ecbcb63591811820f257d}"
+FIRESTARR_IMAGE_TAG="${FIRESTARR_IMAGE_TAG:-main-latest}"
 FIRESTARR_IMAGE_TAG_ARM64="${FIRESTARR_IMAGE_TAG_ARM64:-main-latest}"
 
 # Build a fully-qualified image reference. Treats values starting with
@@ -269,6 +282,10 @@ generate_env() {
     # Core settings
     update_env "NOMAD_DEPLOYMENT_MODE" "SAN"
     update_env "FIRESTARR_DATASET_PATH" "$FIRESTARR_DATASET_PATH"
+    # Dataset source. .env here is BUILT key-by-key, not copied from
+    # .env.example, so the example's default never reaches it. Without this
+    # the dataset installer refuses to run on a freshly installed system.
+    update_env "FIRESTARR_DATASET_INDEX" "$FIRESTARR_DATASET_INDEX"
     update_env "FIRESTARR_EXECUTION_MODE" "docker"
     update_env "NOMAD_DATA_PATH" "$NOMAD_DATA_PATH"
 
@@ -279,6 +296,9 @@ generate_env() {
     update_env "VITE_API_PORT" "$NOMAD_BACKEND_HOST_PORT"
     update_env "VITE_API_BASE_URL" "http://${NOMAD_SERVER_HOSTNAME}:${NOMAD_BACKEND_HOST_PORT}"
     update_env "NOMAD_SERVER_HOSTNAME" "$NOMAD_SERVER_HOSTNAME"
+    update_env "NOMAD_HOME_TIMEZONE" "$NOMAD_HOME_TIMEZONE"
+    update_env "NOMAD_USAGE_LOG_PATH" "/appl/data/usage/usage.jsonl"
+    update_env "NOMAD_USAGE_LOG_MAX_BYTES" "52428800"
 
     # FireSTARR image
     detect_architecture
@@ -305,7 +325,7 @@ check_dataset() {
 
     print_warning "Dataset not found at ${FIRESTARR_DATASET_PATH}"
     echo ""
-    echo "The FireSTARR dataset (~50GB) is required for fire modeling."
+    echo "The FireSTARR dataset (about 3 GB per fuel year) is required for fire modeling."
     echo ""
 
     if [ -z "$AUTO_INSTALL_DATASET" ]; then

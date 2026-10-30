@@ -17,20 +17,23 @@ INSTALLER_VERSION="2.1.1"
 
 # FireSTARR image and binary source configuration
 #
-# Docker default is pinned by digest to a verified-working build (v0.9.11,
-# revision 7070574b46, published 2026-05-13 on the main channel). FireSTARR
-# v0.9.12-alpha-2 introduced an x/y transpose regression that places every
-# output at a consistent geographic offset from the input ignition — see
-# https://github.com/CWFMF/firestarr-cpp/issues/17. Bump this digest when
-# the upstream fix is verified.
+# Both architectures track `main-latest`, the house convention.
 #
-# ARM64 docker is left on `main-latest` (rolling) because most ARM64 users
-# run metal mode; binary release tag is unchanged.
+# x86_64 was temporarily pinned by digest to dodge the v0.9.12-alpha-2 x/y
+# transpose regression (CWFMF/firestarr-cpp#17). That issue was closed fixed
+# on 2026-05-28, and the pin was verified obsolete on 2026-08-05: v0.9.14
+# (main-latest) produced byte-identical model output to the known-good
+# v0.9.11 build on identical inputs — 47 simulations, all three days.
+#
+# The pinned digest had also stopped resolving in GHCR, so a fresh x86_64
+# Docker install could not pull an engine at all and every model run failed
+# with exit 1. Temporary pins need an expiry; this one outlived its cause by
+# ten weeks.
 #
 # See: https://github.com/WISE-Developers/project_nomad/issues/184
 FIRESTARR_REGISTRY="ghcr.io/cwfmf/firestarr-cpp"
 FIRESTARR_IMAGE_NAME="firestarr"
-FIRESTARR_IMAGE_TAG="${FIRESTARR_IMAGE_TAG:-sha256:b4f8ca8b2ced7c3424191d28e8781d4c766e2664120ecbcb63591811820f257d}"
+FIRESTARR_IMAGE_TAG="${FIRESTARR_IMAGE_TAG:-main-latest}"
 FIRESTARR_IMAGE_TAG_ARM64="${FIRESTARR_IMAGE_TAG_ARM64:-main-latest}"
 FIRESTARR_BINARY_RELEASE_TAG="${FIRESTARR_BINARY_RELEASE_TAG:-unstable-latest}"
 
@@ -59,6 +62,33 @@ ENV_EXAMPLE="$PROJECT_DIR/.env.example"
 
 # Dry run mode
 DRY_RUN=false
+
+# Home time zone (#332)
+#
+# IANA zone used to stamp local timestamps in the usage log. The backend is
+# fail-fast on this: it will not start if the key is missing or invalid, because
+# the container's own clock is UTC and a fallback would record every local time
+# silently wrong.
+#
+# This script is intended to run unattended (#335), so the value is taken from
+# the environment and never prompted for.
+NOMAD_HOME_TIMEZONE="${NOMAD_HOME_TIMEZONE:-America/Edmonton}"
+
+# Validate here, so a typo fails next to the mistake rather than at first boot.
+case "$NOMAD_HOME_TIMEZONE" in
+    [+-]*)
+        echo "ERROR: NOMAD_HOME_TIMEZONE is \"$NOMAD_HOME_TIMEZONE\", a fixed UTC offset." >&2
+        echo "       A fixed offset cannot observe DST. Use an IANA zone name," >&2
+        echo "       for example America/Edmonton." >&2
+        exit 1
+        ;;
+    */*) ;;
+    *)
+        echo "ERROR: NOMAD_HOME_TIMEZONE is \"$NOMAD_HOME_TIMEZONE\", which is not an" >&2
+        echo "       IANA zone name. Expected Area/Location, for example America/Edmonton." >&2
+        exit 1
+        ;;
+esac
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -483,8 +513,25 @@ step2_infrastructure() {
 
 # Prompt user for dataset source - use existing or download new
 prompt_dataset_source() {
+    # Index mode: FIRESTARR_DATASET_INDEX names a dataset index, so the source
+    # is already decided and install-firestarr-dataset.sh's year picker chooses
+    # which year(s) to install. Skip the source menu - asking here would prompt
+    # the user for a source twice. The path prompts below still run: the year
+    # picker never asks where the archives land, and install-firestarr-dataset.sh
+    # exits 1 without FIRESTARR_DATASET_PATH.
+    if [ -n "${FIRESTARR_DATASET_INDEX:-}" ]; then
+        echo -e "${CYAN}FireSTARR Dataset${NC}"
+        echo "    Source is configured by dataset index:"
+        echo "      $FIRESTARR_DATASET_INDEX"
+        echo "    You'll choose which fuel year(s) to install during setup."
+        echo ""
+        prompt_new_dataset_path
+        DATASET_INSTALL_MODE="download"
+        return
+    fi
+
     echo -e "${CYAN}FireSTARR Dataset${NC}"
-    echo "    The dataset includes fuel grids, DEM data (~50GB)."
+    echo "    The dataset includes fuel grids and DEM data (about 3 GB per fuel year)."
     echo ""
     echo -e "    ${GREEN}1) Use existing dataset${NC}"
     echo "       Point to an already-installed FireSTARR dataset"
@@ -570,7 +617,7 @@ prompt_existing_dataset() {
 prompt_new_dataset_path() {
     echo ""
     echo -e "${CYAN}Dataset Archive Download Folder${NC}"
-    echo "    Where to save the downloaded archive file (~50GB)."
+    echo "    Where to save the downloaded archive files (about 3 GB per fuel year)."
     echo "    The archive is preserved for future reinstalls."
     echo ""
 
@@ -1763,6 +1810,20 @@ generate_env_file() {
 
     # Update values based on wizard selections
     update_env_value "NOMAD_DEPLOYMENT_MODE" "$NOMAD_DEPLOYMENT_MODE"
+    # Home time zone (#332). REQUIRED - the backend refuses to start without it.
+    # This script is intended to run unattended (#335), so the value is taken
+    # from the environment with a Mountain-time default and never prompted for.
+    update_env_value "NOMAD_HOME_TIMEZONE" "$NOMAD_HOME_TIMEZONE"
+    # Usage log (#332). Both keys are REQUIRED - the backend will not start
+    # without them. The path MUST be on a mounted volume: a path outside a mount
+    # lives on the container overlay and is destroyed on every recreate, and the
+    # writes succeed, so the loss is silent.
+    if [ "$FIRESTARR_EXECUTION_MODE" = "binary" ]; then
+        update_env_value "NOMAD_USAGE_LOG_PATH" "${FIRESTARR_DATASET_PATH}/usage/usage.jsonl"
+    else
+        update_env_value "NOMAD_USAGE_LOG_PATH" "/appl/data/usage/usage.jsonl"
+    fi
+    update_env_value "NOMAD_USAGE_LOG_MAX_BYTES" "52428800"
     update_env_value "FIRESTARR_DATASET_PATH" "$FIRESTARR_DATASET_PATH"
     update_env_value "FIRESTARR_EXECUTION_MODE" "$FIRESTARR_EXECUTION_MODE"
 
@@ -1799,6 +1860,53 @@ generate_env_file() {
     if [ "$NOMAD_INFRA" = "docker" ] && [ -n "$NOMAD_SERVER_HOSTNAME" ] && [ -n "$NOMAD_BACKEND_HOST_PORT" ]; then
         update_env_value "VITE_API_BASE_URL" "http://${NOMAD_SERVER_HOSTNAME}:${NOMAD_BACKEND_HOST_PORT}"
         update_env_value "VITE_API_PORT" "$NOMAD_BACKEND_HOST_PORT"
+    fi
+
+    # --- Crash & error reporting consent (Sentry, #313) ---
+    # OFF by default. Only on explicit opt-in do we inject CIFFC's Sentry DSNs,
+    # which the frontend build bakes in (VITE_SENTRY_DSN) and the backend reads
+    # at runtime (SENTRY_DSN). No DSN => the app never phones home. The frontend
+    # DSN is public (ships in the browser bundle); the backend DSN is server-side.
+    SENTRY_FRONTEND_DSN_CIFFC="https://1260ee8a9108d645b99331926186fe9b@o4511356192751616.ingest.us.sentry.io/4511570358894592"
+    SENTRY_BACKEND_DSN_CIFFC="https://ae5f37e92bcaa761abe6f8856708684c@o4511356192751616.ingest.us.sentry.io/4511808188907520"
+
+    SENTRY_OPT_IN="no"
+    if [ -n "$NOMAD_ERROR_REPORTING" ]; then
+        # Non-interactive override for headless installs: NOMAD_ERROR_REPORTING=true
+        case "$(printf '%s' "$NOMAD_ERROR_REPORTING" | tr '[:upper:]' '[:lower:]')" in
+            true|yes|y|1) SENTRY_OPT_IN="yes" ;;
+        esac
+    elif [ -t 0 ] && [ "$DRY_RUN" != true ]; then
+        echo ""
+        echo "  Crash & error reporting"
+        echo "  Nomad can report crashes and errors to the development team to help fix"
+        echo "  bugs. Reports are scrubbed of personal data. Optional; off by default."
+        read -p "  Allow Nomad to report crashes and errors? [y/N] " -n 1 -r
+        echo ""
+        if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+            SENTRY_OPT_IN="yes"
+        fi
+    fi
+
+    if [ "$SENTRY_OPT_IN" = "yes" ]; then
+        # VITE_SENTRY_DSN first: once uncommented it no longer matches the
+        # SENTRY_DSN substring pattern, avoiding a collision on the next call.
+        update_env_value "VITE_SENTRY_DSN" "$SENTRY_FRONTEND_DSN_CIFFC"
+        update_env_value "SENTRY_DSN" "$SENTRY_BACKEND_DSN_CIFFC"
+        print_success "Crash & error reporting ENABLED (Sentry)"
+    else
+        if [ "$DRY_RUN" != true ]; then
+            for _k in VITE_SENTRY_DSN SENTRY_DSN; do
+                if grep -qE "^${_k}=.+" "$ENV_FILE" 2>/dev/null; then
+                    if [[ "$OSTYPE" == "darwin"* ]]; then
+                        sed -i '' "s|^${_k}=.*|${_k}=|" "$ENV_FILE"
+                    else
+                        sed -i "s|^${_k}=.*|${_k}=|" "$ENV_FILE"
+                    fi
+                fi
+            done
+        fi
+        print_info "Crash & error reporting disabled (no data will be sent)"
     fi
 
     if [ -n "$NOMAD_AGENCY_ID" ]; then

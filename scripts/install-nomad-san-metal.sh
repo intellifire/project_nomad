@@ -50,10 +50,50 @@ print_info() { echo -e "${CYAN}ℹ${NC} $1"; }
 # Set defaults
 INSTALL_DIR="${INSTALL_DIR:-./project_nomad}"
 FIRESTARR_DATASET_PATH="${FIRESTARR_DATASET_PATH:-$HOME/firestarr_data}"
+FIRESTARR_DATASET_INDEX="${FIRESTARR_DATASET_INDEX:-https://fgmfiles.spyd.com/datasets/nomad/index.json}"
 NOMAD_PORT="${NOMAD_PORT:-4901}"
 NOMAD_SERVER_HOSTNAME="${NOMAD_SERVER_HOSTNAME:-localhost}"
 NOMAD_DATA_PATH="${NOMAD_DATA_PATH:-$FIRESTARR_DATASET_PATH}"
 SIMS_OUTPUT_PATH="${SIMS_OUTPUT_PATH:-$FIRESTARR_DATASET_PATH/sims}"
+
+# Home time zone (#332)
+#
+# IANA zone used to stamp local timestamps in the usage log. The backend is
+# fail-fast on this: it will not start if the key is missing or invalid, because
+# the container's own clock is UTC and a fallback would record every local time
+# silently wrong.
+#
+# An environment value pre-fills the answer; the operator can override it. With
+# no tty the same default is taken silently, so a piped install cannot hang and
+# cannot pick a different zone than an attended one would.
+NOMAD_HOME_TIMEZONE="${NOMAD_HOME_TIMEZONE:-America/Edmonton}"
+
+if [ -t 0 ]; then
+    echo ""
+    echo "  Home time zone"
+    echo "  Usage log entries are stamped with local wall-clock time using this zone."
+    echo "  Use an IANA zone name, e.g. America/Edmonton, America/Winnipeg, America/Toronto."
+    read -p "  Time zone [$NOMAD_HOME_TIMEZONE]: " _tz_reply
+    if [ -n "$_tz_reply" ]; then
+        NOMAD_HOME_TIMEZONE="$_tz_reply"
+    fi
+fi
+
+# Validate here, so a typo fails next to the mistake rather than at first boot.
+case "$NOMAD_HOME_TIMEZONE" in
+    [+-]*)
+        echo "ERROR: NOMAD_HOME_TIMEZONE is \"$NOMAD_HOME_TIMEZONE\", a fixed UTC offset." >&2
+        echo "       A fixed offset cannot observe DST. Use an IANA zone name," >&2
+        echo "       for example America/Edmonton." >&2
+        exit 1
+        ;;
+    */*) ;;
+    *)
+        echo "ERROR: NOMAD_HOME_TIMEZONE is \"$NOMAD_HOME_TIMEZONE\", which is not an" >&2
+        echo "       IANA zone name. Expected Area/Location, for example America/Edmonton." >&2
+        exit 1
+        ;;
+esac
 
 # FireSTARR binary source
 FIRESTARR_BINARY_RELEASE_REPO="https://github.com/CWFMF/firestarr-cpp/releases/download"
@@ -242,7 +282,13 @@ generate_env() {
     }
 
     update_env "NOMAD_DEPLOYMENT_MODE" "SAN"
+    update_env "NOMAD_HOME_TIMEZONE" "$NOMAD_HOME_TIMEZONE"
+    update_env "NOMAD_USAGE_LOG_PATH" "${FIRESTARR_DATASET_PATH}/usage/usage.jsonl"
+    update_env "NOMAD_USAGE_LOG_MAX_BYTES" "52428800"
     update_env "FIRESTARR_DATASET_PATH" "$FIRESTARR_DATASET_PATH"
+    # .env is built key-by-key here, not copied from .env.example, so the
+    # example default never reaches it (see #322 regression).
+    update_env "FIRESTARR_DATASET_INDEX" "$FIRESTARR_DATASET_INDEX"
     update_env "FIRESTARR_EXECUTION_MODE" "binary"
     update_env "NOMAD_DATA_PATH" "$NOMAD_DATA_PATH"
     update_env "PORT" "$NOMAD_PORT"
@@ -251,6 +297,37 @@ generate_env() {
     update_env "NOMAD_SERVER_HOSTNAME" "$NOMAD_SERVER_HOSTNAME"
     update_env "NOMAD_AUTH_MODE" "simple"
     update_env "VITE_AUTH_MODE" "simple"
+
+    # --- Crash & error reporting consent (Sentry, #313) ---
+    # OFF by default. Opt in via NOMAD_ERROR_REPORTING=true (non-interactive) or
+    # the prompt below. On opt-in we inject CIFFC's Sentry DSNs (frontend build
+    # bakes VITE_SENTRY_DSN; backend reads SENTRY_DSN). No DSN => never phones home.
+    local sentry_front="https://1260ee8a9108d645b99331926186fe9b@o4511356192751616.ingest.us.sentry.io/4511570358894592"
+    local sentry_back="https://ae5f37e92bcaa761abe6f8856708684c@o4511356192751616.ingest.us.sentry.io/4511808188907520"
+    local sentry_optin="no"
+    if [ -n "$NOMAD_ERROR_REPORTING" ]; then
+        case "$(printf '%s' "$NOMAD_ERROR_REPORTING" | tr '[:upper:]' '[:lower:]')" in
+            true|yes|y|1) sentry_optin="yes" ;;
+        esac
+    elif [ -t 0 ]; then
+        echo ""
+        echo "  Nomad can report crashes and errors to the development team to help"
+        echo "  fix bugs. Reports are scrubbed of personal data. Optional; off by default."
+        read -p "  Allow Nomad to report crashes and errors? [y/N] " -n 1 -r
+        echo ""
+        [[ "$REPLY" =~ ^[Yy]$ ]] && sentry_optin="yes"
+    fi
+    # Set VITE_SENTRY_DSN first: once uncommented it no longer matches the
+    # SENTRY_DSN substring pattern, so the next call can't clobber it.
+    if [ "$sentry_optin" = "yes" ]; then
+        update_env "VITE_SENTRY_DSN" "$sentry_front"
+        update_env "SENTRY_DSN" "$sentry_back"
+        print_success "Crash & error reporting enabled"
+    else
+        update_env "VITE_SENTRY_DSN" ""
+        update_env "SENTRY_DSN" ""
+        echo "  Crash & error reporting disabled (no data will be sent)"
+    fi
 
     # Set FireSTARR binary path if provided or will be auto-installed
     if [ -n "$FIRESTARR_BINARY_PATH" ]; then
