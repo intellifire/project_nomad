@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useLayers } from '../context/LayerContext';
+import { useLayers } from '../context/useLayers';
 import { useMap } from '../context/MapContext';
 import { LayerItem } from './LayerItem';
 import { useCFSLayers } from '../hooks/useCFSLayers';
+import { AdhocLayerSection } from './AdhocLayerSection.js';
 import { useCwfisM3Layers, currentSeasonTime } from '../hooks/useCwfisM3Layers';
 import { useTerrain } from '../hooks/useTerrain';
 import { BasemapStyle, BASEMAP_STYLES } from '../types';
@@ -89,6 +90,14 @@ export function LayerPanel({
   // CFS layer toggles: layerId -> { active, visible }
   const [cfsLayerState, setCfsLayerState] = useState<Record<string, { active: boolean }>>({});
   const [cfsError, setCfsError] = useState<string | null>(null);
+  // Read once: the accessor itself throws in some contexts (blocked site data).
+  const [adhocCurrentUser] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('nomad_username');
+    } catch {
+      return null;
+    }
+  });
   const [cfsDate, setCfsDate] = useState<string>(() => {
     const today = new Date();
     return today.toISOString().split('T')[0];
@@ -244,7 +253,18 @@ export function LayerPanel({
     boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
     minWidth: isMobile ? '240px' : '280px',
     maxWidth: isMobile ? 'calc(100vw - 20px)' : '350px',
-    maxHeight: isMobile ? 'calc(100vh - 120px)' : (cfs.available ? '550px' : '400px'),
+    // 550px regardless of the CFS key since #315: the ad-hoc section is always
+    // present, so the old 400px no-CFS budget left the actual layer list
+    // squeezed to a sliver — the count said 1 and the row was invisible.
+    // Observed in the running panel; no test could see it.
+    // BUDGETED FROM THE VIEWPORT, not a fixed pixel count (#454).
+    //
+    // 550px was chosen for one screen. On a 1154px-tall viewport it left ~600px
+    // of space unused WHILE clipping content — the panel was short and
+    // overflowing at the same time. Measured in the running app: scrollHeight
+    // 659 against clientHeight 550, with `overflow: hidden`, so 109px of the
+    // panel was unreachable.
+    maxHeight: isMobile ? 'calc(100vh - 120px)' : 'calc(100vh - 140px)',
     overflow: 'hidden',
     display: 'flex',
     flexDirection: 'column',
@@ -315,9 +335,24 @@ export function LayerPanel({
     </div>
   );
 
-  const listStyle: React.CSSProperties = {
+  /**
+   * Everything below the header scrolls as one (#454).
+   *
+   * The panel's own `overflow: hidden` clips to its rounded corners; this is
+   * the region that may exceed it. Previously only the layer LIST scrolled, so
+   * the ad-hoc, CFS, CWFIS and basemap sections below it were clipped away
+   * with no way to reach them — which is exactly what the report showed.
+   *
+   * `minHeight: 0` is load-bearing: without it a flex child refuses to shrink
+   * below its content and the scrollbar never appears.
+   */
+  const bodyStyle: React.CSSProperties = {
     flex: 1,
+    minHeight: 0,
     overflowY: 'auto',
+  };
+
+  const listStyle: React.CSSProperties = {
     padding: '8px',
   };
 
@@ -327,6 +362,19 @@ export function LayerPanel({
     color: '#666',
     fontSize: '14px',
   };
+
+  /**
+   * Ad-hoc WMS layers (#315).
+   *
+   * Always rendered — unlike the CFS section there is no API key to gate it,
+   * and a user with no layers still needs the way in to add one.
+   *
+   * `currentUser` decides who is offered DELETE on a shared layer. It is read
+   * from the same key `api.ts` sends as `X-Nomad-User`, so the panel and the
+   * server agree on who is asking; under NOMAD_AUTH_MODE=none it is null,
+   * nothing is attributable, and nothing shared is deletable from here.
+   */
+  const AdhocSection = <AdhocLayerSection currentUser={adhocCurrentUser} />;
 
   /** CFS Layers section - only rendered when API key is configured */
   const CFSSection = cfs.available ? (
@@ -542,10 +590,18 @@ export function LayerPanel({
     return (
       <div className={`layer-panel ${className}`} style={containerStyle}>
         {renderHeader()}
-        <div style={emptyStyle}>
-          No layers added yet
+        <div style={bodyStyle}>
+          <div style={emptyStyle}>
+            No layers added yet
+          </div>
+          {AdhocSection}
+          {/* CWFIS is public and needs no API key (#440). This branch exists
+              because the CFS key is absent, which is no reason to withhold the
+              section that never depended on it — a keyless user with no layers
+              was otherwise unable to reach the M3 layers at all. */}
+          {CwfisSection}
+          {MapSettingsSection}
         </div>
-        {MapSettingsSection}
       </div>
     );
   }
@@ -554,12 +610,15 @@ export function LayerPanel({
     return (
       <div className={`layer-panel ${className}`} style={containerStyle}>
         {renderHeader()}
-        <div style={emptyStyle}>
-          No layers added yet
+        <div style={bodyStyle}>
+          <div style={emptyStyle}>
+            No layers added yet
+          </div>
+          {AdhocSection}
+          {CFSSection}
+          {CwfisSection}
+          {MapSettingsSection}
         </div>
-        {CFSSection}
-        {CwfisSection}
-        {MapSettingsSection}
       </div>
     );
   }
@@ -567,6 +626,7 @@ export function LayerPanel({
   return (
     <div className={`layer-panel ${className}`} style={containerStyle}>
       {renderHeader()}
+      <div style={bodyStyle}>
       <div style={listStyle}>
         {state.layers.map((layer) => (
           <LayerItem
@@ -593,9 +653,11 @@ export function LayerPanel({
           />
         ))}
       </div>
+      {AdhocSection}
       {CFSSection}
       {CwfisSection}
       {MapSettingsSection}
+      </div>
     </div>
   );
 }

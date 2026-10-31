@@ -71,8 +71,15 @@ export interface ArrivalRasterMeta {
   startJulian: number;
   /** Last Julian day + 1 */
   endJulian: number;
-  /** ISO date corresponding to startJulian (UTC) */
-  startDate: string;
+  /**
+   * ISO date corresponding to startJulian (UTC).
+   *
+   * OPTIONAL (#482): runs predating `FireModel.timeRange` recorded no start
+   * instant, and this field used to be filled with `new Date().toISOString()`
+   * — today's date standing in for a 2023 fire. Absent now, and the legend
+   * labels those bins by relative day instead.
+   */
+  startDate?: string;
   /** Current classification granularity; defaults to 'daily' */
   timestep: ArrivalTimestep;
   /** Sub-buckets per day for the hourly view (#271 Unit 8); defaults to 24. */
@@ -91,6 +98,15 @@ export interface ArrivalRasterMeta {
  * Raster layer configuration
  */
 export interface RasterLayerConfig extends BaseLayerConfig {
+  /**
+   * The scale range the server declared for this layer (#448/#449).
+   *
+   * Carried onto the map layer so anything looking at it — the legend prompt,
+   * a future warning — can tell whether the layer is expected to be drawing,
+   * without going back to the ad-hoc store. Absent means unconstrained.
+   */
+  minScaleDenominator?: number;
+  maxScaleDenominator?: number;
   type: 'raster';
   /** Tile URL template or URL array */
   url: string | string[];

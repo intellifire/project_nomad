@@ -11,11 +11,45 @@ permissions:
   pull-requests: read
 
 jobs:
-  stable-release:
+  # Decide whether this push is work (release it) or our own version bump
+  # (skip it). #444: the old job-level guard refused ANY head commit containing
+  # `[release-bot]`, and BOTH release bots write that marker — so a dev -> main
+  # merge, which pushes dev's history, skipped the release for a whole sprint
+  # with nothing going red.
+  #
+  # The decision lives in a script so it can be executed against real commit
+  # messages instead of read. scripts/__tests__/stable_release_gate.test.sh runs
+  # it over every release commit in main's history, over the message this
+  # workflow itself writes, and against a control reproducing the old guard.
+  gate:
     runs-on: ubuntu-latest
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip ci]'))
+    outputs:
+      release: ${{ steps.decide.outputs.release }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Decide
+        id: decide
+        env:
+          HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            echo "Manually dispatched — releasing."
+            exit 0
+          fi
+          if bash .github/scripts/should-release.sh "$HEAD_COMMIT_MESSAGE"; then
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  stable-release:
+    needs: gate
+    if: needs.gate.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.newversion.outputs.version }}
+      tag: ${{ steps.newversion.outputs.tag }}
 
     steps:
       - name: Checkout with full history
@@ -68,8 +102,15 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add frontend/package.json CHANGES.md
-          git commit -m "chore: release v${{ steps.newversion.outputs.version }} [skip ci]"
+          # All three package.json files, not just the frontend (#442), AND the
+          # root lockfile: bump-version.sh writes it, so a workflow that does not
+          # stage it commits the bump and drops the lockfile change. That happened
+          # on dev v0.28.11 — package.json 0.28.11 against lock 0.28.10.
+          # bump-version.sh writes all three; staging only one committed a
+          # partial bump and left root/backend drifting again — which is the
+          # exact state #442 fixed, reintroduced one layer up.
+          git add package.json backend/package.json frontend/package.json package-lock.json CHANGES.md
+          git commit -m "chore: release v${{ steps.newversion.outputs.version }} [release-bot]"
           git push
 
       - name: Create git tag
@@ -85,6 +126,20 @@ jobs:
         run: npm run build:lib && npm pack
         working-directory: frontend
 
+      - name: Generate SBOM
+        # Software bill of materials for the release (#398). Derived from
+        # package-lock.json at THIS commit by `npm sbom`, so it describes the
+        # tree that was actually tagged — GitHub's dependency-graph export
+        # describes whatever it last indexed, which is not the same thing.
+        #
+        # The version is passed in because `npm sbom` names the document after
+        # the ROOT package.json. Since #442 that file IS bumped, so this is now
+        # belt-and-braces rather than load-bearing — but it stays: the document
+        # must name the release even if the two ever diverge again.
+        run: |
+          chmod +x .github/scripts/generate-sbom.sh
+          .github/scripts/generate-sbom.sh "${{ steps.newversion.outputs.version }}" "nomad-sbom-${{ steps.newversion.outputs.version }}.spdx.json"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
@@ -92,7 +147,9 @@ jobs:
           name: "v${{ steps.newversion.outputs.version }}"
           prerelease: false
           generate_release_notes: true
-          files: frontend/nomad-frontend-*.tgz
+          files: |
+            frontend/nomad-frontend-*.tgz
+            nomad-sbom-*.spdx.json
 
       - name: Sync released version back to dev
         run: |
@@ -101,5 +158,71 @@ jobs:
           # to reset any more - dev carries real versions.
           git fetch origin dev
           git checkout dev
-          git merge main -m "chore: sync v${{ steps.newversion.outputs.version }} from main [skip ci]"
+          git merge main -m "chore: sync v${{ steps.newversion.outputs.version }} from main [release-bot]"
           git push origin dev
+
+  # PUBLISH THE APPLICATION IMAGE (#465)
+  #
+  # Until this job existed, CI never produced an application image: deploy.sh
+  # ran `docker compose build` on each target. Everything #465 lists follows
+  # from that one fact — the SBOM had to run on a production box (#441, #464),
+  # each deployed version left a ~28MB document there, nobody could audit a
+  # version they had not deployed, and the artefact that shipped was not the
+  # artefact CI tested.
+  #
+  # WHY A JOB HERE RATHER THAN `on: release: [published]`. A release created
+  # with a token does not reliably cascade into another workflow, and the
+  # failure mode is silence — which is exactly #465's own origin: `sbom: true`
+  # has been set on build-firestarr.yml for months and has NEVER EXECUTED,
+  # because that workflow is workflow_dispatch only. Hanging this off the job
+  # that already cuts the release needs no cascade and no assumption.
+  #
+  # WHAT THE PUBLISHED IMAGE IS. The frontend bakes VITE_* at build time, so a
+  # published image necessarily carries the DEFAULTS: free basemaps (no Mapbox
+  # token), a relative API base, and simple auth. A site needing a Mapbox token
+  # or a different auth mode still builds locally. That is a real limit of a
+  # prebuilt image, not an oversight — it is stated here so the next reader does
+  # not discover it from a blank map.
+  publish-image:
+    needs: [gate, stable-release]
+    if: needs.gate.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      # The TAG, not the triggering SHA: this workflow's own release job commits
+      # the version bump, so the push SHA that started the run predates the
+      # thing being released. Checking out the tag publishes the source that was
+      # actually tagged.
+      - name: Checkout the released tag
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.stable-release.outputs.tag }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: true
+          platforms: linux/amd64
+          # The registry carries the bill of materials, so it is readable by
+          # anyone with pull access rather than existing only on the box that
+          # happened to deploy that version (#460, #464).
+          sbom: true
+          provenance: true
+          tags: |
+            ghcr.io/wise-developers/project_nomad/nomad:${{ needs.stable-release.outputs.version }}
+            ghcr.io/wise-developers/project_nomad/nomad:latest

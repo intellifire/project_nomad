@@ -1,3 +1,4 @@
+import type React from 'react';
 /**
  * Customization Helper Components
  *
@@ -8,7 +9,7 @@
 
 import { type ReactNode, type CSSProperties } from 'react';
 import type { NomadAction, ActionPlacement, NomadSlots } from './types.js';
-import { useNomadCustomizationOptional, useActionsForPlacement } from './NomadCustomizationContext.js';
+import { useNomadCustomizationOptional, useActionsForPlacement } from './useNomadCustomization.js';
 
 // =============================================================================
 // Themed Container
@@ -22,7 +23,7 @@ export interface ThemedContainerProps {
   /** Additional inline styles */
   style?: CSSProperties;
   /** HTML tag to use (default: div) */
-  as?: keyof JSX.IntrinsicElements;
+  as?: keyof React.JSX.IntrinsicElements;
 }
 
 /**

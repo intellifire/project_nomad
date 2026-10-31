@@ -11,7 +11,7 @@
 
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { ResultsSummary } from '../ResultsSummary.js';
 import type { ExecutionSummary, ModelInputs } from '../../types/index.js';
 
@@ -52,7 +52,7 @@ describe('ResultsSummary — recorded fuel vintage (#331)', () => {
     renderWith({
       modelStartDate: '2026-06-19T18:00:00.000Z',
       fuelVintage: {
-        requestedYear: 2026, vintage: '2026',
+        requestedYear: 2026, vintage: '2026', datasetYear: 2026, fuelVintage: 2025,
         matchedRequestedYear: true, usedFallback: false,
       },
     } as ModelInputs);

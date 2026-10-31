@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as fs from 'fs';
 import { asyncHandler, resolveUserId, resolveUserIdCandidates } from '../../middleware/index.js';
+import { resolveRequestedIgnitions } from '../../../application/ignitions/resolveRequestedIgnitions.js';
 import { logger } from '../../../infrastructure/logging/index.js';
 import {
   FireModel,
@@ -25,7 +26,9 @@ import { EngineError } from '../../../domain/errors/index.js';
 import { getModelResultsService } from '../../../application/services/index.js';
 import { getJobQueue } from '../../../infrastructure/services/JobQueue.js';
 import { getModelRepository, getResultRepository } from '../../../infrastructure/database/index.js';
+import { finalizeModelExecution } from '../../../application/services/finalizeModelExecution.js';
 import type { ExecutionOptions, ModelMode } from '../../../application/interfaces/IFireModelingEngine.js';
+import { buildExecutionOptions, deriveOutputMode } from '../../../application/execution/buildExecutionOptions.js';
 import type { WeatherConfig } from '../../../infrastructure/weather/types.js';
 import { parseIsoToDate } from '../../../shared/dateParsing.js';
 import { assertWeatherMeetsEngineContract } from '../../../application/services/WeatherContractCheck.js';
@@ -41,10 +44,26 @@ const router = Router();
 interface RunModelRequestBody {
   name: string;
   engineType: EngineType;
-  ignition: {
+  /**
+   * A single ignition. Kept for every existing caller, including the
+   * openNomad embedding contract.
+   */
+  ignition?: {
     type: 'point' | 'polygon' | 'linestring';
-    coordinates: [number, number] | [number, number][];
+    // Rings for a polygon — the previous type omitted this case even though
+    // the frontend has always sent it for polygons.
+    coordinates: [number, number] | [number, number][] | [number, number][][];
   };
+  /**
+   * Several ignitions, merged into one multi-part geometry (refs #294).
+   *
+   * Additive: `ignition` still works. The wizard sends this so a drawing with
+   * more than one shape no longer loses all but the first.
+   */
+  ignitions?: Array<{
+    type: string;
+    coordinates: unknown;
+  }>;
   timeRange: {
     start: string;
     end: string;
@@ -118,9 +137,17 @@ router.post(
     if (!body.engineType || !Object.values(EngineType).includes(body.engineType)) {
       throw ValidationError.invalidEnum('engineType', Object.values(EngineType), body.engineType);
     }
-    if (!body.ignition?.type || !body.ignition?.coordinates) {
+    const requestedIgnitions = body.ignitions?.length
+      ? body.ignitions
+      : body.ignition
+        ? [body.ignition]
+        : [];
+    if (requestedIgnitions.length === 0) {
       throw new ValidationError('Ignition geometry required', [
-        { field: 'ignition', message: 'Must provide ignition type and coordinates' },
+        {
+          field: 'ignition',
+          message: 'Must provide ignition type and coordinates, or an ignitions array',
+        },
       ]);
     }
     if (!body.timeRange?.start || !body.timeRange?.end) {
@@ -147,9 +174,10 @@ router.post(
       ]);
     }
 
-    // Derive outputMode from modelMode before availability gate
-    const derivedOutputMode: 'probabilistic' | 'deterministic' =
-      modelMode === 'deterministic' ? 'deterministic' : 'probabilistic';
+    // Derive outputMode from modelMode before availability gate.
+    // Shared derivation — the same function buildExecutionOptions uses, so the
+    // model record and the execution options cannot disagree.
+    const derivedOutputMode = deriveOutputMode(modelMode);
 
     if (modelMode !== 'probabilistic' && modelMode !== 'deterministic') {
       throw new ValidationError('Model mode not available', [
@@ -157,16 +185,15 @@ router.post(
       ]);
     }
 
-    // Validate geometry and time range BEFORE creating DB records (prevents orphaned rows)
-    const geometryType = body.ignition.type === 'point'
-      ? GeometryType.Point
-      : body.ignition.type === 'linestring'
-        ? GeometryType.LineString
-        : GeometryType.Polygon;
-    const ignitionGeometry = new SpatialGeometry({
-      type: geometryType,
-      coordinates: body.ignition.coordinates,
-    });
+    // Validate geometry and time range BEFORE creating DB records (prevents orphaned rows).
+    //
+    // resolveRequestedIgnitions replaces a ternary that had no else branch, so
+    // an unknown type silently became Polygon. It also merges more than one
+    // ignition through the same code the .fgmj import uses, and reports what
+    // it did to each — a point becoming a nominal circle, a line becoming a
+    // corridor — which the response carries back.
+    const { geometry: ignitionGeometry, notices: ignitionNotices } =
+      resolveRequestedIgnitions(requestedIgnitions);
     const timeRange = new TimeRange(
       parseIsoToDate(body.timeRange.start, 'POST /models body.timeRange.start'),
       parseIsoToDate(body.timeRange.end, 'POST /models body.timeRange.end'),
@@ -179,12 +206,13 @@ router.post(
     // on the CIFFC demo died that way on 2026-08-19. Failing here means a 400
     // naming the problem while the user can still fix it, and no orphaned model,
     // job or sim directory to clean up.
-    const ignitionLatitude = Array.isArray(body.ignition.coordinates[0])
-      ? (body.ignition.coordinates as [number, number][])[0][1]
-      : (body.ignition.coordinates as [number, number])[1];
-    const ignitionLongitude = Array.isArray(body.ignition.coordinates[0])
-      ? (body.ignition.coordinates as [number, number][])[0][0]
-      : (body.ignition.coordinates as [number, number])[0];
+    // From the geometry's own centroid rather than its first coordinate.
+    // Identical for a point, and for anything else it now matches what the
+    // ENGINE uses — buildParams takes getCentroid() for every non-Point type,
+    // so this pre-check and the actual run were previously looking at
+    // different places. A MultiPolygon has no sensible "first coordinate" at
+    // all.
+    const [ignitionLongitude, ignitionLatitude] = ignitionGeometry.getCentroid();
 
     await assertWeatherMeetsEngineContract(
       body.weather,
@@ -204,10 +232,20 @@ router.post(
       userId: resolveUserId(req),
       notes: body.notes,
       outputMode: derivedOutputMode,
+      // #482: the range the run is FOR, stored on the model rather than only
+      // written into the sim directory's output-config.json. That file was the
+      // only copy, so a start date was an argument to a run and never a
+      // property of the model — 26 of 64 real sim dirs have no record of it.
+      timeRange,
     });
 
-    logger.model(`Creating ignition geometry: type=${body.ignition.type} -> ${geometryType}`, modelId);
-    logger.model(`Ignition geometry created: ${ignitionGeometry.type}, coords length: ${Array.isArray(body.ignition.coordinates[0]) ? body.ignition.coordinates.length : 1}`, modelId);
+    logger.model(
+      `Creating ignition geometry from ${requestedIgnitions.length} requested ` +
+        `(${requestedIgnitions.map((i) => i.type).join(', ')}) -> ${ignitionGeometry.type}`,
+      modelId,
+    );
+    logger.model(`Ignition geometry created: ${ignitionGeometry.type}`, modelId);
+    for (const notice of ignitionNotices) logger.model(`Ignition notice: ${notice}`, modelId);
 
     const modelRepo = getModelRepository();
     await modelRepo.save(model);
@@ -224,17 +262,15 @@ router.post(
     }
     const jobId = jobResult.value.id;
 
-    // Build execution options
-    const executionOptions: ExecutionOptions = {
+    // Build execution options — single shared derivation (see buildExecutionOptions)
+    const executionOptions: ExecutionOptions = buildExecutionOptions({
       ignitionGeometry,
       timeRange,
       timezone: body.timezone,
       weatherConfig: body.weather,
-      simulationCount: body.scenarios ?? 100,
-      outputMode: derivedOutputMode,
-      confidenceInterval: 1,
-      smoothPerimeter: false,
-    };
+      modelMode,
+      scenarios: body.scenarios,
+    });
 
     // Start execution (FireSTARR)
     if (model.engineType === EngineType.FireSTARR) {
@@ -248,25 +284,33 @@ router.post(
           await engine.initialize(model, executionOptions);
           await engine.execute(modelId);
           const status = await engine.getStatus(modelId);
-          if (status.state === 'completed') {
-            await jobQueue.complete(jobId);
-            await modelRepo.save(model.withStatus(ModelStatus.Completed));
-            // Harvest results immediately after completion
-            try {
+          // Every engine state resolves the job. This was an if/else-if with
+          // no else, so a run that stopped while still reporting a
+          // non-terminal state left the job hanging and the processing window
+          // spinning forever (#432).
+          await finalizeModelExecution(status, {
+            completeJob: async () => {
+              await jobQueue.complete(jobId);
+            },
+            failJob: async (reason) => {
+              await jobQueue.fail(jobId, reason);
+            },
+            markModelCompleted: async () => {
+              await modelRepo.save(model.withStatus(ModelStatus.Completed));
+            },
+            markModelFailed: async () => {
+              await modelRepo.save(model.withStatus(ModelStatus.Failed));
+            },
+            harvestResults: async () => {
               const results = await engine.getResults(modelId);
               const resultRepo = getResultRepository();
               for (const result of results) {
                 await resultRepo.save(result);
               }
               logger.model(`Harvested ${results.length} results`, modelId);
-            } catch (harvestError) {
-              logger.warn(`Failed to harvest results for model ${modelId}: ${harvestError}`, 'Model');
-              // Continue anyway - results can still be lazy-loaded on first read
-            }
-          } else if (status.state === 'failed') {
-            await jobQueue.fail(jobId, status.error ?? 'Execution failed');
-            await modelRepo.save(model.withStatus(ModelStatus.Failed));
-          }
+            },
+            warn: (message) => logger.warn(`${message} (model ${modelId})`, 'Model'),
+          });
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           logger.error(`Execution failed: ${message}`, 'Model', { modelId });
@@ -285,6 +329,9 @@ router.post(
       modelId,
       jobId,
       message: 'Model created and execution started',
+      // What was done to the requested ignitions, so the operator is told
+      // rather than finding out from the output. Empty for a single ignition.
+      ignitionNotices,
     });
   })
 );
@@ -456,6 +503,14 @@ interface ExecuteRequestBody {
   timezone: string;
   weather: WeatherConfig;
   scenarios?: number;
+  /**
+   * Preferred field, matching POST /models/run and the GUI.
+   * Issue #435: this endpoint previously read only `outputMode`, so a client
+   * asking for a deterministic run via `modelMode` silently got a probabilistic
+   * one and was told it succeeded.
+   */
+  modelMode?: ModelMode;
+  /** Legacy. Still honoured; `modelMode` wins when both are present. */
   outputMode?: 'probabilistic' | 'deterministic';
 }
 
@@ -624,17 +679,25 @@ router.post(
       parseIsoToDate(body.timeRange.end, 'POST /models/:id/execute body.timeRange.end'),
     );
 
-    // Build execution options
-    const executionOptions: ExecutionOptions = {
+    /**
+     * Issue #435. `modelMode` is the field the GUI and POST /models/run use;
+     * `outputMode` is the legacy name this endpoint used to read EXCLUSIVELY,
+     * which is why a deterministic request was silently run probabilistic.
+     * Both are honoured, `modelMode` wins, and the derivation itself lives in
+     * exactly one place now.
+     */
+    const requestedModelMode: ModelMode | undefined =
+      body.modelMode ?? (body.outputMode === 'deterministic' ? 'deterministic' : undefined);
+
+    // Build execution options — single shared derivation (see buildExecutionOptions)
+    const executionOptions: ExecutionOptions = buildExecutionOptions({
       ignitionGeometry,
       timeRange,
       timezone: body.timezone,
       weatherConfig: body.weather,
-      simulationCount: body.scenarios ?? 100,
-      outputMode: body.outputMode === 'deterministic' ? 'deterministic' : 'probabilistic',
-      confidenceInterval: 1,
-      smoothPerimeter: false,
-    };
+      modelMode: requestedModelMode,
+      scenarios: body.scenarios,
+    });
 
     // Update model with execution metadata and queue it
     const updatedModel = new FireModel({
@@ -646,7 +709,13 @@ router.post(
       updatedAt: new Date(),
       userId: model.userId ?? resolveUserId(req),
       notes: model.notes,
-      outputMode: body.outputMode === 'deterministic' ? 'deterministic' : 'probabilistic',
+      // Same derivation as executionOptions above — read from it rather than
+      // repeating the ternary, which is how these two drifted apart.
+      outputMode: executionOptions.outputMode,
+      // #482: persisted here as well as on POST /models/run. Both endpoints
+      // queue a run with a time range, so a fix applied to only one of them
+      // would leave every execute-path model without a recorded range.
+      timeRange,
     });
     await modelRepo.save(updatedModel);
     const queuedModel = updatedModel;
@@ -681,26 +750,33 @@ router.post(
 
           // Check execution status
           const status = await engine.getStatus(id as FireModelId);
-          if (status.state === 'completed') {
-            await jobQueue.complete(jobId);
-            // Update model status
-            await modelRepo.save(queuedModel.withStatus(ModelStatus.Completed));
-            // Harvest results immediately after completion
-            try {
+          // Every engine state resolves the job. This was an if/else-if with
+          // no else, so a run that stopped while still reporting a
+          // non-terminal state left the job hanging and the processing window
+          // spinning forever (#432).
+          await finalizeModelExecution(status, {
+            completeJob: async () => {
+              await jobQueue.complete(jobId);
+            },
+            failJob: async (reason) => {
+              await jobQueue.fail(jobId, reason);
+            },
+            markModelCompleted: async () => {
+              await modelRepo.save(queuedModel.withStatus(ModelStatus.Completed));
+            },
+            markModelFailed: async () => {
+              await modelRepo.save(queuedModel.withStatus(ModelStatus.Failed));
+            },
+            harvestResults: async () => {
               const results = await engine.getResults(id as FireModelId);
               const resultRepo = getResultRepository();
               for (const result of results) {
                 await resultRepo.save(result);
               }
               logger.model(`Harvested ${results.length} results`, id);
-            } catch (harvestError) {
-              logger.warn(`Failed to harvest results for model ${id}: ${harvestError}`, 'Model');
-              // Continue anyway - results can still be lazy-loaded on first read
-            }
-          } else if (status.state === 'failed') {
-            await jobQueue.fail(jobId, status.error ?? 'Execution failed');
-            await modelRepo.save(queuedModel.withStatus(ModelStatus.Failed));
-          }
+            },
+            warn: (message) => logger.warn(`${message} (model ${id})`, 'Model'),
+          });
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           logger.error(`Execution failed: ${message}`, 'Model', { modelId: id });
@@ -810,7 +886,10 @@ router.get(
         model.name,
         model.engineType,
         model.userId,
-        model.notes
+        model.notes,
+        // #482: the model's own stored range, so the start date no longer
+        // depends on output-config.json having survived in the sim directory.
+        model.timeRange
       );
 
       logger.debug(`Got result, success=${result.success}`, 'Results');
@@ -924,7 +1003,10 @@ router.get(
     const result = await resultsService.getResults(
       id as FireModelId,
       model.name,
-      model.engineType
+      model.engineType,
+      undefined,
+      null,
+      model.timeRange
     );
 
     if (!result.success || !result.value.inputs?.weatherCsvPath) {
@@ -988,7 +1070,10 @@ router.get(
     const result = await resultsService.getResults(
       id as FireModelId,
       model.name,
-      model.engineType
+      model.engineType,
+      undefined,
+      null,
+      model.timeRange
     );
 
     if (!result.success || !result.value.inputs?.ignition?.geojson) {
@@ -1210,7 +1295,9 @@ router.post(
       id as FireModelId,
       model.name,
       model.engineType,
-      model.userId
+      model.userId,
+      model.notes,
+      model.timeRange
     );
 
     if (!resultResponse.success || resultResponse.value.outputs.length === 0) {
@@ -1315,7 +1402,7 @@ router.get(
             const probFiles = files.filter(f => f.match(/^probability_\d+(?:_[\d-]+)?\.tif$/));
             baseInfo.durationDays = probFiles.length;
           }
-        } catch (e) {
+        } catch (_e) {
           // Ignore errors reading filesystem - just return null for durationDays
         }
       }
@@ -1416,6 +1503,44 @@ router.delete(
  * Returns the stored execution config (model.json or output-config.json)
  * for a model. Used by the frontend to re-run imported or completed models.
  */
+/**
+ * GET /models/:id/fire-sizes
+ *
+ * The per-day fire-size ensemble FireSTARR already writes and NOMAD has until
+ * now only labelled inside the export ZIP (#418). Statistics are computed from
+ * the CSV rather than read from the run log: the logged median is the upper
+ * middle value on every even-N distribution, so surfacing it would ship a
+ * central estimate biased high.
+ *
+ * `hasEnsemble: false` means NO ensemble was recorded, which is not an ensemble
+ * of zero. The reason says which.
+ */
+router.get(
+  '/models/:id/fire-sizes',
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const modelRepo = getModelRepository();
+    const model = await modelRepo.findById(createFireModelId(id));
+    if (!model) throw new NotFoundError('Model', id);
+
+    const resultRepo = getResultRepository();
+    const { getResultArtifactGateway } = await import(
+      '../../../infrastructure/firestarr/ResultArtifactGateway.js'
+    );
+    const { resolveFireSizeSeries } = await import(
+      '../../../application/services/fireSizeSeriesService.js'
+    );
+
+    const resolution = await resolveFireSizeSeries(
+      id,
+      async () => resultRepo.findByModelId(createFireModelId(id)),
+      getResultArtifactGateway(),
+    );
+
+    res.json(resolution);
+  }),
+);
+
 router.get(
   '/models/:id/config',
   asyncHandler(async (req, res) => {

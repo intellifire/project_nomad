@@ -11,18 +11,27 @@
  * @module features/Map/components/RasterLegend
  */
 
-import React from 'react';
-import { useLayers } from '../context/LayerContext.js';
+import React, { useState, useCallback } from 'react';
+import { useLayers } from '../context/useLayers.js';
+import { useMap } from '../context/MapContext';
+import { assessScaleVisibility, scaleDenominatorFor } from '../utils/scaleVisibility.js';
+import {
+  setPrivateLayerLegendUrl,
+  dismissLegendPrompt,
+  isLegendPromptDismissed,
+} from '../adhoc/privateAdhocLayers.js';
 import type {
   ArrivalTimestep,
   ArrivalRasterMeta,
   RasterLayerConfig,
+  LayerConfig,
 } from '../types/layer.js';
 import {
   generateArrivalLegend,
   ARRIVAL_RAMP_PRESETS,
 } from '../utils/arrivalTimeSymbolization.js';
 import { PROBABILITY_LEGEND } from '../symbology/palettes.js';
+import { parseRampStops } from './parseRampStops.js';
 
 // =============================================================================
 // Probability Ramp — sourced from the vendored FireSTARR SLD (#283 Unit 2)
@@ -92,31 +101,6 @@ const toggleButtonStyle = (active: boolean): React.CSSProperties => ({
   cursor: 'pointer',
   fontWeight: active ? 600 : 400,
 });
-
-/**
- * Parse an uploaded colour-ramp file into ordered hex stops (#271 Unit 9).
- * Accepts a JSON array of hex strings, or whitespace/comma/newline-separated
- * `#rrggbb` tokens. Fail-fast: throws on anything malformed or with < 2 stops
- * — there is no silent fallback to a default ramp.
- */
-export function parseRampStops(text: string): string[] {
-  const trimmed = text.trim();
-  let tokens: string[];
-  if (trimmed.startsWith('[')) {
-    const parsed = JSON.parse(trimmed);
-    if (!Array.isArray(parsed)) throw new Error('Ramp JSON must be an array of hex colours');
-    tokens = parsed.map(String);
-  } else {
-    tokens = trimmed.split(/[\s,]+/).filter(Boolean);
-  }
-  const stops = tokens.map((t) => {
-    const m = /^#?([0-9a-f]{6})$/i.exec(t.trim());
-    if (!m) throw new Error(`Invalid colour "${t}" (expected #rrggbb)`);
-    return `#${m[1].toLowerCase()}`;
-  });
-  if (stops.length < 2) throw new Error('A ramp needs at least two colour stops');
-  return stops;
-}
 
 // =============================================================================
 // Probability Legend Block
@@ -188,7 +172,10 @@ function ArrivalLegendBlock({
     startJulian: meta.startJulian,
     endJulian: meta.endJulian,
     timestep: meta.timestep,
-    startDate: new Date(meta.startDate),
+    // #482: pass the absence through rather than constructing a Date from
+    // nothing — `new Date(undefined)` is an Invalid Date, which would have
+    // produced "NaN" labels instead of relative ones.
+    startDate: meta.startDate === undefined ? undefined : new Date(meta.startDate),
     originDay,
     totalDaysOverride: totalDays,
     breaksPerDay,
@@ -327,6 +314,56 @@ function ArrivalLegendBlock({
 
 export function RasterLegend() {
   const { state, updateLayer } = useLayers();
+  const { map } = useMap();
+
+  /**
+   * Legends whose image failed to load (#449). A WMS server is not obliged to
+   * serve one, and the derived GetLegendGraphic url simply 404s for some
+   * layers. The LAYER is fine; only its legend is missing.
+   */
+  const [failedLegends, setFailedLegends] = useState<Record<string, true>>({});
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [dismissed, setDismissed] = useState<Record<string, true>>({});
+
+  const markFailed = useCallback((id: string) => {
+    setFailedLegends((prev) => ({ ...prev, [id]: true }));
+  }, []);
+
+  const applyLegendUrl = useCallback(
+    (id: string, url: string) => {
+      const trimmed = url.trim();
+      if (trimmed === '') return;
+      updateLayer(id, { legendUrl: trimmed } as Partial<LayerConfig>);
+      // Persist for private ad-hoc layers so it survives a reload. A url that
+      // is accepted and then forgotten is worse than never offering the field.
+      setPrivateLayerLegendUrl(id, trimmed);
+      setFailedLegends((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+    },
+    [updateLayer],
+  );
+
+  const dismissPrompt = useCallback((id: string) => {
+    dismissLegendPrompt(id);
+    setDismissed((prev) => ({ ...prev, [id]: true }));
+  }, []);
+
+  /**
+   * Prompt only for a layer that is actually rendering (#448 is the gate).
+   * Asking someone to repair the legend of a layer that cannot draw wastes
+   * their time and points them at the wrong problem — the scale warning is the
+   * useful thing to say there.
+   */
+  const shouldPrompt = (layer: RasterLayerConfig): boolean => {
+    if (!failedLegends[layer.id]) return false;
+    if (dismissed[layer.id] || isLegendPromptDismissed(layer.id)) return false;
+    if (!map) return true;
+    return assessScaleVisibility(scaleDenominatorFor(map.getZoom(), map.getCenter().lat), layer)
+      .visible;
+  };
 
   const visibleRasters = state.layers.filter(
     (layer) => layer.type === 'raster' && layer.visible,
@@ -394,7 +431,6 @@ export function RasterLegend() {
       } as Partial<RasterLayerConfig>);
     } catch (err) {
       // Fail loudly — no silent fallback to a default ramp.
-      // eslint-disable-next-line no-alert
       alert(`Could not load colour ramp: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
@@ -402,10 +438,20 @@ export function RasterLegend() {
   const arrivalLayers = visibleRasters.filter(
     (l) => l.legendType === 'arrival' && l.arrivalMeta,
   );
-  // Server-rendered legend images (CWFIS M3 layers #299)
-  const wmsLayers = visibleRasters.filter(
-    (l) => l.legendType === 'wms' && l.legendUrl,
-  );
+  // Server-rendered legend images (CWFIS M3 layers #299).
+  //
+  // DEDUPED BY ID (#447). Each block below is keyed by `layer.id`, so two
+  // entries sharing an id render two children with the SAME React key — and
+  // reconciliation with colliding keys is how a legend survives the removal of
+  // the layer it describes. Reported from the live demo: an ad-hoc layer was
+  // deleted, its row vanished, and two legends for it stayed on the map.
+  //
+  // `upsertLayer` now prevents that state upstream, and this does not rely on
+  // it. A legend is a claim about what is displayed; one with nothing behind it
+  // tells an operator something is on the map when it is not.
+  const wmsLayers = visibleRasters
+    .filter((l) => l.legendType === 'wms' && l.legendUrl)
+    .filter((layer, i, all) => all.findIndex((other) => other.id === layer.id) === i);
   // Probability = model-output rasters (and legacy CFS layers with no type),
   // but NOT arrival or wms layers.
   const hasProbability = visibleRasters.some(
@@ -433,8 +479,48 @@ export function RasterLegend() {
           <img
             src={layer.legendUrl}
             alt={`${layer.name} legend`}
+            onError={() => markFailed(layer.id)}
             style={{ display: 'block', maxWidth: '220px' }}
           />
+          {shouldPrompt(layer) && (
+            <div style={{ marginTop: '4px', maxWidth: '220px' }}>
+              <p style={{ margin: '0 0 4px', fontSize: '11px', color: '#7a4b00' }}>
+                This server did not return a legend for this layer. If you know where its
+                legend image lives, paste the URL.
+              </p>
+              <label
+                htmlFor={`legend-url-${layer.id}`}
+                style={{ display: 'block', fontSize: '11px', marginBottom: '2px' }}
+              >
+                Legend graphic URL
+              </label>
+              <input
+                id={`legend-url-${layer.id}`}
+                type="url"
+                value={drafts[layer.id] ?? ''}
+                onChange={(event) =>
+                  setDrafts((prev) => ({ ...prev, [layer.id]: event.target.value }))
+                }
+                style={{ width: '100%', fontSize: '11px', padding: '2px 4px' }}
+              />
+              <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
+                <button
+                  type="button"
+                  style={{ fontSize: '11px' }}
+                  onClick={() => applyLegendUrl(layer.id, drafts[layer.id] ?? '')}
+                >
+                  Use this legend
+                </button>
+                <button
+                  type="button"
+                  style={{ fontSize: '11px' }}
+                  onClick={() => dismissPrompt(layer.id)}
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ))}
       {arrivalLayers.map((layer) => (

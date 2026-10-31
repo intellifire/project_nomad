@@ -64,6 +64,61 @@ expect_contains "dem DOES use predictor (measured 32% smaller)" "PREDICTOR=YES" 
 expect_contains "no internal overviews — sidecar .ovr is served online" "OVERVIEWS=NONE" "$fuel_opts"
 expect_contains "dem also ships without internal overviews" "OVERVIEWS=NONE" "$dem_opts"
 
+# ---- a declared NoData must fit the band type (#476) --------------------
+#
+# THE DEFECT. Every shipped DEM tile is Int16 with NoData=-32769. Int16 holds
+# -32768..32767, so that sentinel CANNOT equal any stored pixel: the flag is
+# inert and masks nothing. It is harmless while the tiles are void-filled --
+# the lowest value across the first eight 2026 tiles was -251 -- and it is a
+# trap for the first DEM that carries real voids, because a void read as
+# elevation produces slope and aspect out of nothing, and FireSTARR consumes
+# both.
+#
+# The arithmetic is the whole fix, so it is a pure function and tested as one.
+expect_eq "Int16 cannot hold -32769 (the shipped defect)" "1" \
+  "$(run "nodata_representable Int16 -32769; echo \$?")"
+expect_eq "Int16 can hold -32768"            "0" "$(run "nodata_representable Int16 -32768; echo \$?")"
+expect_eq "Int16 can hold 32767"             "0" "$(run "nodata_representable Int16 32767; echo \$?")"
+expect_eq "Int16 cannot hold 32768"          "1" "$(run "nodata_representable Int16 32768; echo \$?")"
+expect_eq "Byte cannot hold -1"              "1" "$(run "nodata_representable Byte -1; echo \$?")"
+expect_eq "Byte can hold 255"                "0" "$(run "nodata_representable Byte 255; echo \$?")"
+expect_eq "UInt16 cannot hold -1"            "1" "$(run "nodata_representable UInt16 -1; echo \$?")"
+expect_eq "Float32 holds -32767 fine"        "0" "$(run "nodata_representable Float32 -32767; echo \$?")"
+# A float NoData on a float band may be fractional; only integer bands are
+# bounded this way.
+expect_eq "Float32 holds a fractional value" "0" "$(run "nodata_representable Float32 -9999.5; echo \$?")"
+# An absent declaration is not a defect -- most tiles legitimately have none.
+expect_eq "no declared NoData is not a defect" "0" "$(run "nodata_representable Int16 ''; echo \$?")"
+expect_eq "a None declaration is not a defect" "0" "$(run "nodata_representable Int16 None; echo \$?")"
+
+# ---- a vintage can say whether its elevation is new (#477) ---------------
+#
+# THE DEFECT. The 2024 and 2025 vintages ship PIXEL-IDENTICAL DEM tiles with
+# different bytes — GDAL checksums agree on every tile checked while sha256 and
+# byte counts differ. Re-encoded, not re-derived: roughly 3GB per vintage of no
+# new elevation.
+#
+# checksums.txt cannot detect that, because a file sha256 changes when the
+# encoding changes. A PIXEL fingerprint survives re-encoding, which is exactly
+# the property needed to answer "is this the same elevation as last year?".
+# Newlines travel badly through the `run` harness (bash -c), so the lines are
+# built with printf inside the subshell rather than quoted in from out here.
+fp_a="$(run "dem_pixel_fingerprint_from \"\$(printf 'dem_10_0.tif:16484\\ndem_11_0.tif:50880\\n')\"")"
+fp_b="$(run "dem_pixel_fingerprint_from \"\$(printf 'dem_11_0.tif:50880\\ndem_10_0.tif:16484\\n')\"")"
+fp_c="$(run "dem_pixel_fingerprint_from \"\$(printf 'dem_10_0.tif:25879\\ndem_11_0.tif:62820\\n')\"")"
+
+expect_eq "fingerprint is 64 hex chars" "64" "$(printf '%s' "$fp_a" | tr -d '\n' | wc -c | tr -d ' ')"
+# Guarded: two EMPTY strings are equal, so without this the order assertion
+# passes on a function that does not exist — a check agreeing with me instead
+# of testing me.
+expect_eq "same tiles in any order give the same fingerprint (2024 vs 2025)" "same-and-nonempty" \
+  "$([ -n "$fp_a" ] && [ "$fp_a" = "$fp_b" ] && echo same-and-nonempty || echo differs-or-empty)"
+expect_eq "different pixels give a different fingerprint (2025 vs 2026)" "different" \
+  "$([ "$fp_a" != "$fp_c" ] && echo different || echo same)"
+
+manifest_dem="$(run "dataset_json 2027 31 31 2026-11-01 '' 0 abc123")"
+expect_contains "manifest carries the dem pixel fingerprint" '"demPixelFingerprint": "abc123"' "$manifest_dem"
+
 # ---- dataset.json manifest ----------------------------------------------
 manifest="$(run "dataset_json 2027 31 31 2026-11-01")"
 expect_contains "manifest carries vintage"     '"vintage": 2027'     "$manifest"
@@ -73,6 +128,103 @@ expect_contains "manifest names the producer"  'Jordan Evens'        "$manifest"
 expect_contains "manifest states run-year convention" 'input for 2027 model runs' "$manifest"
 expect_contains "manifest records fuel tile count" '"fuelTiles": 31' "$manifest"
 expect_contains "manifest records the lut"     '"fuelLut": "fuel.lut"' "$manifest"
+
+# A correction the build made to the source data must be RECORDED, not silent
+# (#476). A manifest that looks identical whether or not tiles were edited
+# cannot answer "is this vintage the data Jordan sent?".
+manifest_fixed="$(run "dataset_json 2027 31 31 2026-11-01 '' 4")"
+expect_contains "manifest records how many tiles had an unusable NoData dropped" \
+  '"demNoDataDropped": 4' "$manifest_fixed"
+expect_eq "manifest stays silent when nothing was corrected" "no" \
+  "$(printf '%s' "$manifest" | grep -q demNoDataDropped && echo yes || echo no)"
+# ---------------------------------------------------------------------------
+# UPSTREAM IS THE SOURCE OF TRUTH, FETCHED AT BUILD TIME (#461)
+#
+# The legend that decodes a fuel grid must be THE legend, identically, in every
+# dataset we ship. Holding our own copy is what broke that: two shipped vintage
+# archives carry a pre-2026 legend with no row 107 (Urban), a value their own
+# tiles contain -- 182,355 pixels of it in one real tile. Upstream gained the
+# row; our copy did not; nobody noticed for eight months.
+#
+# A PIN WAS THE WRONG FIX AND IS DELIBERATELY GONE. Pinning our copy by hash
+# catches OUR copy drifting, which is not the failure we had. It is blind to
+# upstream changing -- the build would pass happily while shipping a stale
+# legend -- so it guards the direction that was never the problem. Franco:
+# "why pin it at all, why not just let the upstream lut be the source of truth
+# and use it all the time?"
+#
+# So: fetch upstream every build, record the hash in the manifest, hold no
+# second copy to go stale. Reproducibility comes from the recorded hash, not
+# from a pin -- rebuild an old vintage by checking out upstream at the hash its
+# manifest names.
+#
+# NO SILENT FALLBACK. If the fetch fails the build stops. Falling back to a
+# local copy would make the build appear to succeed while shipping whatever
+# happened to be on disk, which is the original defect with extra steps.
+echo
+echo "fuel.lut: upstream fetched as the source of truth"
+
+lbin="$tmp/lbin"; mkdir -p "$lbin"
+
+mk_curl() { # mk_curl <mode>
+  cat > "$lbin/curl" <<STUB
+#!/usr/bin/env bash
+mode="$1"
+out=""
+while [ \$# -gt 0 ]; do [ "\$1" = "-o" ] && out="\$2"; shift; done
+case "\$mode" in
+  ok)   printf 'grid_value, export_value, descriptive_name, fuel_type, r, g, b, h, s, l\n' > "\$out"
+        i=1; while [ \$i -le 150 ]; do printf '%s,%s,Name,C-2,34,102,51,95,128,68\n' "\$i" "\$i" >> "\$out"; i=\$((i+1)); done
+        exit 0 ;;
+  fail) exit 22 ;;
+  html) printf '<!DOCTYPE html>\n<html><head><title>404: Not Found</title></head></html>\n' > "\$out"; exit 0 ;;
+esac
+STUB
+  chmod +x "$lbin/curl"
+}
+
+expect_eq "the sha256 pin is gone" "no" \
+  "$(grep -q 'LUT_SHA256' "$SCRIPT" && echo yes || echo no)"
+
+expect_eq "the script names the upstream lut URL" "yes" \
+  "$(grep -q 'raw.githubusercontent.com/CWFMF/firestarr-cpp' "$SCRIPT" && echo yes || echo no)"
+
+mk_curl ok
+expect_eq "a good fetch succeeds" "0" \
+  "$(PATH="$lbin:$PATH" run "LUT_SRC=''; fetch_lut '$tmp/got.lut' >/dev/null 2>&1; echo \$?")"
+expect_eq "and writes a lut-shaped file" "yes" \
+  "$([ -s "$tmp/got.lut" ] && head -1 "$tmp/got.lut" | grep -q 'grid_value' && echo yes || echo no)"
+
+mk_curl fail
+rm -f "$tmp/nofetch.lut"
+expect_eq "a failed fetch returns non-zero" "1" \
+  "$(PATH="$lbin:$PATH" run "LUT_SRC=''; fetch_lut '$tmp/nofetch.lut' >/dev/null 2>&1; echo \$?")"
+expect_eq "a failed fetch leaves no partial file behind" "no" \
+  "$([ -e "$tmp/nofetch.lut" ] && echo yes || echo no)"
+
+# THE ONE THAT MATTERS: a 404 page is HTTP 200 with HTML in it. Exit status
+# alone cannot tell you the fetch worked.
+mk_curl html
+rm -f "$tmp/htmlout.lut"
+expect_eq "an HTML error page is refused, not accepted as a lut" "1" \
+  "$(PATH="$lbin:$PATH" run "LUT_SRC=''; fetch_lut '$tmp/htmlout.lut' >/dev/null 2>&1; echo \$?")"
+
+# LUT_SRC stays, as an EXPLICIT offline override -- never as a fallback.
+printf 'grid_value, export_value, descriptive_name, fuel_type, r, g, b, h, s, l\n' > "$tmp/explicit.lut"
+i=1; while [ $i -le 150 ]; do printf '%s,%s,Name,C-2,34,102,51,95,128,68\n' "$i" "$i" >> "$tmp/explicit.lut"; i=$((i+1)); done
+mk_curl fail   # a fetch would fail; the override must not need one
+expect_eq "an explicit LUT_SRC is used without fetching" "0" \
+  "$(PATH="$lbin:$PATH" run "LUT_SRC='$tmp/explicit.lut'; resolve_lut '$tmp/viasrc.lut' >/dev/null 2>&1; echo \$?")"
+
+# And every vintage must get the SAME file: resolve once, reuse.
+expect_eq "the script resolves the lut once per run, not per year" "yes" \
+  "$(grep -q 'RUN_LUT' "$SCRIPT" && echo yes || echo no)"
+
+manifest_lut="$(run "dataset_json 2027 31 31 2026-11-01 deadbeef")"
+expect_contains "manifest records the lut sha256" "deadbeef" "$manifest_lut"
+expect_eq "manifest does not claim a local augmentation" "no" \
+  "$(printf '%s' "$manifest_lut" | grep -q 'row 107' && echo yes || echo no)"
+
 expect_eq "manifest is valid JSON" "ok" \
   "$(printf '%s' "$manifest" | python3 -c 'import json,sys; json.load(sys.stdin); print("ok")' 2>/dev/null || echo invalid)"
 

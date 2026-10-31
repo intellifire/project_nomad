@@ -20,9 +20,18 @@ on:
   workflow_dispatch:
 
 concurrency:
-  # Keyed on the source branch so a push and its pull_request share a group and
-  # the superseded run is cancelled instead of running twice.
-  group: tests-${{ github.head_ref || github.ref }}
+  # Keyed on the SHORT branch name so a push and its pull_request land in the
+  # same group and the superseded run is cancelled instead of running twice.
+  #
+  # This was `github.head_ref || github.ref`, which never matched between the
+  # two events: head_ref is only set on pull_request and is bare (`dev`), while
+  # github.ref is set on push and is fully qualified (`refs/heads/dev`). Two
+  # different group names, so cancel-in-progress had nothing to cancel and every
+  # suite ran twice — which also left release PRs reporting UNSTABLE rather than
+  # CLEAN while the duplicates were still in flight. (#399)
+  #
+  # github.ref_name is the short form on both events, so the pair now matches.
+  group: tests-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -46,9 +55,41 @@ jobs:
         run: npx tsc --noEmit
         working-directory: backend
 
+      # The slow-test watchdog is armed here on purpose (#491, refs #405).
+      #
+      # #405 characterised an intermittent HANG — always a timeout, never a
+      # wrong assertion, roughly 1 run in 6-12 — and got its only real evidence
+      # from this instrument: at the stall, a live listening server with an
+      # outstanding request that never gets answered. It was then closed
+      # COMPLETED, but the commit it names fixes the WATCHDOG, not the hang.
+      # #491 is the same shape, still happening.
+      #
+      # It cost 24 local runs to capture one sample. CI runs the suite far more
+      # often than anyone runs it by hand, so arming it here turns every run
+      # into a free sample instead of a lost one. It is a no-op unless
+      # NOMAD_TEST_WATCHDOG=1 and its timer is unref'd, so a green run is
+      # unaffected — verified locally: 8 armed full-suite runs, 1365/1365 each,
+      # no behaviour change, and a 50ms-threshold control proving it does fire.
       - name: Test
         run: npx vitest run
         working-directory: backend
+        env:
+          NOMAD_TEST_WATCHDOG: '1'
+          NOMAD_TEST_WATCHDOG_MS: '5000'
+          NOMAD_TEST_WATCHDOG_FILE: ${{ runner.temp }}/nomad-test-stalls.log
+
+      # Uploaded even when the suite passes: a stall that resolves just under
+      # the 30s timeout is the same defect and leaves no other trace. Without
+      # `if: always()` the one run that fails — the run whose sample matters
+      # most — would skip this step.
+      - name: Upload stall report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-stalls-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/nomad-test-stalls.log
+          if-no-files-found: ignore
+          retention-days: 30
 
   frontend:
     name: Frontend (typecheck + tests)
@@ -72,11 +113,123 @@ jobs:
         run: npx vitest run
         working-directory: frontend
 
+      # Lives here, not with the installer suites, because it builds the library
+      # (#403). The bash job installs root dependencies only, so vite is absent
+      # there and this could never pass — it failed every run and took the
+      # required `All tests` check down with it, while looking green locally
+      # where frontend/node_modules already exists.
+      - name: Library bundle emits no stylesheet
+        run: bash scripts/__tests__/lib_bundle_no_css.test.sh
+        working-directory: frontend
+
+      # react/react-dom are externalised by the library build, so declaring them
+      # as `dependencies` ships a second React into every consumer. That blocked
+      # EasyMap 3's React 18 -> 19 upgrade and was found as "Invalid hook call"
+      # in a browser, not by CI. One `npm install react` undoes the fix silently.
+      - name: react is a peer dependency, not a dependency
+        run: bash scripts/__tests__/react_is_a_peer_dep.test.sh
+        working-directory: frontend
+
+  frontend-react19:
+    name: Frontend on React 19 (typecheck + tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      # THE DECLARATION MUST AGREE AT THE ROOT AND THE WORKSPACE.
+      #
+      # Setting react only in the frontend leaves npm hoisting a peer-satisfying
+      # copy to the workspace root (it marks it `peer: true` in the lockfile) and
+      # nesting the new one beneath it. @testing-library/react, hoisted at the
+      # root, then binds the OTHER copy: elements from one React rendered by
+      # another, "Objects are not valid as a React child", and 368 failures that
+      # have nothing to do with React 19. Measured 2026-10-27.
+      #
+      # The check that matters is what the HARNESS resolves, asserted below —
+      # not the root version, which was misleading in every wrong run.
+      - name: Declare React 19 in both manifests
+        run: |
+          npm pkg set devDependencies.react="^19.0.0" devDependencies.react-dom="^19.0.0"
+          npm pkg set devDependencies.react="^19.0.0" devDependencies.react-dom="^19.0.0" \
+            devDependencies.@types/react="^19.3.0" devDependencies.@types/react-dom="^19.3.0" \
+            --workspace @nomad/frontend
+
+          # The lockfile is deliberately KEPT. Deleting it and installing from
+          # the manifests alone fails on a clean runner with
+          # `npm error Cannot read properties of null (reading 'edgesOut')` —
+          # an npm workspace bug that does not reproduce locally, where
+          # node_modules already exists. Verified 2026-10-27 by removing
+          # node_modules and reinstalling with the lock present: npm reconciles
+          # it against the edited manifests and resolves a single react 19.
+
+      - name: Install
+        run: npm install --no-audit --no-fund
+
+      - name: Assert ONE React, and that the test harness sees it
+        run: |
+          node -e "
+            const path = require.resolve('react', { paths: [require.resolve('@testing-library/react')] });
+            const version = require(path.replace(/index\.js$/, 'package.json')).version;
+            console.log('harness resolves react', version, 'from', path);
+            if (!version.startsWith('19.')) {
+              throw new Error('harness resolved react ' + version + ', not 19 — the tree is split and any result below is meaningless');
+            }
+          "
+        working-directory: frontend
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+        working-directory: frontend
+
+      - name: Test
+        run: npx vitest run
+        working-directory: frontend
+
+      # The library build runs here too, and that is deliberate: this is the
+      # artifact consumers vendor, so "the source passes on 19" and "the
+      # published artifact builds on 19" are different claims and the second is
+      # the one they depend on.
+      #
+      # It failed until 2026-10-27 with
+      # `[vite:dts] Internal Error: Unable to follow symbol for "JSX"`. That was
+      # never an api-extractor bug: our own source referenced the BARE global
+      # `JSX` namespace, which @types/react@19 moves to `React.JSX`, so the
+      # extractor correctly could not follow it. Qualifying the one occurrence
+      # fixed the build. Proven both ways — reinstating the bare reference makes
+      # this step fail again.
+      - name: Library build
+        run: npm run build:lib
+        working-directory: frontend
+
   scripts:
     name: Installer suites (bash)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+
+      # Root-only dependencies, for the suites that need one.
+      #
+      # fgmj_decode.test.sh needs protobufjs to decode .fgmj fixtures against the
+      # vendored WISE schema (#294). --workspaces=false keeps this to the two root
+      # devDependencies instead of installing backend and frontend, which is what
+      # this job was deliberately avoiding.
+      #
+      # That suite fails loudly rather than skipping when protobufjs is absent, so
+      # if this step is ever removed the failure says why instead of going quiet.
+      #
+      # A suite that needs to BUILD a workspace does not belong in this job — it
+      # cannot pass here, and it will look green on any developer machine that
+      # already has that workspace installed. lib_bundle_no_css.test.sh was
+      # exactly that and now runs in the Frontend job (#403).
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Install root dependencies only
+        run: npm ci --workspaces=false --ignore-scripts
 
       # These suites had no runner at all - not an npm script, not a workflow.
       # They are plain bash 3.x-compatible and self-contained, each exiting
@@ -121,12 +274,46 @@ jobs:
           fi
           echo "All installer scripts parse"
 
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Plain and blocking, as of #386 taking the count to 0.
+      #
+      # This was a ratchet for as long as there was a backlog to drain: lint had
+      # never actually executed here, and the workspace globs covered 6 of 275
+      # files, so switching it on revealed 108 findings at once. A blocking job
+      # then would have sat permanently red and taught everyone to ignore it.
+      # The ceiling fell 108 -> 94 -> 92 -> 0, so the ratchet and its baseline
+      # are gone and any new finding fails the build.
+      #
+      # The workspace lint scripts pass --max-warnings 0 deliberately. Several
+      # rules are configured as warnings -- react-refresh/only-export-components
+      # most of all -- and eslint exits 0 on warnings. Without that flag this
+      # job would be WEAKER than the ratchet it replaced, because the ratchet
+      # counted warnings and a bare `eslint src` does not. Verified: a single
+      # react-refresh warning exits 0 plain, 1 with the flag.
+      #
+      # The job id stays `lint` because all-tests lists it in `needs`.
+      - name: Lint
+        run: npm run lint
+
   # Single required check to point branch protection at, so adding or renaming
   # a job later does not silently leave the gate unprotected.
   all-tests:
     name: All tests
     runs-on: ubuntu-latest
-    needs: [backend, frontend, scripts]
+    needs: [backend, frontend, frontend-react19, scripts, lint]
     if: always()
     steps:
       - name: Verify every suite passed

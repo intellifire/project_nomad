@@ -6,7 +6,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import * as maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import { useOpenNomad } from '../../../openNomad/context';
 import { PROBABILITY_LEGEND } from '../../Map/symbology/palettes';
 import type { OutputItem } from '../types';
@@ -99,6 +98,13 @@ export function OutputPreviewModal({
     }
 
     fetchPreview();
+    // Keyed on `output.id`, not `output.previewUrl`, deliberately. The backend
+    // derives previewUrl FROM the output -- regular results get
+    // /results/{id}/preview, perimeters get /models/{id}/perimeters -- so for
+    // a given id the url is deterministic. Depending on the url as well adds
+    // no case the id does not already cover, and would re-fetch whenever the
+    // parent rebuilt the output object with an equal url.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [api, output.id]);
 
   // Initialize map when GeoJSON is loaded

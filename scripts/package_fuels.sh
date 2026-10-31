@@ -29,6 +29,28 @@ set -euo pipefail
 SRC_DIR="${SRC_DIR:-/Volumes/KINGSTON/FireSTARR_Fuel_Data_Sets/DataSourcesFromJordan}"
 OUT_DIR="${OUT_DIR:-/Volumes/KINGSTON/FireSTARR_Fuel_Data_Sets/masterDataSets}"
 LUT_SRC="${LUT_SRC:-}"          # override; defaults to the master at $OUT_DIR/fuel.lut
+
+# UPSTREAM IS THE SOURCE OF TRUTH FOR fuel.lut, FETCHED EVERY BUILD (#461).
+#
+# The legend that decodes a fuel grid must be THE legend, identically, in every
+# dataset we ship. Keeping our own copy is what broke that: two shipped vintage
+# archives carry a pre-2026 legend with no row 107 (Urban), a value their own
+# tiles contain -- 182,355 pixels of it in one real tile. Upstream gained the
+# row, our copy did not, and nobody noticed for eight months.
+#
+# A hash PIN was tried and removed. Pinning our copy catches OUR copy drifting,
+# which was never the failure; it is blind to upstream changing, so the build
+# would pass happily while shipping a stale legend. Fetching removes the second
+# copy entirely, and with it the thing that can go stale.
+#
+# Reproducibility comes from dataset.json's lutSha256, not from a pin: to
+# rebuild an old vintage, check upstream out at the hash its manifest records.
+LUT_URL="${LUT_URL:-https://raw.githubusercontent.com/CWFMF/firestarr-cpp/main/fuel.lut}"
+
+# Resolved ONCE per run and reused, so every vintage in a build carries the
+# byte-identical file. Fetching per year would risk two vintages built minutes
+# apart disagreeing, which is the property this whole change exists to provide.
+RUN_LUT=""
 VERSION="${VERSION:-1.0}"
 COG="${COG:-1}"                 # 1 = convert tiles to Cloud Optimized GeoTIFF
 
@@ -68,6 +90,115 @@ cog_opts_for() {
     fi
 }
 
+# Can this band type actually hold this NoData value? (#476)
+#
+# THE DEFECT THIS EXISTS FOR. Every shipped DEM tile is Int16 declaring
+# NoData=-32769. Int16 holds -32768..32767, so the sentinel can never equal a
+# stored pixel: the flag is inert and masks nothing. Harmless while the tiles
+# are void-filled -- the lowest value across the first eight 2026 tiles was
+# -251 -- and a trap for the first DEM that carries real voids, because a void
+# read as elevation produces slope and aspect out of nothing and FireSTARR
+# consumes both.
+#
+# Returns 0 when the declaration is fine (including when there is none, which
+# is the normal case), 1 when the type cannot hold it.
+nodata_representable() {
+    local type="$1" value="${2-}"
+
+    # No declaration is not a defect.
+    case "$value" in ''|None|none|nan|NaN) return 0 ;; esac
+
+    local lo hi
+    case "$type" in
+        Byte)    lo=0;      hi=255 ;;
+        Int8)    lo=-128;   hi=127 ;;
+        UInt16)  lo=0;      hi=65535 ;;
+        Int16)   lo=-32768; hi=32767 ;;
+        UInt32)  lo=0;      hi=4294967295 ;;
+        Int32)   lo=-2147483648; hi=2147483647 ;;
+        # Float bands carry their own sentinels, fractional ones included, and
+        # are not bounded the way an integer band is.
+        *)       return 0 ;;
+    esac
+
+    # Integer band: a fractional sentinel cannot be stored either.
+    case "$value" in *.*) return 1 ;; esac
+
+    [ "$value" -ge "$lo" ] 2>/dev/null && [ "$value" -le "$hi" ] 2>/dev/null && return 0
+    return 1
+}
+
+# Does this vintage carry new elevation? (#477)
+#
+# THE DEFECT THIS ANSWERS. The 2024 and 2025 vintages ship PIXEL-IDENTICAL DEM
+# tiles with different bytes: GDAL checksums agree on every tile checked while
+# sha256 and byte counts differ. Re-encoded, not re-derived — roughly 3GB per
+# vintage of elevation that did not change.
+#
+# checksums.txt cannot see that, because a file sha256 moves whenever the
+# encoding moves. A PIXEL fingerprint survives re-encoding, which is exactly
+# the property needed to answer "is this the same elevation as last year?".
+#
+# Order-independent by construction: the per-tile lines are sorted before
+# hashing, so a build that walks tiles in a different order still agrees.
+dem_pixel_fingerprint_from() {
+    printf '%s\n' "$1" | sed '/^[[:space:]]*$/d' | LC_ALL=C sort | {
+        if command -v shasum >/dev/null 2>&1; then shasum -a 256
+        else sha256sum; fi
+    } | awk '{print $1}'
+}
+
+# The same thing over a built tile directory. Uses the GDAL checksum per tile,
+# which is a function of the PIXELS and not of the container.
+dem_pixel_fingerprint() {
+    local dir="$1" f lines=""
+    command -v gdalinfo >/dev/null 2>&1 || return 1
+    for f in "$dir"/dem_*.tif; do
+        [ -f "$f" ] || continue
+        local ck
+        ck="$(gdalinfo -checksum "$f" 2>/dev/null | grep -m1 Checksum | cut -d= -f2)"
+        [ -n "$ck" ] || return 1
+        lines="$lines$(basename "$f"):$ck
+"
+    done
+    [ -n "$lines" ] || return 1
+    dem_pixel_fingerprint_from "$lines"
+}
+
+# Drop a NoData declaration the band type cannot hold (#476).
+#
+# PIXELS ARE NEVER TOUCHED. The declaration is removed, because a sentinel that
+# cannot be stored masks nothing and is only able to mislead the next reader.
+# Removing it is also the only honest option: the voids it claims to mark, if
+# any existed, would be indistinguishable from elevation and we cannot guess
+# which value they took.
+#
+# Returns 0 when it dropped one, 1 when there was nothing to do.
+drop_unusable_nodata() {
+    local f="$1" type nd
+    command -v gdalinfo >/dev/null 2>&1 || return 1
+    read -r type nd <<EOF
+$(gdalinfo -json "$f" 2>/dev/null | python3 -c "
+import sys, json
+try:
+    b = json.load(sys.stdin)['bands'][0]
+except Exception:
+    print('', ''); raise SystemExit
+print(b.get('type', ''), b.get('noDataValue', ''))
+" 2>/dev/null)
+EOF
+    [ -n "${type:-}" ] || return 1
+    nodata_representable "$type" "${nd:-}" && return 1
+
+    command -v gdal_edit.py >/dev/null 2>&1 || {
+        print_warning "$(basename "$f"): declares NoData=$nd which $type cannot hold, and gdal_edit.py is not installed to fix it"
+        return 1
+    }
+    gdal_edit.py -unsetnodata "$f" >/dev/null 2>&1 || return 1
+    print_warning "$(basename "$f"): dropped NoData=$nd — $type cannot hold it (#476); pixels untouched"
+    return 0
+}
+
 # Overview resampling for the online sidecars. MODE for categorical: AVERAGE
 # invents fuel codes that do not exist (e.g. "103.5" between two classes) and
 # compresses far worse.
@@ -78,7 +209,17 @@ overview_resampling_for() {
 # The provenance manifest that ships inside every vintage and is read by
 # Nomad's fuel dataset catalog (#319) to show which fuel produced a result.
 dataset_json() {
-    local year="$1" nfuel="$2" ndem="$3" build_date="$4"
+    local year="$1" nfuel="$2" ndem="$3" build_date="$4" lut_sha="${5:-}" nodata_dropped="${6:-0}" dem_fp="${7:-}"
+    # A correction the build made to the source data is RECORDED (#476). A
+    # manifest that reads identically whether or not tiles were edited cannot
+    # answer "is this vintage the data Jordan sent?". Absent when nothing was
+    # corrected, so the common case stays quiet.
+    local nodata_line=""
+    if [ "${nodata_dropped:-0}" -gt 0 ] 2>/dev/null; then
+        nodata_line="
+  \"demNoDataDropped\": $nodata_dropped,
+  \"demNoDataNote\": \"source tiles declared a NoData their band type cannot hold (#476); the declaration was removed, pixels untouched\","
+    fi
     cat <<JSON
 {
   "vintage": $year,
@@ -89,8 +230,11 @@ dataset_json() {
   "resolution_m": 100,
   "crs": "NAD83 / UTM (per zone; each tile carries its own)",
   "grid": { "path": "generated/grid/100m/$year", "tilePattern": "{fuel|dem}_{zone}_{row}.tif", "fuelTiles": $nfuel, "demTiles": $ndem },
-  "fuelLut": "fuel.lut",
-  "lutNote": "canonical CWFMF/firestarr-cpp fuel.lut + row 107=Urban (D-1/D-2, clone of 106)"
+  "fuelLut": "fuel.lut",$nodata_line
+  "lutSha256": "$lut_sha",
+  "demPixelFingerprint": "$dem_fp",
+  "demPixelNote": "sha256 over the per-tile GDAL pixel checksums (#477). Survives re-encoding, so two vintages sharing this value carry the SAME elevation however the files were written.",
+  "lutNote": "canonical CWFMF/firestarr-cpp fuel.lut, verified by sha256 at build time; identical in every vintage"
 }
 JSON
 }
@@ -106,6 +250,73 @@ strip_mac_metadata() {
 }
 
 # sha256 over every file, relative paths, excluding the checksum file itself.
+# Hash one file, using whichever tool this host has. Same idiom as
+# write_checksums below, kept separate so verify_lut can be called on an input
+# before anything is copied.
+sha256_of() {
+    if command -v shasum >/dev/null 2>&1; then shasum -a 256 "$1" | awk '{print $1}'
+    else sha256sum "$1" | awk '{print $1}'; fi
+}
+
+# Does this file look like a fuel lookup table at all?
+#
+# THE EXIT STATUS OF A FETCH IS NOT ENOUGH. A 404 page, a captive portal or a
+# proxy error arrives as HTTP 200 with HTML in it, and curl reports success.
+# Checked by shape: the header line, and a plausible number of rows that start
+# with an integer and carry ten comma-separated fields.
+looks_like_lut() {
+    local f="$1" rows
+    [ -s "$f" ] || return 1
+    head -1 "$f" | grep -q 'grid_value' || return 1
+    rows="$(awk -F, 'NR>1 && $1 ~ /^[0-9]+$/ && NF==10' "$f" | wc -l | tr -d ' ')"
+    # The real lut has 150 data rows. A floor rather than an exact count, so a
+    # legitimate upstream addition does not fail the build for being bigger.
+    [ "${rows:-0}" -ge 100 ]
+}
+
+# Fetch the lut from upstream. Fails loudly and cleans up after itself; NEVER
+# falls back to a local copy, because a build that appears to succeed while
+# shipping whatever was on disk is the original defect with extra steps.
+fetch_lut() {
+    local dest="$1" part="$1.part"
+    rm -f "$part"
+    if ! curl -fsSL "$LUT_URL" -o "$part" 2>/dev/null; then
+        print_error "Could not fetch fuel.lut from $LUT_URL"
+        print_error "  Upstream CWFMF/firestarr-cpp is the source of truth and there is no fallback."
+        print_error "  Fix the network, or pass LUT_SRC=<path> to use a local copy DELIBERATELY."
+        rm -f "$part"
+        return 1
+    fi
+    if ! looks_like_lut "$part"; then
+        print_error "Fetched $LUT_URL but it is not a fuel lookup table"
+        print_error "  $(wc -c < "$part" | tr -d ' ') bytes, first line: $(head -c 80 "$part" | tr -d '\n')"
+        print_error "  An error page returns HTTP 200, so the download succeeding proves nothing."
+        rm -f "$part"
+        return 1
+    fi
+    mv "$part" "$dest"
+}
+
+# Resolve the lut for this run, once, into $1.
+#
+# LUT_SRC is an EXPLICIT offline override, not a fallback. Set it and no fetch
+# happens; leave it unset and upstream is authoritative. The distinction is the
+# point: an operator choosing a local file is fine, a build quietly settling for
+# one is not.
+resolve_lut() {
+    local dest="$1"
+    if [ -n "${LUT_SRC:-}" ]; then
+        print_info "Using LUT_SRC=$LUT_SRC (explicit override — not fetching upstream)"
+        if ! looks_like_lut "$LUT_SRC"; then
+            print_error "LUT_SRC=$LUT_SRC is not a fuel lookup table. Refusing to ship it."
+            return 1
+        fi
+        cp "$LUT_SRC" "$dest" || return 1
+        return 0
+    fi
+    fetch_lut "$dest"
+}
+
 write_checksums() {
     local root="$1"
     ( cd "$root" && find . -type f ! -name checksums.txt | sort | while read -r f; do
@@ -152,7 +363,7 @@ package_year() {
     [ -d "$srctiles" ] || srctiles="$(find "$stage" -maxdepth 2 -type d -name '*.tif' -prune -o -maxdepth 2 -type d -print | tail -1)"
 
     print_step "$year: building tiles (COG=$COG)"
-    local n=0 f
+    local n=0 f nodata_dropped=0
     for f in "$srctiles"/*.tif; do
         [ -f "$f" ] || continue
         case "$(basename "$f")" in .DS_Store|._*) continue ;; esac
@@ -161,6 +372,12 @@ package_year() {
             gdal_translate -q $(cog_opts_for "$f") "$f" "$tiles/$(basename "$f")"
         else
             cp "$f" "$tiles/$(basename "$f")"
+        fi
+        # #476: every shipped DEM tile declares NoData=-32769 on an Int16 band,
+        # which cannot hold it. Checked on the OUTPUT, so the shipped file is
+        # what gets vouched for.
+        if drop_unusable_nodata "$tiles/$(basename "$f")"; then
+            nodata_dropped=$((nodata_dropped + 1))
         fi
         n=$((n + 1))
     done
@@ -171,20 +388,29 @@ package_year() {
     nfuel=$(find "$tiles" -name 'fuel_*.tif' | wc -l | tr -d ' ')
     ndem=$(find "$tiles" -name 'dem_*.tif' | wc -l | tr -d ' ')
 
-    # fuel.lut comes from THE MASTER at the root of OUT_DIR — one canonical copy
-    # (upstream CWFMF/firestarr-cpp lut + row 107=Urban, which upstream still
-    # lacks), copied identically into every vintage. Jordan's source zips contain
-    # tiles only and never a lut, so there is nothing to fall back to: a dataset
-    # without the lut is broken, so fail loudly rather than ship one.
-    local lut="${LUT_SRC:-$OUT_DIR/fuel.lut}"
-    if [ ! -f "$lut" ]; then
-        print_error "$year: master fuel.lut not found at $lut"
-        print_error "  Set LUT_SRC, or restore the master lut. Refusing to build an incomplete dataset."
-        return 1
+    # fuel.lut comes from UPSTREAM, fetched once per run and reused, so every
+    # vintage in this build carries the byte-identical legend. Jordan's source
+    # zips contain tiles only and never a lut.
+    if [ -z "$RUN_LUT" ]; then
+        RUN_LUT="$OUT_DIR/.fuel.lut.run"
+        if ! resolve_lut "$RUN_LUT"; then
+            RUN_LUT=""
+            print_error "$year: could not obtain fuel.lut. Refusing to build a dataset without its legend."
+            return 1
+        fi
+        print_step "fuel.lut resolved for this run ($(sha256_of "$RUN_LUT" | cut -c1-12)…)"
     fi
-    cp "$lut" "$root/fuel.lut"
+    cp "$RUN_LUT" "$root/fuel.lut"
 
-    dataset_json "$year" "$nfuel" "$ndem" "$build_date" > "$root/dataset.json"
+    local lut_sha
+    lut_sha="$(sha256_of "$root/fuel.lut")"
+    # #477: a pixel fingerprint over the DEM tiles, so a vintage can say whether
+    # its elevation is new. 2024 and 2025 shipped identical pixels in different
+    # bytes, which checksums.txt cannot see.
+    local dem_fp=""
+    dem_fp="$(dem_pixel_fingerprint "$tiles" || true)"
+    [ -n "$dem_fp" ] || print_warning "$year: could not fingerprint the DEM tiles — dataset.json will carry none"
+    dataset_json "$year" "$nfuel" "$ndem" "$build_date" "$lut_sha" "$nodata_dropped" "$dem_fp" > "$root/dataset.json"
     # Strip immediately before hashing so checksums.txt can never list a
     # .DS_Store, then exclude them again at zip time in case Finder recreates
     # one while the build is running.

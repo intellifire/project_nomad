@@ -10,7 +10,8 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { RasterLegend, parseRampStops } from './RasterLegend.js';
+import { RasterLegend } from './RasterLegend.js';
+import { parseRampStops } from './parseRampStops.js';
 import { ARRIVAL_RAMP_PRESETS } from '../utils/arrivalTimeSymbolization.js';
 
 // =============================================================================
@@ -19,8 +20,20 @@ import { ARRIVAL_RAMP_PRESETS } from '../utils/arrivalTimeSymbolization.js';
 
 const mockUseLayers = vi.fn();
 
-vi.mock('../context/LayerContext.js', () => ({
+vi.mock('../context/useLayers.js', () => ({
   useLayers: () => mockUseLayers(),
+}));
+
+/** The map, for the scale gate on the legend prompt (#449). */
+const legendMapView = { zoom: 12, lat: 55 };
+vi.mock('../context/MapContext', () => ({
+  useMap: () => ({
+    map: {
+      getZoom: () => legendMapView.zoom,
+      getCenter: () => ({ lat: legendMapView.lat, lng: -106 }),
+    },
+    isLoaded: true,
+  }),
 }));
 
 // =============================================================================
@@ -179,6 +192,85 @@ describe('RasterLegend', () => {
       const swatches = container.querySelectorAll('[data-testid="legend-swatch"]');
       // Last swatch corresponds to 0-10% (SLD low class #00b1f2 — no longer green)
       expect(swatches[9]).toHaveStyle({ backgroundColor: '#00b1f2' });
+    });
+  });
+
+  describe('arrival legend with no recorded start instant (#482)', () => {
+    /**
+     * Franco's ruling, 2026-10-30, option (a): a run whose start instant was
+     * never recorded shows relative day labels, never a substituted date.
+     *
+     * This renders the real component, because the unit tests on
+     * `generateArrivalLegend` prove the FUNCTION returns "Day 1" and say
+     * nothing about whether the legend displays it. `RasterLegend` used to do
+     * `new Date(meta.startDate)` unconditionally, so an absent value would have
+     * reached it as `new Date(undefined)` — an Invalid Date, rendering "NaN"
+     * rather than failing.
+     */
+    function makeArrivalLayerNoStart(id: string, timestep: 'daily' | 'hourly' = 'daily') {
+      const layer = makeArrivalLayer(id, timestep);
+      return {
+        ...layer,
+        arrivalMeta: { ...layer.arrivalMeta, startDate: undefined },
+      };
+    }
+
+    it('shows relative day labels instead of dates', () => {
+      mockUseLayers.mockReturnValue({
+        state: {
+          layers: [makeArrivalLayerNoStart('a', 'daily')],
+          groups: [],
+          selectedLayerId: null,
+        },
+        updateLayer: vi.fn(),
+      });
+
+      render(<RasterLegend />);
+
+      expect(screen.getByText('Day 1')).toBeInTheDocument();
+      expect(screen.getByText('Day 2')).toBeInTheDocument();
+      expect(screen.getByText('Day 3')).toBeInTheDocument();
+    });
+
+    it('renders no NaN and no calendar date anywhere in the legend', () => {
+      mockUseLayers.mockReturnValue({
+        state: {
+          layers: [makeArrivalLayerNoStart('a', 'daily')],
+          groups: [],
+          selectedLayerId: null,
+        },
+        updateLayer: vi.fn(),
+      });
+
+      const { container } = render(<RasterLegend />);
+
+      expect(container.textContent).not.toContain('NaN');
+      expect(container.textContent).not.toContain('Invalid');
+      // No month name and no four-digit year — the substituted date would have
+      // put the CURRENT year here, which is the defect this closes.
+      expect(container.textContent).not.toMatch(
+        /Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/,
+      );
+      expect(container.textContent).not.toMatch(/\b\d{4}\b/);
+    });
+
+    it('THE CONTROL: a recorded start still renders real calendar dates', () => {
+      // Without this, the assertions above could be passing because the arrival
+      // legend stopped rendering labels altogether.
+      mockUseLayers.mockReturnValue({
+        state: {
+          layers: [makeArrivalLayer('a', 'daily')],
+          groups: [],
+          selectedLayerId: null,
+        },
+        updateLayer: vi.fn(),
+      });
+
+      const { container } = render(<RasterLegend />);
+
+      expect(container.textContent).toMatch(/Jun/);
+      expect(container.textContent).toMatch(/2026/);
+      expect(screen.queryByText('Day 1')).not.toBeInTheDocument();
     });
   });
 
@@ -420,5 +512,181 @@ describe('RasterLegend', () => {
       const style = legend.style;
       expect(['absolute', 'fixed']).toContain(style.position);
     });
+  });
+});
+
+
+/**
+ * A LEGEND MUST NOT OUTLIVE ITS LAYER (#447).
+ *
+ * Reported from the live CIFFC demo: an ad-hoc layer was deleted, the row
+ * disappeared from the panel, and TWO legends for it stayed on the map. A
+ * legend is a claim about what is displayed; one with nothing behind it tells
+ * an operator something is on the map when it is not. During an incident that
+ * is a wrong answer rather than an untidy screen.
+ *
+ * The cause was upstream and is fixed in 63d12e7. The layer list had TWO
+ * entries carrying the SAME id, because `addRasterLayer` guarded the map but
+ * appended to state unconditionally. This component keys each legend block by
+ * `layer.id`, so duplicate entries rendered duplicate React keys — and
+ * reconciliation with colliding keys is exactly how stale DOM survives a
+ * removal.
+ *
+ * These tests pin the contract at this end regardless: one legend per layer,
+ * and none for a layer that is gone. They would have caught the symptom even
+ * though the defect was elsewhere, which is the point of asserting at the seam
+ * a user actually looks at.
+ */
+describe('a legend must not outlive its layer (#447)', () => {
+  const wmsLayer = (id: string, name: string) => ({
+    id,
+    name,
+    type: 'raster' as const,
+    visible: true,
+    opacity: 1,
+    zIndex: 0,
+    url: `https://example.org/wms?layers=${id}`,
+    legendType: 'wms' as const,
+    legendUrl: `https://example.org/wms?layer=${id}&request=GetLegendGraphic`,
+  });
+
+  it('renders no legend for a layer that is no longer in the list', () => {
+    // The control: it is there first, so the absence below means something.
+    mockUseLayers.mockReturnValue({
+      state: { layers: [wmsLayer('adhoc-1', 'M3 Fire Perimeter Estimate')] },
+      updateLayer: vi.fn(),
+    });
+    const { rerender } = render(<RasterLegend />);
+    expect(screen.getByAltText('M3 Fire Perimeter Estimate legend')).toBeTruthy();
+
+    // Deleted — removeLayer filters it out of state.
+    mockUseLayers.mockReturnValue({ state: { layers: [] }, updateLayer: vi.fn() });
+    rerender(<RasterLegend />);
+    expect(screen.queryByAltText('M3 Fire Perimeter Estimate legend')).toBeNull();
+  });
+
+  it('renders ONE legend per layer even if the list carries a duplicate id', () => {
+    // Defensive: upsertLayer now prevents this state upstream, but a colliding
+    // React key is a hazard this component should not depend on others to avoid.
+    const dup = wmsLayer('adhoc-1', 'M3 Fire Perimeter Estimate');
+    mockUseLayers.mockReturnValue({
+      state: { layers: [dup, { ...dup }] },
+      updateLayer: vi.fn(),
+    });
+    render(<RasterLegend />);
+    expect(screen.getAllByAltText('M3 Fire Perimeter Estimate legend')).toHaveLength(1);
+  });
+
+  it('removes only the deleted layer, leaving the others legended', () => {
+    const a = wmsLayer('adhoc-a', 'Fire Danger');
+    const b = wmsLayer('adhoc-b', 'Forest Licensee Operating Areas');
+    mockUseLayers.mockReturnValue({ state: { layers: [a, b] }, updateLayer: vi.fn() });
+    const { rerender } = render(<RasterLegend />);
+    expect(screen.getByAltText('Fire Danger legend')).toBeTruthy();
+    expect(screen.getByAltText('Forest Licensee Operating Areas legend')).toBeTruthy();
+
+    mockUseLayers.mockReturnValue({ state: { layers: [b] }, updateLayer: vi.fn() });
+    rerender(<RasterLegend />);
+    expect(screen.queryByAltText('Fire Danger legend')).toBeNull();
+    expect(screen.getByAltText('Forest Licensee Operating Areas legend')).toBeTruthy();
+  });
+
+  it('renders no legend for a HIDDEN layer — hide takes it off the map too', () => {
+    mockUseLayers.mockReturnValue({
+      state: { layers: [{ ...wmsLayer('adhoc-1', 'Shared Perimeters'), visible: false }] },
+      updateLayer: vi.fn(),
+    });
+    render(<RasterLegend />);
+    expect(screen.queryByAltText('Shared Perimeters legend')).toBeNull();
+  });
+});
+
+
+/**
+ * OFFERING A CUSTOM LEGEND URL WHEN THE DERIVED ONE FAILS (#449).
+ *
+ * A WMS server is not obliged to serve a legend. When the derived
+ * GetLegendGraphic URL 404s, the layer is fine and only its legend is missing —
+ * and the user may know where the real one lives.
+ *
+ * GATED ON THE LAYER ACTUALLY RENDERING. Asking someone to repair the cosmetic
+ * half of something already broken wastes their time and misdirects them, so a
+ * layer that cannot draw at this scale (#448) gets no prompt — it gets the
+ * scale warning instead, which is the useful thing to say.
+ *
+ * A DISMISSAL STICKS. A prompt that will not take no for an answer is one
+ * people learn to click past without reading.
+ */
+describe('a legend that will not load (#449)', () => {
+  const wms = (over = {}) => ({
+    id: 'adhoc-1',
+    name: 'Legendless',
+    type: 'raster',
+    visible: true,
+    opacity: 1,
+    zIndex: 0,
+    url: 'https://example.org/wms?layers=topo',
+    legendType: 'wms',
+    legendUrl: 'https://example.org/wms?layer=topo&request=GetLegendGraphic',
+    ...over,
+  });
+
+  beforeEach(() => {
+    localStorage.clear();
+    legendMapView.zoom = 12;
+  });
+
+  it('says nothing while the legend is loading or fine — the control', () => {
+    mockUseLayers.mockReturnValue({ state: { layers: [wms()] }, updateLayer: vi.fn() });
+    render(<RasterLegend />);
+    expect(screen.queryByLabelText(/legend graphic url/i)).toBeNull();
+  });
+
+  it('offers a url field once the legend image fails', () => {
+    mockUseLayers.mockReturnValue({ state: { layers: [wms()] }, updateLayer: vi.fn() });
+    render(<RasterLegend />);
+    fireEvent.error(screen.getByAltText('Legendless legend'));
+    expect(screen.getByLabelText(/legend graphic url/i)).toBeTruthy();
+  });
+
+  it('applies the url the user supplies', () => {
+    const updateLayer = vi.fn();
+    mockUseLayers.mockReturnValue({ state: { layers: [wms()] }, updateLayer });
+    render(<RasterLegend />);
+    fireEvent.error(screen.getByAltText('Legendless legend'));
+
+    fireEvent.change(screen.getByLabelText(/legend graphic url/i), {
+      target: { value: 'https://example.org/real-legend.png' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /use this legend/i }));
+
+    expect(updateLayer).toHaveBeenCalledWith('adhoc-1', {
+      legendUrl: 'https://example.org/real-legend.png',
+    });
+  });
+
+  it('stops asking once dismissed, and stays stopped across a remount', () => {
+    mockUseLayers.mockReturnValue({ state: { layers: [wms()] }, updateLayer: vi.fn() });
+    const { unmount } = render(<RasterLegend />);
+    fireEvent.error(screen.getByAltText('Legendless legend'));
+    fireEvent.click(screen.getByRole('button', { name: /dismiss/i }));
+    expect(screen.queryByLabelText(/legend graphic url/i)).toBeNull();
+
+    unmount();
+    render(<RasterLegend />);
+    fireEvent.error(screen.getByAltText('Legendless legend'));
+    expect(screen.queryByLabelText(/legend graphic url/i)).toBeNull();
+  });
+
+  it('does NOT prompt for a layer that cannot draw at this scale', () => {
+    // It is not the legend that is wrong — #448 says what is, and says it better.
+    legendMapView.zoom = 4.3;
+    mockUseLayers.mockReturnValue({
+      state: { layers: [wms({ maxScaleDenominator: 6_000_000 })] },
+      updateLayer: vi.fn(),
+    });
+    render(<RasterLegend />);
+    fireEvent.error(screen.getByAltText('Legendless legend'));
+    expect(screen.queryByLabelText(/legend graphic url/i)).toBeNull();
   });
 });

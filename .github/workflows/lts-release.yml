@@ -40,8 +40,15 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add frontend/package.json
-          git commit -m "chore: bump to v${{ steps.newversion.outputs.version }}-lts [skip ci]"
+          # All three package.json files, not just the frontend (#442), AND the
+          # root lockfile: bump-version.sh writes it, so a workflow that does not
+          # stage it commits the bump and drops the lockfile change. That happened
+          # on dev v0.28.11 — package.json 0.28.11 against lock 0.28.10.
+          # bump-version.sh writes all three; staging only one committed a
+          # partial bump and left root/backend drifting again — which is the
+          # exact state #442 fixed, reintroduced one layer up.
+          git add package.json backend/package.json frontend/package.json package-lock.json
+          git commit -m "chore: bump to v${{ steps.newversion.outputs.version }}-lts [release-bot]"
           git pull --rebase origin lts
           git push
 
@@ -58,6 +65,20 @@ jobs:
         run: npm run build:lib && npm pack
         working-directory: frontend
 
+      - name: Generate SBOM
+        # Software bill of materials for the release (#398). Derived from
+        # package-lock.json at THIS commit by `npm sbom`, so it describes the
+        # tree that was actually tagged — GitHub's dependency-graph export
+        # describes whatever it last indexed, which is not the same thing.
+        #
+        # The version is passed in because `npm sbom` names the document after
+        # the ROOT package.json. Since #442 that file IS bumped, so this is now
+        # belt-and-braces rather than load-bearing — but it stays: the document
+        # must name the release even if the two ever diverge again.
+        run: |
+          chmod +x .github/scripts/generate-sbom.sh
+          .github/scripts/generate-sbom.sh "${{ steps.newversion.outputs.version }}" "nomad-sbom-${{ steps.newversion.outputs.version }}.spdx.json"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
@@ -65,7 +86,9 @@ jobs:
           name: "v${{ steps.newversion.outputs.version }} (LTS)"
           prerelease: false
           generate_release_notes: true
-          files: frontend/nomad-frontend-*.tgz
+          files: |
+            frontend/nomad-frontend-*.tgz
+            nomad-sbom-*.spdx.json
           body: |
             **LTS release** — long-term support channel.
 
