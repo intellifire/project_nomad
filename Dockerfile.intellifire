@@ -60,6 +60,16 @@ COPY --from=backend-builder /app/backend/dist ./backend/dist
 COPY --from=backend-builder /app/node_modules ./node_modules
 COPY --from=backend-builder /app/backend/package.json ./backend/
 
+# Runtime data the backend reads from the repo rather than from node_modules.
+# `vendor/wise-protos/fgmj_descriptor_set.pb` is REQUIRED at startup: the
+# Prometheus importer loads it in weatherPatchOperations, and its absence is a
+# hard throw, not a degraded mode — the process exits 1 and the container
+# restart-loops. This image is backend-only and had never copied vendor/,
+# which was harmless until upstream added that dependency after v0.11.5.
+# Copied from the build context rather than the builder stage, because the
+# builder only ever receives backend/.
+COPY vendor/ ./vendor/
+
 # NOTE: No frontend/dist copy. backend/src/index.ts existsSync() check
 # will skip static-file serving and log a benign startup warning.
 
