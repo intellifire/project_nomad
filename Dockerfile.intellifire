@@ -70,6 +70,20 @@ COPY --from=backend-builder /app/backend/package.json ./backend/
 # builder only ever receives backend/.
 COPY vendor/ ./vendor/
 
+# Version. appVersion.ts resolves NOMAD_VERSION, else /app/VERSION, and THROWS
+# when it has neither rather than reporting a placeholder — so a missing file
+# is a startup failure, not a degraded mode. Upstream bakes it in its
+# frontend-builder stage (backend/Dockerfile:211-214) from
+# frontend/package.json, which is the release source of truth; the root and
+# backend package.json files are never bumped. This image has no frontend
+# stage, so the manifest comes from the build context, as vendor/ does above.
+# `cat` is deliberate: it fails the BUILD if the file did not get written,
+# which is the only place this class of fault is visible.
+COPY frontend/package.json /tmp/frontend-package.json
+RUN node -p "require('/tmp/frontend-package.json').version" > /app/VERSION \
+    && rm /tmp/frontend-package.json \
+    && cat /app/VERSION
+
 # NOTE: No frontend/dist copy. backend/src/index.ts existsSync() check
 # will skip static-file serving and log a benign startup warning.
 
