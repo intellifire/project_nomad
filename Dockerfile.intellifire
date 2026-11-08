@@ -8,6 +8,13 @@
 # This file mirrors stages 2 (backend-builder) and 3 (production) from
 # upstream's backend/Dockerfile. Re-sync when upstream changes those stages.
 
+# ---- Stage 0: FireSTARR engine files ----
+# Binary mode (FIRESTARR_EXECUTION_MODE=binary) runs FireSTARR as a child
+# process of the backend, so Nomad needs no Docker socket. The engine version
+# is fixed here; 0.9.29 is the release staging was baselined on (2026-11-08).
+ARG FIRESTARR_IMAGE=ghcr.io/cwfmf/firestarr-cpp/firestarr:0.9.29
+FROM ${FIRESTARR_IMAGE} AS firestarr
+
 # ---- Stage 1: Build backend ----
 FROM node:22-slim AS backend-builder
 
@@ -83,6 +90,13 @@ COPY frontend/package.json /tmp/frontend-package.json
 RUN node -p "require('/tmp/frontend-package.json').version" > /app/VERSION \
     && rm /tmp/frontend-package.json \
     && cat /app/VERSION
+
+# FireSTARR binary plus the files it reads beside it (settings.ini, fuel.lut,
+# proj.db). RASTER_ROOT points at the dataset mount, which the docker-mode
+# compose wrapper used to set with sed at every run.
+COPY --from=firestarr /appl/firestarr /appl/firestarr
+RUN sed -i 's|RASTER_ROOT.*|RASTER_ROOT = /appl/data/generated/grid/100m|' /appl/firestarr/settings.ini \
+    && grep -q '^RASTER_ROOT = /appl/data/generated/grid/100m' /appl/firestarr/settings.ini
 
 # NOTE: No frontend/dist copy. backend/src/index.ts existsSync() check
 # will skip static-file serving and log a benign startup warning.
