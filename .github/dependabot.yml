@@ -1,0 +1,73 @@
+# Dependabot: fleet pattern (docker + github-actions version updates; npm/composer held, security fixes via alerts).
+version: 2
+updates:
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: saturday
+      time: "04:00"
+      timezone: America/Edmonton
+    open-pull-requests-limit: 2
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: docker
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: saturday
+      time: "04:00"
+      timezone: America/Edmonton
+    open-pull-requests-limit: 2
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: docker
+    directory: /docker/firestarr
+    schedule:
+      interval: weekly
+      day: saturday
+      time: "04:00"
+      timezone: America/Edmonton
+    open-pull-requests-limit: 2
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: docker
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: saturday
+      time: "04:00"
+      timezone: America/Edmonton
+    open-pull-requests-limit: 2
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: saturday
+      time: "04:00"
+      timezone: America/Edmonton
+    open-pull-requests-limit: 2
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]
